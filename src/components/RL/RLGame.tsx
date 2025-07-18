@@ -3,11 +3,11 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, RotateCcw, Brain, Target, Shield, Gift } from "lucide-react";
+import { Play, Pause, RotateCcw, Brain, Target, Shield, Gift, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Types
-type CellType = 'empty' | 'obstacle' | 'reward' | 'goal';
+type CellType = 'empty' | 'obstacle' | 'reward' | 'punishment' | 'goal';
 type Position = { x: number; y: number };
 
 interface Cell {
@@ -26,11 +26,12 @@ interface GameState {
   explorationRate: number;
 }
 
-const GRID_SIZE = 12;
+const GRID_SIZE = 8;
 const INITIAL_Q_VALUE = 0;
 const LEARNING_RATE = 0.1;
 const DISCOUNT_FACTOR = 0.9;
 const REWARD_VALUE = 10;
+const PUNISHMENT_VALUE = -15;
 const OBSTACLE_PENALTY = -5;
 const GOAL_REWARD = 100;
 const STEP_PENALTY = -1;
@@ -163,6 +164,8 @@ export function RLGame() {
         return OBSTACLE_PENALTY;
       case 'reward':
         return REWARD_VALUE;
+      case 'punishment':
+        return PUNISHMENT_VALUE;
       default:
         return STEP_PENALTY;
     }
@@ -258,6 +261,8 @@ export function RLGame() {
       classes += " bg-obstacle text-destructive-foreground";
     } else if (cell.type === 'reward') {
       classes += " bg-reward text-primary-foreground animate-pulse-reward";
+    } else if (cell.type === 'punishment') {
+      classes += " bg-destructive text-destructive-foreground animate-pulse-reward";
     } else {
       // Color based on Q-value for exploration visualization
       const qNormalized = Math.max(0, Math.min(1, (cell.qValue + 50) / 100));
@@ -330,22 +335,30 @@ export function RLGame() {
 
             <div>
               <h4 className="text-sm font-medium mb-3">Place Items</h4>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 <Button
                   variant={placementMode === 'obstacle' ? 'default' : 'outline'}
                   onClick={() => setPlacementMode('obstacle')}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-1 text-xs"
                 >
-                  <Shield className="w-4 h-4" />
+                  <Shield className="w-3 h-3" />
                   Obstacles
                 </Button>
                 <Button
                   variant={placementMode === 'reward' ? 'default' : 'outline'}
                   onClick={() => setPlacementMode('reward')}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-1 text-xs"
                 >
-                  <Gift className="w-4 h-4" />
+                  <Gift className="w-3 h-3" />
                   Rewards
+                </Button>
+                <Button
+                  variant={placementMode === 'punishment' ? 'default' : 'outline'}
+                  onClick={() => setPlacementMode('punishment')}
+                  className="flex items-center gap-1 text-xs"
+                >
+                  <Zap className="w-3 h-3" />
+                  Punish
                 </Button>
               </div>
             </div>
@@ -386,6 +399,10 @@ export function RLGame() {
                   <div className="w-3 h-3 bg-reward rounded"></div>
                   <span>Reward</span>
                 </div>
+                <div className="flex items-center gap-1 text-xs">
+                  <div className="w-3 h-3 bg-destructive rounded"></div>
+                  <span>Punishment</span>
+                </div>
               </div>
             </div>
             
@@ -403,6 +420,7 @@ export function RLGame() {
                       {gameState.goal.x === x && gameState.goal.y === y && '🎯'}
                       {cell.type === 'obstacle' && '🚫'}
                       {cell.type === 'reward' && '💎'}
+                      {cell.type === 'punishment' && '⚡'}
                     </div>
                   ))}
                 </div>
@@ -410,7 +428,7 @@ export function RLGame() {
             </div>
             
             <p className="text-xs text-muted-foreground mt-4">
-              Click cells to place {placementMode === 'obstacle' ? 'obstacles' : 'rewards'}. 
+              Click cells to place {placementMode === 'obstacle' ? 'obstacles' : placementMode === 'reward' ? 'rewards' : 'punishments'}. 
               Darker cells show higher Q-values (learned preferences).
             </p>
           </Card>
