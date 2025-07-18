@@ -77,7 +77,7 @@ export function RLGame() {
 
   // Handle cell click for placing obstacles/rewards
   const handleCellClick = useCallback((x: number, y: number) => {
-    if (gameState.isRunning) return;
+    // Don't place on agent or goal positions
     if ((x === gameState.agent.x && y === gameState.agent.y) || 
         (x === gameState.goal.x && y === gameState.goal.y)) return;
 
@@ -95,9 +95,9 @@ export function RLGame() {
         })
       )
     }));
-  }, [gameState.isRunning, gameState.agent, gameState.goal, placementMode]);
+  }, [gameState.agent, gameState.goal, placementMode]);
 
-  // Get possible actions from a position
+  // Get possible actions from a position (excluding obstacles)
   const getPossibleActions = (pos: Position): Position[] => {
     const actions: Position[] = [];
     const directions = [
@@ -111,9 +111,17 @@ export function RLGame() {
       const newX = pos.x + dir.x;
       const newY = pos.y + dir.y;
       if (newX >= 0 && newX < GRID_SIZE && newY >= 0 && newY < GRID_SIZE) {
-        actions.push({ x: newX, y: newY });
+        // Only include if not an obstacle
+        if (gameState.grid[newY][newX].type !== 'obstacle') {
+          actions.push({ x: newX, y: newY });
+        }
       }
     });
+
+    // If no valid actions (surrounded by obstacles), allow staying in place
+    if (actions.length === 0) {
+      actions.push(pos);
+    }
 
     return actions;
   };
@@ -193,11 +201,11 @@ export function RLGame() {
     const currentPos = gameState.agent;
     const nextPos = chooseAction(currentPos, gameState.explorationRate);
     
-    // Don't move into obstacles
-    if (gameState.grid[nextPos.y][nextPos.x].type === 'obstacle') {
-      const reward = getReward(nextPos);
-      updateQValue(currentPos, reward, currentPos);
-      setGameState(prev => ({ ...prev, totalReward: prev.totalReward + reward }));
+    // If agent stays in place (surrounded by obstacles), give penalty but continue
+    if (nextPos.x === currentPos.x && nextPos.y === currentPos.y) {
+      updateQValue(currentPos, STEP_PENALTY, currentPos);
+      setGameState(prev => ({ ...prev, totalReward: prev.totalReward + STEP_PENALTY }));
+      setMoveCount(prev => prev + 1);
       return;
     }
 
