@@ -61,7 +61,14 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// RL Game colors
+				agent: 'hsl(var(--agent))',
+				obstacle: 'hsl(var(--obstacle))',
+				reward: 'hsl(var(--reward))',
+				goal: 'hsl(var(--goal))',
+				'grid-line': 'hsl(var(--grid-line))',
+				visited: 'hsl(var(--visited))'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -84,11 +91,27 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'agent-move': {
+					'0%': { transform: 'scale(1)', filter: 'brightness(1)' },
+					'50%': { transform: 'scale(1.1)', filter: 'brightness(1.2)' },
+					'100%': { transform: 'scale(1)', filter: 'brightness(1)' }
+				},
+				'pulse-reward': {
+					'0%, 100%': { opacity: '1', transform: 'scale(1)' },
+					'50%': { opacity: '0.8', transform: 'scale(1.05)' }
+				},
+				'glow': {
+					'0%, 100%': { filter: 'drop-shadow(0 0 5px currentColor)' },
+					'50%': { filter: 'drop-shadow(0 0 15px currentColor)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'agent-move': 'agent-move 0.3s ease-out',
+				'pulse-reward': 'pulse-reward 2s ease-in-out infinite',
+				'glow': 'glow 2s ease-in-out infinite'
 			}
 		}
 	},
