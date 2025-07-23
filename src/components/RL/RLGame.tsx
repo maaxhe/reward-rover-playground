@@ -256,13 +256,13 @@ export function RLGame() {
       classes += " bg-agent text-primary-foreground animate-glow";
       if (isAgentMoving) classes += " animate-agent-move";
     } else if (isGoal) {
-      classes += " bg-goal text-primary-foreground animate-pulse";
+      classes += " bg-goal text-primary-foreground";
     } else if (cell.type === 'obstacle') {
       classes += " bg-obstacle text-destructive-foreground";
     } else if (cell.type === 'reward') {
-      classes += " bg-reward text-primary-foreground animate-pulse-reward";
+      classes += " bg-reward text-primary-foreground";
     } else if (cell.type === 'punishment') {
-      classes += " bg-destructive text-destructive-foreground animate-pulse-reward";
+      classes += " bg-destructive text-destructive-foreground";
     } else {
       // Color based on Q-value for exploration visualization
       const qNormalized = Math.max(0, Math.min(1, (cell.qValue + 50) / 100));
