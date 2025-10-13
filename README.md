@@ -71,3 +71,12 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Spielmodus & Toggles
+
+- **Modus-Schalter** – wechsle zwischen „Playground“ (autonomes Lernen) und „Spielmodus“ (manuelle Steuerung, Ziele erreichen, Highscores speichern).
+- **Werte anzeigen** – blendet für jedes Feld Q-Werte bzw. Tile-Reward als Badge ein (`Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 })`).
+- **Tile-Größe & Level** – vier Größen (S–XL) und drei Level-Presets mit eigener Dichte an Hindernissen, Rewards, Punishments und Zielen.
+- **HUD & Legende** – Sticky-HUD zeigt Score, Züge, Timer & Bestwerte; Farblegende erläutert Agent, Ziel, Reward, Strafe, Hindernis.
+- **Steuerung** – Pfeiltasten/WASD oder die On-Screen-Buttons bewegen den Agent. Hindernisse blockieren, Strafen ziehen Punkte ab, Rewards addieren, Ziele beenden den Lauf.
+- **Victory-Modal & Highscore** – bei Ziel-Erfolg erscheint eine Auswertung (Züge, Score, Rewards, Strafen, Zeit) und Highscores werden pro Level in `localStorage` gespeichert.

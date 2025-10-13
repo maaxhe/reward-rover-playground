@@ -8,54 +8,63 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* AI/Tech inspired color scheme */
-    --background: 220 27% 8%;
-    --foreground: 210 40% 95%;
+    /* AI/Tech inspired color scheme - matched to main website */
+    --background: 222 47% 4%;
+    --foreground: 193 100% 96%;
 
-    --card: 220 25% 12%;
-    --card-foreground: 210 40% 95%;
+    --card: 222 47% 6%;
+    --card-foreground: 193 100% 96%;
 
-    --popover: 220 25% 12%;
-    --popover-foreground: 210 40% 95%;
+    --popover: 222 47% 6%;
+    --popover-foreground: 193 100% 96%;
 
-    --primary: 235 85% 65%;
-    --primary-foreground: 220 27% 8%;
+    --primary: 193 100% 60%;
+    --primary-foreground: 222 47% 4%;
 
-    --secondary: 220 20% 18%;
-    --secondary-foreground: 210 40% 95%;
+    --secondary: 222 47% 11%;
+    --secondary-foreground: 193 100% 96%;
 
-    --muted: 220 20% 15%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 222 47% 11%;
+    --muted-foreground: 220 8.9% 65.1%;
 
-    --accent: 195 100% 70%;
-    --accent-foreground: 220 27% 8%;
+    --accent: 193 100% 70%;
+    --accent-foreground: 222 47% 4%;
 
-    --destructive: 10 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 193 100% 96%;
 
-    --border: 220 20% 20%;
-    --input: 220 20% 18%;
-    --ring: 235 85% 65%;
+    --border: 222 47% 15%;
+    --input: 222 47% 15%;
+    --ring: 193 100% 60%;
 
-    /* RL Game specific colors */
-    --agent: 195 100% 70%;
-    --obstacle: 10 84% 60%;
-    --reward: 120 60% 55%;
-    --goal: 280 85% 70%;
-    --grid-line: 220 20% 25%;
-    --visited: 235 50% 30%;
+    /* Reward Rover tile palette - vibrant and friendly */
+    --tile-bg: #0a0f1a;
+    --tile-reward: #10b981;
+    --tile-punishment: #f97316;
+    --tile-obstacle: #475569;
+    --tile-agent: #22d3ee;
+    --tile-goal: #fbbf24;
+    --tile-portal: #a855f7;
+    --tile-outline: rgba(34, 211, 238, 0.15);
+    --tile-text-on-light: #f8fafc;
+    --tile-text-on-dark: #0f172a;
+    --grid-line: 222 47% 15%;
+    --visited: 193 100% 60%;
 
-    /* Gradients */
-    --gradient-main: linear-gradient(135deg, hsl(220 27% 8%), hsl(235 40% 15%));
-    --gradient-card: linear-gradient(135deg, hsl(220 25% 12%), hsl(220 20% 18%));
-    --gradient-agent: linear-gradient(135deg, hsl(195 100% 70%), hsl(235 85% 65%));
+    /* Gradients - matched to main website */
+    --gradient-main: radial-gradient(circle at top, rgba(34, 211, 238, 0.12), rgba(15, 23, 42, 0.98));
+    --gradient-card: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(30, 41, 59, 0.95));
+    --gradient-agent: linear-gradient(135deg, rgba(34, 211, 238, 0.9), rgba(96, 165, 250, 0.9));
 
-    /* Animations */
+    /* Animations & Shadows */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --glow-agent: 0 0 20px hsl(var(--agent) / 0.5);
-    --glow-primary: 0 0 15px hsl(var(--primary) / 0.3);
+    --glow-agent: 0 0 20px rgba(34, 211, 238, 0.5);
+    --glow-primary: 0 0 15px rgba(34, 211, 238, 0.3);
+    --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-medium: 0 8px 25px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.5);
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -102,6 +111,17 @@ All colors MUST be HSL.
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+    --tile-bg: #0b1220;
+    --tile-reward: #3be086;
+    --tile-punishment: #ff6666;
+    --tile-obstacle: #475569;
+    --tile-agent: #3b82f6;
+    --tile-goal: #fbbf24;
+    --tile-outline: rgba(255, 255, 255, 0.28);
+    --tile-text-on-light: #f9fafb;
+    --tile-text-on-dark: #0f172a;
+    --grid-line: 215 24% 26%;
+    --visited: 215 70% 45%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -121,4 +141,85 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@layer utilities {
+  .bg-tile-empty { background-color: var(--tile-bg); }
+  .bg-tile-reward { background-color: var(--tile-reward); }
+  .bg-tile-punishment { background-color: var(--tile-punishment); }
+  .bg-tile-obstacle {
+    background: linear-gradient(135deg, #5a657d 0%, #475569 50%, #5a657d 100%);
+    border: 1px solid #3a4556;
+  }
+  .bg-tile-agent { background-color: var(--tile-agent); }
+  .bg-tile-goal { background-color: var(--tile-goal); }
+  .bg-tile-portal { background-color: var(--tile-portal); }
+  .tile-outline { box-shadow: inset 0 0 0 1px var(--tile-outline); }
+  .tile-focus:focus-visible {
+    outline: 2px solid var(--tile-agent);
+    outline-offset: 2px;
+  }
+  .legend-dot {
+    border-radius: 9999px;
+    width: 16px;
+    height: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Gradient text animation - matched to main website */
+  .gradient-text {
+    background-image: linear-gradient(90deg, #60a5fa 0%, #22d3ee 40%, #a5f3fc 50%, #22d3ee 60%, #60a5fa 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-repeat: repeat;
+    background-size: 1000px 100%;
+    animation: gradient-slide 4800ms linear infinite;
+  }
+
+  @keyframes gradient-slide {
+    0% { background-position: 0 50%; }
+    100% { background-position: 1000px 50%; }
+  }
+
+  /* Hover effects */
+  .hover-lift {
+    transition: transform 200ms ease, box-shadow 200ms ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+  }
+
+  /* Custom shadows */
+  .shadow-soft { box-shadow: var(--shadow-soft); }
+  .shadow-medium { box-shadow: var(--shadow-medium); }
+  .shadow-xl { box-shadow: var(--shadow-xl); }
+}
+
+.tile-value-badge {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.15rem 0.25rem;
+  border-radius: 0.25rem;
+}
+
+.tile-value-badge.light {
+  color: rgba(15, 23, 42, 0.9);
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.tile-value-badge.empty {
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.3);
 }
