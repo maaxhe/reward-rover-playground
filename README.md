@@ -1,82 +1,88 @@
-# Welcome to your Lovable project
+# 🚀 Reward Rover
 
-## Project info
+**Reward Rover** ist mein Versuch, Reinforcement Learning greifbar zu machen.  
+Nicht in Form von endlosen Formeln oder komplizierten Papers, sondern als interaktives Spiel.  
+Ein kleiner Rover läuft über ein Grid, stolpert in Mauern, kassiert Strafen oder findet Belohnungen – und lernt dabei mit jeder Episode, bessere Entscheidungen zu treffen.
 
-**URL**: https://lovable.dev/projects/c8439c3e-00e6-4c23-bbff-1b7876021ebc
+---
 
-## How can I edit this code?
+## Warum dieses Projekt?
 
-There are several ways of editing your application.
+Ich habe mich in den letzten Jahren viel mit KI beschäftigt – von neuronalen Netzen bis zu den neuesten Sprachmodellen.  
+Aber was mich am meisten fasziniert, ist der Kern: **Wie lernen Maschinen überhaupt?**  
+Reinforcement Learning (RL) ist für mich eines der ehrlichsten Paradigmen, weil es so nah an unserem eigenen Lernen dran ist: Versuch und Irrtum, kleine Belohnungen, große Rückschläge – und langsam entsteht eine Strategie.  
 
-**Use Lovable**
+Reward Rover soll genau das zeigen.  
+Kein abstraktes Buzzword, sondern eine Erfahrung:  
+Du siehst einem Agenten dabei zu, wie er aus „Fehlern“ etwas Sinnvolles macht.  
+Und wenn man versteht, wie dieser Prozess funktioniert, versteht man auch ein Stück besser, wie KI-Systeme ihre Welt „sehen“ und warum sie manchmal überraschend gute (oder dumme) Entscheidungen treffen.  
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c8439c3e-00e6-4c23-bbff-1b7876021ebc) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## Features
 
-**Use your preferred IDE**
+- **Exploration vs. Exploitation**  
+  Der zentrale Trade-off im RL: Bleibt der Rover bei sicheren Wegen oder probiert er Neues?  
+  Mit jedem Lauf verändert sich sein Verhalten – und du kannst live zuschauen.  
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **Drei Modi**  
+  - **Playground:** Baue deine eigene Welt, platziere Mauern, Rewards, Strafen und Portale.  
+  - **Zufallsmodus:** Lass dir automatisch generierte Welten erstellen – jedes Mal anders.  
+  - **Vergleichsmodus:** Starte zwei Rover gleichzeitig mit unterschiedlichen Hyperparametern (Explorationsrate, Lernrate, Gamma) und sieh, wer schneller lernt.  
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **Q-Learning live erklärt**  
+  - Q-Werte lassen sich als Zahlen oder Heatmap einblenden.  
+  - Du kannst direkt an den Stellschrauben drehen:  
+    - **Explorationsrate (ε):** Wie neugierig ist der Rover?  
+    - **Lernrate (α):** Wie stark überschreiben neue Erfahrungen alte Werte?  
+    - **Discount-Faktor (γ):** Denkt er kurzfristig oder langfristig?  
 
-Follow these steps:
+- **Levels & Statistik**  
+  - Eigene Karten bauen oder Preset-Levels laden.  
+  - Nach jeder Episode gibt’s Feedback: Rewards, Strafen, Schritte, Zeit.  
+  - Highscores werden gespeichert, damit du Fortschritte vergleichen kannst.  
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## Wie man spielt
 
-# Step 3: Install the necessary dependencies.
-npm i
+1. Starte das Projekt lokal oder öffne die gehostete Version.  
+2. Wähle einen Modus: Playground, Zufall oder Vergleich.  
+3. Platziere ein paar Hindernisse oder probier gleich die Preset-Levels.  
+4. Klick auf **Start** – und schau, wie der Rover mit jedem Zug schlauer wird.  
+5. Passe Parameter an und beobachte, wie sich das Verhalten verändert.  
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+Es macht einen Unterschied, ob der Rover vorsichtig, gierig oder langfristig denkend unterwegs ist.  
+Und genau das ist der Kern von RL: Entscheidungen unter Unsicherheit.  
+
+---
+
+## Warum ist das wichtig?
+
+Wir reden heute viel über „künstliche Intelligenz“.  
+Doch oft bleibt unklar, wie Maschinen eigentlich lernen, warum sie manchmal erstaunlich gut generalisieren und in anderen Momenten spektakulär scheitern.  
+RL liefert hier einen Schlüssel: Es zeigt, dass Intelligenz nicht aus Zauberei entsteht, sondern aus Feedback, Struktur und unzähligen Versuchen.  
+
+Wenn wir das begreifen, können wir auch besser einschätzen, wo die Grenzen heutiger KI liegen – und wo vielleicht die nächsten Durchbrüche kommen.  
+Reward Rover ist für mich ein kleiner Schritt in diese Richtung: ein Tool, das zeigt, wie Lernen funktioniert, und das Diskussionen über KI transparenter macht.  
+
+---
+
+## Tech-Stack
+
+- React + TypeScript  
+- Vite  
+- Tailwind CSS  
+- shadcn/ui  
+
+---
+
+## Installation & Start
+
+Falls du selbst spielen möchtest:
+
+```bash
+git clone https://github.com/maaxhe/reward-rover-playground.git
+cd reward-rover-playground
+npm install
 npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/c8439c3e-00e6-4c23-bbff-1b7876021ebc) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
-
-## Spielmodus & Toggles
-
-- **Modus-Schalter** – wechsle zwischen „Playground“ (autonomes Lernen) und „Spielmodus“ (manuelle Steuerung, Ziele erreichen, Highscores speichern).
-- **Werte anzeigen** – blendet für jedes Feld Q-Werte bzw. Tile-Reward als Badge ein (`Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 })`).
-- **Tile-Größe & Level** – vier Größen (S–XL) und drei Level-Presets mit eigener Dichte an Hindernissen, Rewards, Punishments und Zielen.
-- **HUD & Legende** – Sticky-HUD zeigt Score, Züge, Timer & Bestwerte; Farblegende erläutert Agent, Ziel, Reward, Strafe, Hindernis.
-- **Steuerung** – Pfeiltasten/WASD oder die On-Screen-Buttons bewegen den Agent. Hindernisse blockieren, Strafen ziehen Punkte ab, Rewards addieren, Ziele beenden den Lauf.
-- **Victory-Modal & Highscore** – bei Ziel-Erfolg erscheint eine Auswertung (Züge, Score, Rewards, Strafen, Zeit) und Highscores werden pro Level in `localStorage` gespeichert.
