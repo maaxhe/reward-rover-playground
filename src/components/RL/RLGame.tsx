@@ -85,6 +85,8 @@ const GRID_PIXEL_TARGET: Record<keyof typeof TILE_SIZE_MAP, number> = {
 
 const MIN_GOAL_DISTANCE = 5;
 const BONUS_INTERVAL = 10;
+const TUTORIAL_STORAGE_KEY = "reward_rover_tutorial_seen";
+
 const EPISODE_TITLES = [
   "Aurora Approach",
   "Nebula Run",
@@ -1648,6 +1650,8 @@ export function RLGame() {
   const [isDragging, setIsDragging] = useState(false);
   const [episodeHistory, setEpisodeHistory] = useState<Array<{ episode: number; reward: number; steps: number }>>([]);
   const [undoStack, setUndoStack] = useState<TileState[][][]>([]);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
   const celebrationFacts: Array<Record<Language, string>> = [
     {
       de: "Wusstest du? Q-Learning gehört zur Familie der Temporal-Difference-Methoden.",
@@ -1710,6 +1714,80 @@ export function RLGame() {
     (de: string, en: string) => (isEnglish ? en : de),
     [isEnglish],
   );
+
+  // Tutorial Slides
+  const tutorialSlides = useMemo(() => [
+    {
+      title: translate("Willkommen bei Reward Rover! 🚀", "Welcome to Reward Rover! 🚀"),
+      content: translate(
+        "Entdecke, wie Reinforcement Learning funktioniert! Der Rover lernt eigenständig, welche Wege zum Ziel führen.",
+        "Discover how reinforcement learning works! The rover learns on its own which paths lead to the goal."
+      ),
+    },
+    {
+      title: translate("Der Start-Button ▶️", "The Start Button ▶️"),
+      content: translate(
+        "Drücke den Start-Button im linken Panel, um den Lernprozess zu starten. Der Rover beginnt dann, das Spielfeld zu erkunden.",
+        "Press the Start button in the left panel to begin the learning process. The rover will then start exploring the playfield."
+      ),
+    },
+    {
+      title: translate("Pfeiltasten = Impulse geben! ⌨️", "Arrow Keys = Give Hints! ⌨️"),
+      content: translate(
+        "WICHTIG: Die Pfeiltasten steuern den Rover NICHT direkt! Sie geben ihm nur kurzfristige Impulse in eine Richtung. Der Rover entscheidet weiterhin selbst und lernt dabei.",
+        "IMPORTANT: Arrow keys do NOT control the rover directly! They only give short-term directional hints. The rover still makes its own decisions and keeps learning."
+      ),
+      bullets: [
+        translate("⚠️ Der Rover trifft weiterhin eigene Entscheidungen", "⚠️ The rover still makes its own decisions"),
+        translate("Der Impuls wirkt nur beim Drücken der Taste", "The hint only works while pressing the key"),
+        translate("Der Lernprozess läuft weiter", "The learning process continues"),
+      ],
+    },
+    {
+      title: translate("Gestalte das Spielfeld 🎨", "Design the Playfield 🎨"),
+      content: translate(
+        "Nutze die Platzierungs-Tools links, um Hindernisse, Belohnungen oder Strafen zu platzieren. Experimentiere und beobachte, wie der Rover lernt!",
+        "Use the placement tools on the left to place obstacles, rewards, or penalties. Experiment and watch how the rover learns!"
+      ),
+    },
+  ], [translate]);
+
+  // Tutorial functions
+  const closeTutorial = useCallback(() => {
+    setTutorialOpen(false);
+    try {
+      localStorage.setItem(TUTORIAL_STORAGE_KEY, "true");
+    } catch (e) {
+      console.warn("Could not save tutorial status", e);
+    }
+  }, []);
+
+  const nextTutorialStep = useCallback(() => {
+    if (tutorialStep < tutorialSlides.length - 1) {
+      setTutorialStep(prev => prev + 1);
+    } else {
+      closeTutorial();
+    }
+  }, [tutorialStep, tutorialSlides.length, closeTutorial]);
+
+  const prevTutorialStep = useCallback(() => {
+    if (tutorialStep > 0) {
+      setTutorialStep(prev => prev - 1);
+    }
+  }, [tutorialStep]);
+
+  // Check if tutorial was already seen
+  useEffect(() => {
+    try {
+      const seen = localStorage.getItem(TUTORIAL_STORAGE_KEY);
+      if (!seen) {
+        setTutorialOpen(true);
+      }
+    } catch (e) {
+      console.warn("Could not check tutorial status", e);
+    }
+  }, []);
+
   const tileLabels = useMemo(() => TILE_LABELS[language], [language]);
   const sizeLabels = useMemo(() => TILE_SIZE_LABELS[language], [language]);
   const numberFormatter = useMemo(
@@ -2829,8 +2907,53 @@ const handleActiveBonusClick = useCallback(() => {
     </Card>
   );
 
+  const currentSlide = tutorialSlides[tutorialStep];
+
   return (
-    <div className="min-h-screen bg-[var(--gradient-main)] pb-12">
+    <>
+      {/* Tutorial Dialog */}
+      <Dialog open={tutorialOpen} onOpenChange={setTutorialOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">{currentSlide?.title}</DialogTitle>
+            <DialogDescription className="text-base leading-relaxed pt-2">
+              {currentSlide?.content}
+            </DialogDescription>
+          </DialogHeader>
+
+          {currentSlide?.bullets && (
+            <ul className="space-y-2 text-sm text-muted-foreground list-disc pl-6 py-3">
+              {currentSlide.bullets.map((bullet, idx) => (
+                <li key={idx} className="leading-relaxed">{bullet}</li>
+              ))}
+            </ul>
+          )}
+
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              {translate("Schritt", "Step")} {tutorialStep + 1} / {tutorialSlides.length}
+            </div>
+            <div className="flex gap-2">
+              {tutorialStep > 0 && (
+                <Button variant="outline" onClick={prevTutorialStep}>
+                  {translate("Zurück", "Back")}
+                </Button>
+              )}
+              <Button variant="ghost" onClick={closeTutorial}>
+                {translate("Später", "Skip")}
+              </Button>
+              <Button onClick={nextTutorialStep}>
+                {tutorialStep < tutorialSlides.length - 1
+                  ? translate("Weiter", "Next")
+                  : translate("Los geht's!", "Let's go!")
+                }
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <div className="min-h-screen bg-[var(--gradient-main)] pb-12">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 pt-6">
         {/* Hero Section */}
         <div className="rounded-3xl border border-border bg-card/95 p-8 shadow-xl backdrop-blur-sm">
@@ -4183,6 +4306,7 @@ const handleActiveBonusClick = useCallback(() => {
         </div>
       </div>
     </div>
+    </>
   );
 }
 
