@@ -30,6 +30,11 @@ export interface TileProps {
   onMouseDown?: () => void;
   onMouseEnter?: () => void;
   icon?: ReactNode;
+  visits?: number;
+  showHeatmap?: boolean;
+  maxVisits?: number;
+  bestAction?: string; // "up", "down", "left", "right"
+  showActions?: boolean;
 }
 
 const TileComponent = ({
@@ -46,8 +51,33 @@ const TileComponent = ({
   onMouseDown,
   onMouseEnter,
   icon,
+  visits = 0,
+  showHeatmap = false,
+  maxVisits = 1,
+  bestAction,
+  showActions = false,
 }: TileProps) => {
   const style = TILE_STYLE[type];
+
+  // Pfeil-Symbol basierend auf bester Aktion
+  const getArrowIcon = (action?: string) => {
+    if (!action) return null;
+    switch (action) {
+      case "up": return "↑";
+      case "down": return "↓";
+      case "left": return "←";
+      case "right": return "→";
+      default: return null;
+    }
+  };
+
+  // Berechne Heatmap-Farbe basierend auf Besuchshäufigkeit
+  const heatmapOverlay = useMemo(() => {
+    if (!showHeatmap || visits === 0 || type === "obstacle") return undefined;
+    const intensity = Math.min(visits / Math.max(maxVisits, 1), 1);
+    // Von transparent (0 visits) zu rot (max visits)
+    return `rgba(255, 0, 0, ${intensity * 0.6})`;
+  }, [showHeatmap, visits, maxVisits, type]);
 
   const badgeClass = useMemo(() => {
     if (!showValues) return undefined;
@@ -109,7 +139,31 @@ const TileComponent = ({
       onMouseEnter={handleMouseEnter}
       onKeyDown={handleKeyDown}
     >
+      {/* Heatmap Overlay */}
+      {heatmapOverlay && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundColor: heatmapOverlay,
+            borderRadius: tileSize > 32 ? "6px" : "4px",
+          }}
+        />
+      )}
       {showValues && <span className={badgeClass}>{displayValue}</span>}
+      {/* Aktions-Pfeil */}
+      {showActions && bestAction && !isAgent && type !== "obstacle" && (
+        <div
+          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          style={{
+            fontSize: tileSize > 40 ? "2rem" : tileSize > 32 ? "1.5rem" : "1.25rem",
+            color: "rgba(59, 130, 246, 0.8)",
+            fontWeight: "bold",
+            textShadow: "0 0 4px rgba(0,0,0,0.5)",
+          }}
+        >
+          {getArrowIcon(bestAction)}
+        </div>
+      )}
       <span
         className="pointer-events-none select-none transition-transform duration-200"
         style={{ fontSize: tileSize > 40 ? "1.5rem" : tileSize > 32 ? "1.25rem" : "1rem" }}
@@ -126,9 +180,17 @@ const areEqual = (prev: TileProps, next: TileProps) => {
   if (prev.isAgent !== next.isAgent) return false;
   if (prev.isGoal !== next.isGoal) return false;
   if (prev.showValues !== next.showValues) return false;
+  if (prev.showHeatmap !== next.showHeatmap) return false;
+  if (prev.showActions !== next.showActions) return false;
+  if (prev.bestAction !== next.bestAction) return false;
+  if (prev.visits !== next.visits) return false;
+  if (prev.maxVisits !== next.maxVisits) return false;
   if (prev.tileSize !== next.tileSize) return false;
   if (Math.round(prev.value * 100) !== Math.round(next.value * 100)) return false;
   if (prev.icon !== next.icon) return false;
+  if (!!prev.onMouseEnter !== !!next.onMouseEnter) return false;
+  if (!!prev.onMouseDown !== !!next.onMouseDown) return false;
+  if (!!prev.onClick !== !!next.onClick) return false;
   return true;
 };
 

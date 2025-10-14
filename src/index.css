@@ -198,6 +198,89 @@ All colors MUST be HSL.
   .shadow-xl { box-shadow: var(--shadow-xl); }
 }
 
+@layer components {
+  .input-slider {
+    --slider-value: 0;
+    --slider-fill: calc(var(--slider-value) * 100%);
+    appearance: none;
+    width: 100%;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: transparent;
+    outline: none;
+    cursor: pointer;
+    transition: box-shadow 180ms ease, transform 180ms ease;
+  }
+
+  .input-slider:focus-visible {
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.25), 0 0 0 1px hsl(var(--primary));
+  }
+
+  .input-slider:hover {
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.4);
+  }
+
+  .input-slider:active {
+    transform: scaleX(1.01);
+  }
+
+  .input-slider::-webkit-slider-runnable-track {
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: linear-gradient(
+      90deg,
+      hsl(var(--primary)) 0%,
+      hsl(var(--primary)) var(--slider-fill),
+      hsl(var(--muted-foreground) / 0.35) var(--slider-fill),
+      hsl(var(--muted-foreground) / 0.35) 100%
+    );
+  }
+
+  .input-slider::-moz-range-track {
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: linear-gradient(
+      90deg,
+      hsl(var(--primary)) 0%,
+      hsl(var(--primary)) var(--slider-fill),
+      hsl(var(--muted-foreground) / 0.35) var(--slider-fill),
+      hsl(var(--muted-foreground) / 0.35) 100%
+    );
+  }
+
+  .input-slider::-webkit-slider-thumb {
+    appearance: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 9999px;
+    border: 2px solid hsl(var(--primary) / 0.8);
+    background: radial-gradient(circle at 30% 30%, hsl(0 0% 100% / 0.45), hsl(191 82% 53% / 0.9));
+    box-shadow: 0 6px 18px hsl(191 82% 53% / 0.45);
+    margin-top: -0.375rem;
+    transition: transform 180ms ease, box-shadow 180ms ease;
+  }
+
+  .input-slider:active::-webkit-slider-thumb {
+    transform: scale(1.05);
+    box-shadow: 0 8px 22px hsl(191 82% 53% / 0.55);
+  }
+
+  .input-slider::-moz-range-thumb {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 9999px;
+    border: 2px solid hsl(var(--primary) / 0.8);
+    background: radial-gradient(circle at 30% 30%, hsl(0 0% 100% / 0.45), hsl(191 82% 53% / 0.9));
+    box-shadow: 0 6px 18px hsl(191 82% 53% / 0.45);
+    transition: transform 180ms ease, box-shadow 180ms ease;
+  }
+
+  .input-slider:active::-moz-range-thumb {
+    transform: scale(1.05);
+    box-shadow: 0 8px 22px hsl(191 82% 53% / 0.55);
+  }
+}
+
 .tile-value-badge {
   position: absolute;
   top: 0.35rem;
