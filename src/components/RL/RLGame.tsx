@@ -2720,6 +2720,32 @@ const handleActiveBonusClick = useCallback(() => {
   const gridSize = activeGrid.length;
   const tileSizePx = Math.max(24, Math.floor(GRID_PIXEL_TARGET[tileSize] / Math.max(gridSize, 1)));
   const gridPixelDimension = tileSizePx * gridSize;
+  const leftComparisonGridSize = comparisonState.left.grid.length;
+  const rightComparisonGridSize = comparisonState.right.grid.length;
+  const leftComparisonTileSizePx = Math.max(
+    24,
+    Math.floor(GRID_PIXEL_TARGET[tileSize] / Math.max(leftComparisonGridSize, 1)),
+  );
+  const rightComparisonTileSizePx = Math.max(
+    24,
+    Math.floor(GRID_PIXEL_TARGET[tileSize] / Math.max(rightComparisonGridSize, 1)),
+  );
+  const leftComparisonMaxVisits = useMemo(
+    () => {
+      if (!showHeatmap) return 1;
+      const visits = comparisonState.left.grid.flat().map((cell) => cell.visits);
+      return Math.max(...visits, 1);
+    },
+    [comparisonState.left.grid, showHeatmap],
+  );
+  const rightComparisonMaxVisits = useMemo(
+    () => {
+      if (!showHeatmap) return 1;
+      const visits = comparisonState.right.grid.flat().map((cell) => cell.visits);
+      return Math.max(...visits, 1);
+    },
+    [comparisonState.right.grid, showHeatmap],
+  );
   const randomGridSize = randomState.grid.length;
   const randomObstacleCount = randomState.grid.reduce(
     (acc, row) => acc + row.filter((cell) => cell.type === "obstacle").length,
@@ -3359,13 +3385,15 @@ const handleActiveBonusClick = useCallback(() => {
               <div
                 className="relative mx-auto"
                 style={{
-                  width: "min-content",
+                  width: leftComparisonTileSizePx * leftComparisonGridSize,
+                  height: leftComparisonTileSizePx * leftComparisonGridSize,
                 }}
               >
                 <div
                   className="grid bg-tile-bg"
                   style={{
-                    gridTemplateColumns: `repeat(${comparisonState.left.grid.length}, ${GRID_PIXEL_TARGET[tileSize] / comparisonState.left.grid.length}px)`,
+                    gridTemplateColumns: `repeat(${leftComparisonGridSize}, ${leftComparisonTileSizePx}px)`,
+                    gridTemplateRows: `repeat(${leftComparisonGridSize}, ${leftComparisonTileSizePx}px)`,
                     gap: "1px",
                     borderRadius: "8px",
                     overflow: "hidden",
@@ -3375,22 +3403,33 @@ const handleActiveBonusClick = useCallback(() => {
                     row.map((cell, x) => {
                       const isAgent = comparisonState.left.agent.x === x && comparisonState.left.agent.y === y;
                       const isGoal = comparisonState.left.goal.x === x && comparisonState.left.goal.y === y;
+                      const tileType = isGoal ? "goal" : isAgent ? "empty" : cell.type;
+                      const value = showValues ? cell.qValue : cell.value;
+                      const icon = isAgent ? "" : isGoal ? TILE_ICONS.goal : TILE_ICONS[cell.type];
+                      const showValue =
+                        showValues &&
+                        !isAgent &&
+                        tileType !== "obstacle" &&
+                        tileType !== "portal";
+                      const ariaLabel = isEnglish
+                        ? `${tileLabels[cell.type]} at tile (${x + 1}, ${y + 1}), value ${numberFormatter.format(value)}${isAgent ? ", Rover" : ""}${isGoal ? ", Goal" : ""}`
+                        : `${tileLabels[cell.type]} bei Feld (${x + 1}, ${y + 1}), Wert ${numberFormatter.format(value)}${isAgent ? ", Agent" : ""}${isGoal ? ", Ziel" : ""}`;
                       return (
                         <Tile
                           key={`left-${x}-${y}`}
                           x={x}
                           y={y}
-                          type={cell.type}
-                          value={showValues ? cell.qValue : cell.value}
-                          showValues={showValues}
+                          type={tileType}
+                          value={value}
+                          showValues={showValue}
                           isAgent={isAgent}
                           isGoal={isGoal}
-                          tileSize={GRID_PIXEL_TARGET[tileSize] / comparisonState.left.grid.length}
-                          ariaLabel={`${x},${y}`}
-                          icon={isAgent ? "🤖" : isGoal ? TILE_ICONS.goal : TILE_ICONS[cell.type]}
+                          tileSize={leftComparisonTileSizePx}
+                          ariaLabel={ariaLabel}
+                          icon={icon}
                           visits={cell.visits}
                           showHeatmap={showHeatmap}
-                          maxVisits={Math.max(...comparisonState.left.grid.flat().map((c) => c.visits), 1)}
+                          maxVisits={leftComparisonMaxVisits}
                           onClick={mode === "comparison" ? handleComparisonTilePlacement : undefined}
                           onMouseDown={mode === "comparison" ? handleMouseDown : undefined}
                           onMouseEnter={
@@ -3406,6 +3445,29 @@ const handleActiveBonusClick = useCallback(() => {
                       );
                     })
                   )}
+                </div>
+                <div
+                  className="absolute pointer-events-none"
+                  style={{
+                    left: comparisonState.left.agent.x * leftComparisonTileSizePx,
+                    top: comparisonState.left.agent.y * leftComparisonTileSizePx,
+                    width: leftComparisonTileSizePx,
+                    height: leftComparisonTileSizePx,
+                    transition: "left 0.3s ease-out, top 0.3s ease-out",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize:
+                      leftComparisonTileSizePx > 40
+                        ? "2.5rem"
+                        : leftComparisonTileSizePx > 32
+                          ? "2rem"
+                          : "1.5rem",
+                    zIndex: 10,
+                  }}
+                  aria-hidden
+                >
+                  🤖
                 </div>
               </div>
             </Card>
@@ -3519,13 +3581,15 @@ const handleActiveBonusClick = useCallback(() => {
               <div
                 className="relative mx-auto"
                 style={{
-                  width: "min-content",
+                  width: rightComparisonTileSizePx * rightComparisonGridSize,
+                  height: rightComparisonTileSizePx * rightComparisonGridSize,
                 }}
               >
                 <div
                   className="grid bg-tile-bg"
                   style={{
-                    gridTemplateColumns: `repeat(${comparisonState.right.grid.length}, ${GRID_PIXEL_TARGET[tileSize] / comparisonState.right.grid.length}px)`,
+                    gridTemplateColumns: `repeat(${rightComparisonGridSize}, ${rightComparisonTileSizePx}px)`,
+                    gridTemplateRows: `repeat(${rightComparisonGridSize}, ${rightComparisonTileSizePx}px)`,
                     gap: "1px",
                     borderRadius: "8px",
                     overflow: "hidden",
@@ -3535,22 +3599,33 @@ const handleActiveBonusClick = useCallback(() => {
                     row.map((cell, x) => {
                       const isAgent = comparisonState.right.agent.x === x && comparisonState.right.agent.y === y;
                       const isGoal = comparisonState.right.goal.x === x && comparisonState.right.goal.y === y;
+                      const tileType = isGoal ? "goal" : isAgent ? "empty" : cell.type;
+                      const value = showValues ? cell.qValue : cell.value;
+                      const icon = isAgent ? "" : isGoal ? TILE_ICONS.goal : TILE_ICONS[cell.type];
+                      const showValue =
+                        showValues &&
+                        !isAgent &&
+                        tileType !== "obstacle" &&
+                        tileType !== "portal";
+                      const ariaLabel = isEnglish
+                        ? `${tileLabels[cell.type]} at tile (${x + 1}, ${y + 1}), value ${numberFormatter.format(value)}${isAgent ? ", Rover" : ""}${isGoal ? ", Goal" : ""}`
+                        : `${tileLabels[cell.type]} bei Feld (${x + 1}, ${y + 1}), Wert ${numberFormatter.format(value)}${isAgent ? ", Agent" : ""}${isGoal ? ", Ziel" : ""}`;
                       return (
                         <Tile
                           key={`right-${x}-${y}`}
                           x={x}
                           y={y}
-                          type={cell.type}
-                          value={showValues ? cell.qValue : cell.value}
-                          showValues={showValues}
+                          type={tileType}
+                          value={value}
+                          showValues={showValue}
                           isAgent={isAgent}
                           isGoal={isGoal}
-                          tileSize={GRID_PIXEL_TARGET[tileSize] / comparisonState.right.grid.length}
-                          ariaLabel={`${x},${y}`}
-                          icon={isAgent ? "🤖" : isGoal ? TILE_ICONS.goal : TILE_ICONS[cell.type]}
+                          tileSize={rightComparisonTileSizePx}
+                          ariaLabel={ariaLabel}
+                          icon={icon}
                           visits={cell.visits}
                           showHeatmap={showHeatmap}
-                          maxVisits={Math.max(...comparisonState.right.grid.flat().map((c) => c.visits), 1)}
+                          maxVisits={rightComparisonMaxVisits}
                           onClick={mode === "comparison" ? handleComparisonTilePlacement : undefined}
                           onMouseDown={mode === "comparison" ? handleMouseDown : undefined}
                           onMouseEnter={
@@ -3566,6 +3641,29 @@ const handleActiveBonusClick = useCallback(() => {
                       );
                     })
                   )}
+                </div>
+                <div
+                  className="absolute pointer-events-none"
+                  style={{
+                    left: comparisonState.right.agent.x * rightComparisonTileSizePx,
+                    top: comparisonState.right.agent.y * rightComparisonTileSizePx,
+                    width: rightComparisonTileSizePx,
+                    height: rightComparisonTileSizePx,
+                    transition: "left 0.3s ease-out, top 0.3s ease-out",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize:
+                      rightComparisonTileSizePx > 40
+                        ? "2.5rem"
+                        : rightComparisonTileSizePx > 32
+                          ? "2rem"
+                          : "1.5rem",
+                    zIndex: 10,
+                  }}
+                  aria-hidden
+                >
+                  🤖
                 </div>
               </div>
             </Card>
