@@ -35,6 +35,7 @@ export interface TileProps {
   maxVisits?: number;
   bestAction?: string; // "up", "down", "left", "right"
   showActions?: boolean;
+  rewardAnimation?: "reward" | "punishment" | null;
 }
 
 const TileComponent = ({
@@ -56,6 +57,7 @@ const TileComponent = ({
   maxVisits = 1,
   bestAction,
   showActions = false,
+  rewardAnimation,
 }: TileProps) => {
   const style = TILE_STYLE[type];
 
@@ -164,6 +166,20 @@ const TileComponent = ({
           {getArrowIcon(bestAction)}
         </div>
       )}
+      {/* Reward/Punishment Animation */}
+      {rewardAnimation && (
+        <div
+          className={cn(
+            "absolute inset-0 flex items-center justify-center pointer-events-none z-10",
+            rewardAnimation === "reward" ? "animate-reward-pop" : "animate-punishment-pop"
+          )}
+          style={{
+            fontSize: tileSize > 40 ? "2.5rem" : tileSize > 32 ? "2rem" : "1.5rem",
+          }}
+        >
+          {rewardAnimation === "reward" ? "❤️" : "💔"}
+        </div>
+      )}
       <span
         className="pointer-events-none select-none transition-transform duration-200"
         style={{ fontSize: tileSize > 40 ? "1.5rem" : tileSize > 32 ? "1.25rem" : "1rem" }}
@@ -188,6 +204,7 @@ const areEqual = (prev: TileProps, next: TileProps) => {
   if (prev.tileSize !== next.tileSize) return false;
   if (Math.round(prev.value * 100) !== Math.round(next.value * 100)) return false;
   if (prev.icon !== next.icon) return false;
+  if (prev.rewardAnimation !== next.rewardAnimation) return false;
   if (!!prev.onMouseEnter !== !!next.onMouseEnter) return false;
   if (!!prev.onMouseDown !== !!next.onMouseDown) return false;
   if (!!prev.onClick !== !!next.onClick) return false;
