@@ -113,8 +113,7 @@ Du findest den Reward Rover auch direkt auf meiner Website:
 
 Dort teile ich außerdem Artikel, Projekte und Gedanken rund um Neuroscience, KI und Gesellschaft.
 
-
-⸻
+---
 
 # 🚀 Reward Rover (English Version)
 
