@@ -622,6 +622,7 @@ interface PlaygroundState {
   episodeHistory: EpisodeStats[];
   spawn: Position;
   portalCooldowns: Record<string, number>;
+  pendingPortalTeleport?: { from: Position; to: Position; waitCounter: number } | null;
 }
 
 interface EpisodeStats {
@@ -911,7 +912,7 @@ const getTileReward = (grid: TileState[][], goals: Position[], pos: Position): n
     case "punishment":
       return PUNISHMENT_VALUE;
     case "portal":
-      return 5;
+      return 0;
     default:
       return STEP_PENALTY;
   }
@@ -981,19 +982,41 @@ const runPlaygroundStep = (
   gamma = 0.85,
 ): PlaygroundState => {
   const current = state.agent;
-  let nextPos = chooseAction(state.grid, current, explorationRate, bias);
+  let nextPos = current;
   const cooledCooldowns = decrementPortalCooldowns(state.portalCooldowns);
   let portalCooldowns = cooledCooldowns;
+  let pendingPortalTeleport = state.pendingPortalTeleport;
 
-  // Check for portal teleportation
-  if (
-    state.grid[nextPos.y][nextPos.x].type === "portal" &&
-    !isPortalOnCooldown(portalCooldowns, nextPos)
-  ) {
-    const entryPortal = nextPos;
-    const targetPortal = teleportThroughPortal(state.grid, nextPos);
-    portalCooldowns = withPortalCooldowns(portalCooldowns, [entryPortal, targetPortal]);
-    nextPos = targetPortal;
+  // If we have a pending portal teleport, check if wait is over
+  if (pendingPortalTeleport) {
+    if (pendingPortalTeleport.waitCounter <= 0) {
+      // Wait is over, execute teleport
+      nextPos = pendingPortalTeleport.to;
+      pendingPortalTeleport = null;
+    } else {
+      // Still waiting on portal, decrement counter and stay in place
+      pendingPortalTeleport = {
+        ...pendingPortalTeleport,
+        waitCounter: pendingPortalTeleport.waitCounter - 1,
+      };
+      nextPos = current; // Stay on portal
+    }
+  }
+  // No pending teleport, choose normal action
+  else {
+    nextPos = chooseAction(state.grid, current, explorationRate, bias);
+
+    // Check for new portal teleportation
+    if (
+      state.grid[nextPos.y][nextPos.x].type === "portal" &&
+      !isPortalOnCooldown(portalCooldowns, nextPos)
+    ) {
+      const entryPortal = nextPos;
+      const targetPortal = teleportThroughPortal(state.grid, nextPos);
+      portalCooldowns = withPortalCooldowns(portalCooldowns, [entryPortal, targetPortal]);
+      // Wait for ~500ms (2 steps at 220ms = 440ms)
+      pendingPortalTeleport = { from: entryPortal, to: targetPortal, waitCounter: 2 };
+    }
   }
 
   const reward = getTileReward(state.grid, [state.goal], nextPos);
@@ -1052,6 +1075,7 @@ const runPlaygroundStep = (
       currentSteps: 0,
       episodeHistory: newHistory,
       portalCooldowns: {},
+      pendingPortalTeleport: null,
     };
   }
 
@@ -1062,6 +1086,7 @@ const runPlaygroundStep = (
     totalReward: state.totalReward + reward,
     currentSteps: newSteps,
     portalCooldowns,
+    pendingPortalTeleport,
   };
 };
 
@@ -1303,6 +1328,7 @@ const createInitialPlaygroundState = (size: number): PlaygroundState => {
     episodeHistory: [],
     spawn,
     portalCooldowns: {},
+    pendingPortalTeleport: null,
   };
 };
 
@@ -1516,8 +1542,8 @@ const createRandomModeState = (level: LevelConfig, baseSize: number): RandomMode
 
       if (emptyTiles.length >= 2) {
         const shuffled = emptyTiles.sort(() => Math.random() - 0.5);
-        grid[shuffled[0].y][shuffled[0].x] = { type: "portal", qValue: 0, visits: 0, value: 5 };
-        grid[shuffled[1].y][shuffled[1].x] = { type: "portal", qValue: 0, visits: 0, value: 5 };
+        grid[shuffled[0].y][shuffled[0].x] = { type: "portal", qValue: 0, visits: 0, value: 0 };
+        grid[shuffled[1].y][shuffled[1].x] = { type: "portal", qValue: 0, visits: 0, value: 0 };
       }
     }
   } else {
@@ -2023,7 +2049,7 @@ export function RLGame() {
   ], [translate]);
 
   // Sound functions
-  const playSound = useCallback((type: "reward" | "punishment" | "goal") => {
+  const playSound = useCallback((type: "reward" | "punishment" | "goal" | "portal") => {
     if (!soundEnabled) return;
 
     try {
@@ -2053,6 +2079,13 @@ export function RLGame() {
         oscillator.frequency.exponentialRampToValueAtTime(783.99, audioContext.currentTime + 0.1); // G5
         gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      } else if (type === "portal") {
+        // Magical whoosh - oscillating frequency
+        oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
+        oscillator.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.1); // A5
+        oscillator.frequency.exponentialRampToValueAtTime(220, audioContext.currentTime + 0.2); // A3
+        gainNode.gain.setValueAtTime(0.25, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.25);
       }
 
       oscillator.type = "sine";
@@ -2471,6 +2504,11 @@ export function RLGame() {
         // Use 0% exploration when replaying
         const effectiveExplorationRate = isReplaying ? 0 : explorationRate;
         const next = runPlaygroundStep(prev, effectiveExplorationRate, directionBias, consumeRewards, alpha, gamma);
+
+        // Check if portal teleport started (agent just stepped onto portal with full wait counter)
+        if (!prev.pendingPortalTeleport && next.pendingPortalTeleport && next.pendingPortalTeleport.waitCounter > 0) {
+          playSound("portal");
+        }
 
         // Check if agent moved to a reward or punishment tile
         const tileType = prev.grid[next.agent.y][next.agent.x].type;
@@ -4486,6 +4524,9 @@ const handleActiveBonusClick = useCallback(() => {
                 onReset={handlePlaygroundReset}
                 onUndo={handleUndo}
                 canUndo={undoStack.length > 0}
+                onReplay={handleReplayBest}
+                isReplaying={isReplaying}
+                onStopReplay={handleStopReplay}
                 onLoadPreset={handleLoadPreset}
                 placementMode={placementMode}
                 onPlacementModeChange={changePlacementMode}
@@ -4887,6 +4928,36 @@ const handleActiveBonusClick = useCallback(() => {
                   <div className="space-y-1">
                     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
                       <div className="flex items-center gap-1.5">
+                        <Label htmlFor="show-actions-settings" className="text-xs font-semibold leading-tight">
+                          {translate("Policy-Pfeile anzeigen", "Show policy arrows")}
+                        </Label>
+                        <button
+                          onClick={() => setShowActionsInfo(!showActionsInfo)}
+                          className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                          aria-label="Toggle info"
+                        >
+                          <Info className="h-3 w-3" />
+                        </button>
+                      </div>
+                      <Switch
+                        id="show-actions-settings"
+                        checked={showActions}
+                        onCheckedChange={setShowActions}
+                        aria-label={translate("Policy-Pfeile umschalten", "Toggle policy arrows")}
+                      />
+                    </div>
+                    {showActionsInfo && (
+                      <p className="text-xs text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
+                        {translate(
+                          "Zeigt Pfeile, die die bevorzugte Bewegungsrichtung des Rovers für jedes Feld anzeigen.",
+                          "Shows arrows indicating the rover's preferred direction for each tile.",
+                        )}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+                      <div className="flex items-center gap-1.5">
                         <Label htmlFor="show-values-settings" className="text-xs font-semibold leading-tight">
                           {translate("Q-Werte anzeigen", "Show Q-values")}
                         </Label>
@@ -4970,36 +5041,6 @@ const handleActiveBonusClick = useCallback(() => {
                         {translate(
                           "Belohnungen und Strafen verschwinden nach dem Einsammeln.",
                           "Rewards and penalties disappear after collection.",
-                        )}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-                      <div className="flex items-center gap-1.5">
-                        <Label htmlFor="show-actions-settings" className="text-xs font-semibold leading-tight">
-                          {translate("Policy-Pfeile anzeigen", "Show policy arrows")}
-                        </Label>
-                        <button
-                          onClick={() => setShowActionsInfo(!showActionsInfo)}
-                          className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-                          aria-label="Toggle info"
-                        >
-                          <Info className="h-3 w-3" />
-                        </button>
-                      </div>
-                      <Switch
-                        id="show-actions-settings"
-                        checked={showActions}
-                        onCheckedChange={setShowActions}
-                        aria-label={translate("Policy-Pfeile umschalten", "Toggle policy arrows")}
-                      />
-                    </div>
-                    {showActionsInfo && (
-                      <p className="text-xs text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
-                        {translate(
-                          "Zeigt Pfeile, die die bevorzugte Bewegungsrichtung des Rovers für jedes Feld anzeigen.",
-                          "Shows arrows indicating the rover's preferred direction for each tile.",
                         )}
                       </p>
                     )}
@@ -5254,6 +5295,9 @@ const PlaygroundControls = ({
   onReset,
   onUndo,
   canUndo,
+  onReplay,
+  isReplaying = false,
+  onStopReplay,
   onLoadPreset,
   placementMode,
   onPlacementModeChange,
@@ -5286,17 +5330,28 @@ const PlaygroundControls = ({
           {translate("Zurück", "Reset")}
         </Button>
       </div>
-      <div>
+      <div className="flex gap-2">
         <Button
           variant="outline"
           size="lg"
           onClick={onUndo}
           disabled={!canUndo}
-          className="w-full font-semibold"
+          className="flex-1 font-semibold"
         >
           <Undo2 className="mr-2 h-4 w-4" />
           {translate("Rückgängig", "Undo")}
         </Button>
+        {onReplay && onStopReplay && (
+          <Button
+            variant={isReplaying ? "destructive" : "secondary"}
+            size="lg"
+            onClick={isReplaying ? onStopReplay : onReplay}
+            className="flex-1 font-semibold"
+          >
+            {isReplaying ? "⏹️" : "🎬"}
+            <span className="ml-2">{isReplaying ? translate("Stop", "Stop") : translate("Replay", "Replay")}</span>
+          </Button>
+        )}
       </div>
 
       <Collapsible open={presetsOpen} onOpenChange={setPresetsOpen} className="space-y-2">
