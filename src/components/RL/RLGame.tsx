@@ -81,9 +81,9 @@ const TILE_LABELS: Record<Language, Record<TileType, string>> = {
 };
 
 const GRID_PIXEL_TARGET: Record<keyof typeof TILE_SIZE_MAP, number> = {
-  s: 420,
-  m: 520,
-  l: 640,
+  s: 380,
+  m: 480,
+  l: 580,
 };
 
 const MIN_GOAL_DISTANCE = 5;
@@ -548,7 +548,7 @@ const REWARD_VALUE = 12;
 const PUNISHMENT_VALUE = -15;
 const OBSTACLE_PENALTY = -20;
 const GOAL_REWARD = REWARD_VALUE * 2;
-const DEFAULT_TILE_OPTION: TileSizeOption = "m";
+const DEFAULT_TILE_OPTION: TileSizeOption = "s";
 const PORTAL_COOLDOWN_STEPS = 4;
 
 type Position = { x: number; y: number };
@@ -1639,9 +1639,9 @@ export function RLGame() {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("theme");
       if (stored === "light" || stored === "dark") return stored;
-      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      return "dark"; // Default immer dark
     }
-    return "light";
+    return "dark";
   });
   const [language, setLanguage] = useState<Language>("de");
   const [mode, setMode] = useState<Mode>("playground");
@@ -1677,6 +1677,8 @@ export function RLGame() {
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [rewardAnimation, setRewardAnimation] = useState<{ x: number; y: number; type: "reward" | "punishment" } | null>(null);
+  const [leftRewardAnimation, setLeftRewardAnimation] = useState<{ x: number; y: number; type: "reward" | "punishment" } | null>(null);
+  const [rightRewardAnimation, setRightRewardAnimation] = useState<{ x: number; y: number; type: "reward" | "punishment" } | null>(null);
   const celebrationFacts: Array<Record<Language, string>> = [
     {
       de: "Wusstest du? Q-Learning gehört zur Familie der Temporal-Difference-Methoden.",
@@ -1834,6 +1836,24 @@ export function RLGame() {
       return () => clearTimeout(timer);
     }
   }, [rewardAnimation]);
+
+  useEffect(() => {
+    if (leftRewardAnimation) {
+      const timer = setTimeout(() => {
+        setLeftRewardAnimation(null);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [leftRewardAnimation]);
+
+  useEffect(() => {
+    if (rightRewardAnimation) {
+      const timer = setTimeout(() => {
+        setRightRewardAnimation(null);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [rightRewardAnimation]);
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
@@ -2155,10 +2175,28 @@ export function RLGame() {
   useEffect(() => {
     if (mode !== "comparison" || (!comparisonState.left.isRunning && !comparisonState.right.isRunning)) return;
     const interval = window.setInterval(() => {
-      setComparisonState((prev) => ({
-        left: prev.left.isRunning ? runComparisonRoverStep(prev.left, consumeRewards) : prev.left,
-        right: prev.right.isRunning ? runComparisonRoverStep(prev.right, consumeRewards) : prev.right,
-      }));
+      setComparisonState((prev) => {
+        const nextLeft = prev.left.isRunning ? runComparisonRoverStep(prev.left, consumeRewards) : prev.left;
+        const nextRight = prev.right.isRunning ? runComparisonRoverStep(prev.right, consumeRewards) : prev.right;
+
+        // Check for reward/punishment animations on left side
+        if (prev.left.isRunning && (nextLeft.agent.x !== prev.left.agent.x || nextLeft.agent.y !== prev.left.agent.y)) {
+          const tileType = prev.left.grid[nextLeft.agent.y][nextLeft.agent.x].type;
+          if (tileType === "reward" || tileType === "punishment") {
+            setLeftRewardAnimation({ x: nextLeft.agent.x, y: nextLeft.agent.y, type: tileType });
+          }
+        }
+
+        // Check for reward/punishment animations on right side
+        if (prev.right.isRunning && (nextRight.agent.x !== prev.right.agent.x || nextRight.agent.y !== prev.right.agent.y)) {
+          const tileType = prev.right.grid[nextRight.agent.y][nextRight.agent.x].type;
+          if (tileType === "reward" || tileType === "punishment") {
+            setRightRewardAnimation({ x: nextRight.agent.x, y: nextRight.agent.y, type: tileType });
+          }
+        }
+
+        return { left: nextLeft, right: nextRight };
+      });
     }, 220);
     return () => window.clearInterval(interval);
   }, [mode, comparisonState.left.isRunning, comparisonState.right.isRunning, consumeRewards]);
@@ -2536,6 +2574,7 @@ const handleActiveBonusClick = useCallback(() => {
       setTileSize(size);
       setCelebration(null);
       setPlaygroundState(createInitialPlaygroundState(nextSize));
+      setComparisonState(createComparisonState(nextSize));
       if (speedrunEnabled) {
         setRandomState((prev) =>
           buildSpeedrunState(prev.speedrun.stage, nextSize, prev.episode, prev.episodeHistory),
@@ -2787,6 +2826,19 @@ const handleActiveBonusClick = useCallback(() => {
   const gridSize = activeGrid.length;
   const tileSizePx = Math.max(24, Math.floor(GRID_PIXEL_TARGET[tileSize] / Math.max(gridSize, 1)));
   const gridPixelDimension = tileSizePx * gridSize;
+
+  // Zusätzlicher Platz basierend auf Feldgröße: s=320px, m=200px, l=150px
+  // Bei l: genug für Header + Grid + padding ohne scrollen
+  const cardHeightExtra = tileSize === 's' ? 320 : tileSize === 'm' ? 200 : 150;
+  const cardHeight = gridPixelDimension + cardHeightExtra;
+
+  // Grid-Layout: Bei größeren Feldern wird die Playground-Spalte breiter
+  const gridCols = tileSize === 's'
+    ? 'lg:grid-cols-[minmax(250px,1fr)_auto_minmax(250px,1fr)]'
+    : tileSize === 'm'
+    ? 'lg:grid-cols-[minmax(200px,0.7fr)_auto_minmax(200px,0.7fr)]'
+    : 'lg:grid-cols-[minmax(180px,0.5fr)_auto_minmax(180px,0.5fr)]';
+
   const leftComparisonGridSize = comparisonState.left.grid.length;
   const rightComparisonGridSize = comparisonState.right.grid.length;
   const leftComparisonTileSizePx = Math.max(
@@ -3482,7 +3534,7 @@ const handleActiveBonusClick = useCallback(() => {
             </div>
             <div className="grid gap-4 md:grid-cols-2">
             {/* Left Rover */}
-            <Card className="rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm">
+            <Card className="rounded-3xl border border-border bg-card/95 p-4 shadow-medium text-foreground backdrop-blur-sm max-h-[calc(100vh-12rem)] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-primary">{comparisonState.left.name}</h2>
                 <Button
@@ -3588,10 +3640,11 @@ const handleActiveBonusClick = useCallback(() => {
               </div>
 
               <div
-                className="relative mx-auto"
+                className="relative mx-auto overflow-hidden"
                 style={{
-                  width: leftComparisonTileSizePx * leftComparisonGridSize,
-                  height: leftComparisonTileSizePx * leftComparisonGridSize,
+                  width: leftComparisonTileSizePx * leftComparisonGridSize + (leftComparisonGridSize - 1),
+                  height: leftComparisonTileSizePx * leftComparisonGridSize + (leftComparisonGridSize - 1),
+                  borderRadius: "8px",
                 }}
               >
                 <div
@@ -3600,8 +3653,6 @@ const handleActiveBonusClick = useCallback(() => {
                     gridTemplateColumns: `repeat(${leftComparisonGridSize}, ${leftComparisonTileSizePx}px)`,
                     gridTemplateRows: `repeat(${leftComparisonGridSize}, ${leftComparisonTileSizePx}px)`,
                     gap: "1px",
-                    borderRadius: "8px",
-                    overflow: "hidden",
                   }}
                 >
                   {comparisonState.left.grid.flatMap((row, y) =>
@@ -3646,6 +3697,7 @@ const handleActiveBonusClick = useCallback(() => {
                                 }
                               : undefined
                           }
+                          rewardAnimation={leftRewardAnimation && leftRewardAnimation.x === x && leftRewardAnimation.y === y ? leftRewardAnimation.type : null}
                         />
                       );
                     })
@@ -3678,7 +3730,7 @@ const handleActiveBonusClick = useCallback(() => {
             </Card>
 
             {/* Right Rover */}
-            <Card className="rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm">
+            <Card className="rounded-3xl border border-border bg-card/95 p-4 shadow-medium text-foreground backdrop-blur-sm max-h-[calc(100vh-12rem)] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-primary">{comparisonState.right.name}</h2>
                 <Button
@@ -3784,10 +3836,11 @@ const handleActiveBonusClick = useCallback(() => {
               </div>
 
               <div
-                className="relative mx-auto"
+                className="relative mx-auto overflow-hidden"
                 style={{
-                  width: rightComparisonTileSizePx * rightComparisonGridSize,
-                  height: rightComparisonTileSizePx * rightComparisonGridSize,
+                  width: rightComparisonTileSizePx * rightComparisonGridSize + (rightComparisonGridSize - 1),
+                  height: rightComparisonTileSizePx * rightComparisonGridSize + (rightComparisonGridSize - 1),
+                  borderRadius: "8px",
                 }}
               >
                 <div
@@ -3796,8 +3849,6 @@ const handleActiveBonusClick = useCallback(() => {
                     gridTemplateColumns: `repeat(${rightComparisonGridSize}, ${rightComparisonTileSizePx}px)`,
                     gridTemplateRows: `repeat(${rightComparisonGridSize}, ${rightComparisonTileSizePx}px)`,
                     gap: "1px",
-                    borderRadius: "8px",
-                    overflow: "hidden",
                   }}
                 >
                   {comparisonState.right.grid.flatMap((row, y) =>
@@ -3842,6 +3893,7 @@ const handleActiveBonusClick = useCallback(() => {
                                 }
                               : undefined
                           }
+                          rewardAnimation={rightRewardAnimation && rightRewardAnimation.x === x && rightRewardAnimation.y === y ? rightRewardAnimation.type : null}
                         />
                       );
                     })
@@ -4001,14 +4053,15 @@ const handleActiveBonusClick = useCallback(() => {
 
         <div className="relative">
           <div
-            className="grid gap-6 lg:grid-cols-[minmax(250px,1fr)_auto_minmax(250px,1fr)] lg:items-stretch transition-opacity"
+            className={cn("flex flex-col gap-6 lg:grid lg:items-stretch transition-opacity", gridCols)}
             aria-disabled={mode === "comparison"}
           >
-          <div className="relative">
+          <div className="relative order-2 lg:order-1">
             <Card
               ref={consoleScrollRef}
+              style={{ height: `${cardHeight}px` }}
               className={cn(
-                "flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm h-[calc(100vh-16rem)] overflow-y-auto transition-colors duration-200 hover:border-primary/30",
+                "flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm overflow-y-auto transition-colors duration-200 hover:border-primary/30",
                 mode === "comparison" && "pointer-events-none opacity-40 grayscale",
               )}
             >
@@ -4288,9 +4341,11 @@ const handleActiveBonusClick = useCallback(() => {
           <ScrollIndicator containerRef={consoleScrollRef} />
           </div>
 
+          <div className="order-1 lg:order-2">
           <Card
+            style={{ height: `${cardHeight}px` }}
             className={cn(
-              "flex flex-col rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm w-fit mx-auto h-[calc(100vh-16rem)] overflow-y-auto transition-colors duration-200 hover:border-primary/30",
+              "flex flex-col rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm w-fit mx-auto overflow-y-auto transition-colors duration-200 hover:border-primary/30",
               mode === "comparison" && "pointer-events-none opacity-40 grayscale",
             )}
           >
@@ -4389,9 +4444,10 @@ const handleActiveBonusClick = useCallback(() => {
             </div>
             </div>
           </Card>
+          </div>
 
-          <div className="relative">
-            <Card ref={settingsScrollRef} className="flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm h-[calc(100vh-16rem)] overflow-y-auto transition-colors duration-200 hover:border-primary/30">
+          <div className="relative order-3 lg:order-3">
+            <Card ref={settingsScrollRef} style={{ height: `${cardHeight}px` }} className="flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm overflow-y-auto transition-colors duration-200 hover:border-primary/30">
               <h2 className="text-xl font-bold gradient-text">
                 {translate("⚙️ Einstellungen", "⚙️ Settings")}
               </h2>
@@ -4495,16 +4551,17 @@ const handleActiveBonusClick = useCallback(() => {
                 </div>
               </div>
               <div className="my-3 h-px w-full bg-border/60" />
-              <Collapsible open={showLearningParams} onOpenChange={setShowLearningParams} className="space-y-2">
+              <Collapsible open={showLearningParams && mode !== "comparison"} onOpenChange={mode !== "comparison" ? setShowLearningParams : undefined} className="space-y-2">
                 <CollapsibleTrigger asChild>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full justify-between rounded-xl border border-border/40 bg-secondary/80 font-semibold text-base hover:bg-secondary"
+                    disabled={mode === "comparison"}
+                    className="w-full justify-between rounded-xl border border-border/40 bg-background/60 font-semibold text-base disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span>{translate("🎓 Lernparameter", "🎓 Learning Parameters")}</span>
                     <ChevronDown
-                      className={cn("h-4 w-4 transition-transform duration-200", showLearningParams ? "rotate-180" : "")}
+                      className={cn("h-4 w-4 transition-transform duration-200", showLearningParams && mode !== "comparison" ? "rotate-180" : "")}
                     />
                   </Button>
                 </CollapsibleTrigger>
@@ -4628,14 +4685,12 @@ const handleActiveBonusClick = useCallback(() => {
             {mode === "random" && (
               <>
                 <Card className="rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-soft space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-bold text-foreground">
-                      {translate("🎲 Zufallsmodus-Einstellungen", "🎲 Random mode settings")}
-                    </h3>
-                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
-                      {levelName}
-                    </Badge>
-                  </div>
+                  <h3 className="text-base font-bold text-foreground">
+                    {translate("🎲 Zufallsmodus-Einstellungen", "🎲 Random mode settings")}
+                  </h3>
+                  <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 w-fit">
+                    {levelName}
+                  </Badge>
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     {translate(
                       "Wähle den Schwierigkeitsgrad und platziere Herausforderungen live im Feld.",
