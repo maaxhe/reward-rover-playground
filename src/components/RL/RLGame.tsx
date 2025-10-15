@@ -30,6 +30,7 @@ import {
   Undo2,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const TILE_SIZE_MAP = {
   s: 6,
@@ -1954,7 +1955,7 @@ export function RLGame() {
     }
     return "dark";
   });
-  const [language, setLanguage] = useState<Language>("de");
+  const { language, setLanguage, isEnglish, translate } = useLanguage();
   const [mode, setMode] = useState<Mode>("playground");
   const [tileSize, setTileSize] = useState<TileSizeOption>(DEFAULT_TILE_OPTION);
   const [levelKey, setLevelKey] = useState<LevelKey>("level1");
@@ -2004,11 +2005,6 @@ export function RLGame() {
   const [directionBias, setDirectionBias] = useState<Position | null>(null);
   const [speedrunEnabled, setSpeedrunEnabled] = useState(false);
   const [rlDialogOpen, setRlDialogOpen] = useState(false);
-  const isEnglish = language === "en";
-  const translate = useCallback(
-    (de: string, en: string) => (isEnglish ? en : de),
-    [isEnglish],
-  );
 
   // Tutorial Slides
   const tutorialSlides = useMemo(() => [
