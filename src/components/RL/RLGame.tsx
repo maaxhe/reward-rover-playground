@@ -1729,7 +1729,7 @@ const BONUS_DETAILS: Record<BonusType, { icon: string; label: Record<Language, s
   portal: {
     icon: "🌀",
     label: { de: "Portal setzen", en: "Place portal" },
-    actionHint: { de: "Setze ein Portal – ein Partner erscheint beim nächsten Bonus.", en: "Drop a portal – another portal arrives with the next bonus." },
+    actionHint: { de: "Setze ein Portal – ein Partner erscheint bei nächster Belohnung.", en: "Drop a portal – another portal arrives with the next reward." },
   },
   teleport: {
     icon: "✨",
@@ -4608,19 +4608,19 @@ const handleActiveBonusClick = useCallback(() => {
                       <span>{bonusDetail.label[language]}</span>
                     </Button>
                     <p className="text-sm text-muted-foreground text-center">
-                      {translate("Nächster Bonus in", "Next bonus in")}
+                      {translate("Nächste Belohnung in", "Next bonus in")}
                       {" "}
                       {randomState.bonusCountdown}s
                     </p>
                     {!randomState.bonusReady && (
                       <p className="text-sm text-muted-foreground tracking-wide uppercase text-center">
-                        {translate("Bonus verbraucht – neuer Bonus erscheint gleich.", "Bonus spent – new bonus arrives soon.")}
+                        {translate("Belohnung verbraucht – neue Belohnung erscheint gleich.", "Reward spent – new reward arrives soon.")}
                       </p>
                     )}
                   </>
                 ) : (
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    {translate("Bonus wird vorbereitet...", "Preparing next bonus...")}
+                    {translate("Belohnung wird vorbereitet...", "Preparing next bonus...")}
                   </p>
                 )}
               </Card>
@@ -5329,7 +5329,7 @@ const PlaygroundControls = ({
           onClick={() => onPlacementModeChange("reward")}
           className="text-sm font-semibold"
         >
-          {translate("🍬 Bonus", "🍬 Bonus")}
+          {translate("🍬 Belohnung", "🍬 Reward")}
         </Button>
         <Button
           variant={placementMode === "punishment" ? "default" : "outline"}
