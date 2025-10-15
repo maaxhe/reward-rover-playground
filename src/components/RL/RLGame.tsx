@@ -4001,14 +4001,14 @@ const handleActiveBonusClick = useCallback(() => {
 
         <div className="relative">
           <div
-            className="grid gap-6 lg:grid-cols-[minmax(280px,340px)_1fr_minmax(280px,340px)] transition-opacity"
+            className="grid gap-6 lg:grid-cols-[minmax(250px,1fr)_auto_minmax(250px,1fr)] lg:items-stretch transition-opacity"
             aria-disabled={mode === "comparison"}
           >
           <div className="relative">
             <Card
               ref={consoleScrollRef}
               className={cn(
-                "flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm max-h-[calc(100vh-24rem)] overflow-y-auto transition-colors duration-200 hover:border-primary/30",
+                "flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm h-[calc(100vh-16rem)] overflow-y-auto transition-colors duration-200 hover:border-primary/30",
                 mode === "comparison" && "pointer-events-none opacity-40 grayscale",
               )}
             >
@@ -4290,7 +4290,7 @@ const handleActiveBonusClick = useCallback(() => {
 
           <Card
             className={cn(
-              "rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm transition-colors duration-200 hover:border-primary/30",
+              "flex flex-col rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm w-fit mx-auto h-[calc(100vh-16rem)] overflow-y-auto transition-colors duration-200 hover:border-primary/30",
               mode === "comparison" && "pointer-events-none opacity-40 grayscale",
             )}
           >
@@ -4305,10 +4305,10 @@ const handleActiveBonusClick = useCallback(() => {
               tabIndex={0}
               role="application"
               aria-label={translate("Reward Rover Spielfeld", "Reward Rover playfield")}
-              className="overflow-auto rounded-2xl border border-border/50 bg-background/80 p-4 shadow-soft focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
+              className="rounded-2xl border border-border/50 bg-background/80 p-4 shadow-soft focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
               style={{
-                maxHeight: gridPixelDimension + 40,
-                maxWidth: gridPixelDimension + 40,
+                width: gridPixelDimension + 40,
+                height: gridPixelDimension + 40,
               }}
               onMouseDown={() => gridRef.current?.focus()}
             >
@@ -4391,7 +4391,7 @@ const handleActiveBonusClick = useCallback(() => {
           </Card>
 
           <div className="relative">
-            <Card ref={settingsScrollRef} className="flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm max-h-[calc(100vh-24rem)] overflow-y-auto transition-colors duration-200 hover:border-primary/30">
+            <Card ref={settingsScrollRef} className="flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm h-[calc(100vh-16rem)] overflow-y-auto transition-colors duration-200 hover:border-primary/30">
               <h2 className="text-xl font-bold gradient-text">
                 {translate("⚙️ Einstellungen", "⚙️ Settings")}
               </h2>
