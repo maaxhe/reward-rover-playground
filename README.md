@@ -43,6 +43,7 @@ Und wenn man versteht, wie dieser Prozess funktioniert, versteht man auch ein St
   - Nach jeder Episode gibt’s Feedback: Rewards, Strafen, Schritte, Zeit.  
   - Highscores werden gespeichert, damit du Fortschritte vergleichen kannst.  
 
+
 ---
 
 ## Wie man spielt
@@ -137,23 +138,27 @@ And once you understand how this process works, you also understand a bit better
 ---
 
 ## Features
-	•	Exploration vs. Exploitation
-The key trade-off in RL: Should the rover stick to safe strategies or try new ones?
-With each run, its behavior shifts – and you can watch it live.
-	•	Three modes
-	•	Playground: Build your own world, place walls, rewards, penalties, and portals.
-	•	Random mode: Generate worlds automatically – different each time.
-	•	Comparison mode: Run two rovers with different hyperparameters (exploration rate, learning rate, gamma) and see who learns faster.
-	•	Q-learning live
-	•	Show Q-values as numbers or as a heatmap.
-	•	Adjust key parameters:
-	•	Exploration rate (ε): How curious is the rover?
-	•	Learning rate (α): How strongly do new experiences overwrite old ones?
-	•	Discount factor (γ): Short-term gains vs. long-term strategy.
-	•	Levels & Statistics
-	•	Build your own maps or load preset levels.
-	•	After each episode: rewards, penalties, steps, time.
-	•	Highscores are stored locally so you can track progress.
+
+- **Exploration vs. Exploitation**  
+  The central trade-off in RL: Does the rover stick to safe paths or try something new?  
+  With every run, its behavior changes – and you can watch live.  
+
+- **Three Modes**  
+  - **Playground:** Build your own world, place walls, rewards, penalties, and portals.  
+  - **Random Mode:** Let automatically generated worlds be created – different every time.  
+  - **Comparison Mode:** Start two rovers simultaneously with different hyperparameters (exploration rate, learning rate, gamma) and see who learns faster.  
+
+- **Q-Learning explained live**  
+  - Q-values can be displayed as numbers or a heatmap.  
+  - You can directly adjust the parameters:  
+    - **Exploration rate (ε):** How curious is the rover?  
+    - **Learning rate (α):** How strongly do new experiences overwrite old values?  
+    - **Discount factor (γ):** Does it think short-term or long-term?  
+
+- **Levels & Statistics**  
+  - Build your own maps or load preset levels.  
+  - After each episode, you get feedback: rewards, penalties, steps, time.  
+  - High scores are saved so you can compare progress.  
 
 ---
 
@@ -178,10 +183,10 @@ For me, Reward Rover is a small step in that direction: a tool to show how learn
 ---
 
 ## Tech Stack
-	•	React + TypeScript
-	•	Vite
-	•	Tailwind CSS
-	•	shadcn/ui
+- React + TypeScript
+- Vite
+- Tailwind CSS
+- shadcn/ui
 
 ---
 
