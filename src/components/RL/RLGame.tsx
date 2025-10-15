@@ -1993,6 +1993,9 @@ export function RLGame() {
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [rewardAnimation, setRewardAnimation] = useState<{ x: number; y: number; type: "reward" | "punishment" } | null>(null);
+
+  // Persistent AudioContext for instant sound playback
+  const audioContextRef = useRef<AudioContext | null>(null);
   const [leftRewardAnimation, setLeftRewardAnimation] = useState<{ x: number; y: number; type: "reward" | "punishment" } | null>(null);
   const [rightRewardAnimation, setRightRewardAnimation] = useState<{ x: number; y: number; type: "reward" | "punishment" } | null>(null);
   const [celebration, setCelebration] = useState<{
@@ -2053,44 +2056,158 @@ export function RLGame() {
     if (!soundEnabled) return;
 
     try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
+      // Create or reuse AudioContext for instant playback
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      const audioContext = audioContextRef.current;
 
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-
-      if (type === "reward") {
-        // Happy beep - ascending
-        oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
-        oscillator.frequency.exponentialRampToValueAtTime(659.25, audioContext.currentTime + 0.1); // E5
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-      } else if (type === "punishment") {
-        // Sad beep - descending
-        oscillator.frequency.setValueAtTime(392.00, audioContext.currentTime); // G4
-        oscillator.frequency.exponentialRampToValueAtTime(293.66, audioContext.currentTime + 0.1); // D4
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-      } else if (type === "goal") {
-        // Success fanfare
-        oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime); // C5
-        oscillator.frequency.exponentialRampToValueAtTime(659.25, audioContext.currentTime + 0.05); // E5
-        oscillator.frequency.exponentialRampToValueAtTime(783.99, audioContext.currentTime + 0.1); // G5
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-      } else if (type === "portal") {
-        // Magical whoosh - oscillating frequency
-        oscillator.frequency.setValueAtTime(440, audioContext.currentTime); // A4
-        oscillator.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.1); // A5
-        oscillator.frequency.exponentialRampToValueAtTime(220, audioContext.currentTime + 0.2); // A3
-        gainNode.gain.setValueAtTime(0.25, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.25);
+      // Resume context if suspended (browser autoplay policy)
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
       }
 
-      oscillator.type = "sine";
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.3);
+      const mainGain = audioContext.createGain();
+      mainGain.connect(audioContext.destination);
+
+      if (type === "reward") {
+        // Cheerful coin/pickup sound - layered tones
+        const osc1 = audioContext.createOscillator();
+        const osc2 = audioContext.createOscillator();
+        const gain1 = audioContext.createGain();
+        const gain2 = audioContext.createGain();
+
+        osc1.connect(gain1);
+        osc2.connect(gain2);
+        gain1.connect(mainGain);
+        gain2.connect(mainGain);
+
+        osc1.type = "triangle";
+        osc2.type = "sine";
+
+        // First tone: C6 -> E6
+        osc1.frequency.setValueAtTime(1046.50, audioContext.currentTime);
+        osc1.frequency.exponentialRampToValueAtTime(1318.51, audioContext.currentTime + 0.08);
+
+        // Second tone: E6 -> G6 (delayed slightly for richness)
+        osc2.frequency.setValueAtTime(1318.51, audioContext.currentTime + 0.04);
+        osc2.frequency.exponentialRampToValueAtTime(1567.98, audioContext.currentTime + 0.12);
+
+        gain1.gain.setValueAtTime(0.15, audioContext.currentTime);
+        gain1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+        gain2.gain.setValueAtTime(0.12, audioContext.currentTime + 0.04);
+        gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.18);
+
+        osc1.start(audioContext.currentTime);
+        osc2.start(audioContext.currentTime + 0.04);
+        osc1.stop(audioContext.currentTime + 0.2);
+        osc2.stop(audioContext.currentTime + 0.2);
+
+      } else if (type === "punishment") {
+        // Dark "thud" with descending pitch
+        const osc1 = audioContext.createOscillator();
+        const osc2 = audioContext.createOscillator();
+        const gain1 = audioContext.createGain();
+        const gain2 = audioContext.createGain();
+
+        osc1.connect(gain1);
+        osc2.connect(gain2);
+        gain1.connect(mainGain);
+        gain2.connect(mainGain);
+
+        osc1.type = "sawtooth";
+        osc2.type = "square";
+
+        // Low thud: G3 -> C3
+        osc1.frequency.setValueAtTime(196.00, audioContext.currentTime);
+        osc1.frequency.exponentialRampToValueAtTime(130.81, audioContext.currentTime + 0.15);
+
+        // Dissonant overtone
+        osc2.frequency.setValueAtTime(220.00, audioContext.currentTime);
+        osc2.frequency.exponentialRampToValueAtTime(146.83, audioContext.currentTime + 0.15);
+
+        gain1.gain.setValueAtTime(0.2, audioContext.currentTime);
+        gain1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+        gain2.gain.setValueAtTime(0.08, audioContext.currentTime);
+        gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+        osc1.start(audioContext.currentTime);
+        osc2.start(audioContext.currentTime);
+        osc1.stop(audioContext.currentTime + 0.25);
+        osc2.stop(audioContext.currentTime + 0.25);
+
+      } else if (type === "goal") {
+        // Victory fanfare - major chord progression
+        const playNote = (freq: number, startTime: number, duration: number, oscType: OscillatorType = "triangle") => {
+          const osc = audioContext.createOscillator();
+          const gain = audioContext.createGain();
+          osc.connect(gain);
+          gain.connect(mainGain);
+          osc.type = oscType;
+          osc.frequency.setValueAtTime(freq, startTime);
+          gain.gain.setValueAtTime(0.15, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+          osc.start(startTime);
+          osc.stop(startTime + duration);
+        };
+
+        const now = audioContext.currentTime;
+        // C major chord arpeggio: C5 -> E5 -> G5 -> C6
+        playNote(523.25, now, 0.15); // C5
+        playNote(659.25, now + 0.08, 0.15); // E5
+        playNote(783.99, now + 0.16, 0.2); // G5
+        playNote(1046.50, now + 0.24, 0.3); // C6
+
+        // Add harmony
+        playNote(523.25, now + 0.24, 0.3, "sine"); // C5 harmony
+
+      } else if (type === "portal") {
+        // Sci-fi teleport whoosh with modulation
+        const osc1 = audioContext.createOscillator();
+        const osc2 = audioContext.createOscillator();
+        const lfo = audioContext.createOscillator();
+        const lfoGain = audioContext.createGain();
+        const gain1 = audioContext.createGain();
+        const gain2 = audioContext.createGain();
+
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc1.frequency);
+        osc1.connect(gain1);
+        osc2.connect(gain2);
+        gain1.connect(mainGain);
+        gain2.connect(mainGain);
+
+        osc1.type = "sine";
+        osc2.type = "triangle";
+        lfo.type = "sine";
+
+        // Main swoosh: fast upward then down
+        osc1.frequency.setValueAtTime(200, audioContext.currentTime);
+        osc1.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.12);
+        osc1.frequency.exponentialRampToValueAtTime(300, audioContext.currentTime + 0.28);
+
+        // Secondary tone
+        osc2.frequency.setValueAtTime(400, audioContext.currentTime);
+        osc2.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.12);
+        osc2.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.28);
+
+        // LFO for wobble effect
+        lfo.frequency.setValueAtTime(8, audioContext.currentTime);
+        lfoGain.gain.setValueAtTime(30, audioContext.currentTime);
+
+        gain1.gain.setValueAtTime(0.18, audioContext.currentTime);
+        gain1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+        gain2.gain.setValueAtTime(0.12, audioContext.currentTime);
+        gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+
+        lfo.start(audioContext.currentTime);
+        osc1.start(audioContext.currentTime);
+        osc2.start(audioContext.currentTime);
+        lfo.stop(audioContext.currentTime + 0.35);
+        osc1.stop(audioContext.currentTime + 0.35);
+        osc2.stop(audioContext.currentTime + 0.35);
+      }
+
     } catch (e) {
       console.warn("Could not play sound", e);
     }
@@ -2131,6 +2248,21 @@ export function RLGame() {
       console.warn("Could not check tutorial status", e);
     }
   }, []);
+
+  // Initialize AudioContext when sound is enabled for instant playback
+  useEffect(() => {
+    if (soundEnabled && !audioContextRef.current) {
+      try {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        // Resume immediately to avoid delays
+        if (audioContextRef.current.state === 'suspended') {
+          audioContextRef.current.resume();
+        }
+      } catch (e) {
+        console.warn("Could not initialize AudioContext", e);
+      }
+    }
+  }, [soundEnabled]);
 
   // Theme effect
   useEffect(() => {
@@ -5330,13 +5462,13 @@ const PlaygroundControls = ({
           {translate("Zurück", "Reset")}
         </Button>
       </div>
-      <div className="flex gap-2">
+      <div className="space-y-2">
         <Button
           variant="outline"
           size="lg"
           onClick={onUndo}
           disabled={!canUndo}
-          className="flex-1 font-semibold"
+          className="w-full font-semibold"
         >
           <Undo2 className="mr-2 h-4 w-4" />
           {translate("Rückgängig", "Undo")}
@@ -5346,7 +5478,7 @@ const PlaygroundControls = ({
             variant={isReplaying ? "destructive" : "secondary"}
             size="lg"
             onClick={isReplaying ? onStopReplay : onReplay}
-            className="flex-1 font-semibold"
+            className="w-full font-semibold"
           >
             {isReplaying ? "⏹️" : "🎬"}
             <span className="ml-2">{isReplaying ? translate("Stop", "Stop") : translate("Replay", "Replay")}</span>

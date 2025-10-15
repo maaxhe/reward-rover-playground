@@ -153,7 +153,7 @@ const TileComponent = ({
       )}
       {showValues && <span className={badgeClass}>{displayValue}</span>}
       {/* Aktions-Pfeil */}
-      {showActions && bestAction && !isAgent && type !== "obstacle" && (
+      {showActions && bestAction && !isAgent && type !== "obstacle" && type !== "portal" && type !== "goal" && (
         <div
           className="absolute inset-0 flex items-center justify-center pointer-events-none"
           style={{
