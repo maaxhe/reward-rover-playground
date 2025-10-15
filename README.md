@@ -1,10 +1,9 @@
-# 🚀 Reward Rover
+# 🚀 Reward Rover  
+*(English version below)*
 
 **Reward Rover** ist mein Versuch, Reinforcement Learning greifbar zu machen.  
 Nicht in Form von endlosen Formeln oder komplizierten Papers, sondern als interaktives Spiel.  
 Ein kleiner Rover läuft über ein Grid, stolpert in Mauern, kassiert Strafen oder findet Belohnungen – und lernt dabei mit jeder Episode, bessere Entscheidungen zu treffen.
-
-Checke ihn hier aus: 👉 [https://rl-agent.maximleopold.com/](https://rl-agent.maximleopold.com/) 
 
 ---
 
@@ -54,9 +53,6 @@ Und wenn man versteht, wie dieser Prozess funktioniert, versteht man auch ein St
 4. Klick auf **Start** – und schau, wie der Rover mit jedem Zug schlauer wird.  
 5. Passe Parameter an und beobachte, wie sich das Verhalten verändert.  
 
-Es macht einen Unterschied, ob der Rover vorsichtig, gierig oder langfristig denkend unterwegs ist.  
-Und genau das ist der Kern von RL: Entscheidungen unter Unsicherheit.  
-
 ---
 
 ## Warum ist das wichtig?
@@ -89,22 +85,140 @@ cd reward-rover-playground
 npm install
 npm run dev
 ```
----
 
-## Persönliche Note
+
+Danach findest du das Projekt unter http://localhost:5173.
+
+⸻
+
+Persönliche Note
 
 Dieses Projekt ist nicht „von Hand“ aus dem Nichts entstanden.
-Ich habe beim Bauen KI-Tools zur Unterstützung genutzt – fürs Code-Schreiben, UI-Ideen und Debugging.
+Ich habe beim Bauen KI-Tools zur Unterstützung genutzt – für Boilerplate-Code, UI-Ideen und Debugging.
 Mir war wichtig, zu zeigen: Man muss heute nicht alles selbst tippen, um spannende Dinge zu erschaffen.
-Die Kunst liegt darin, die Werkzeuge schlau einzusetzen und daraus etwas Eigenes zu formen.
+Die Kunst liegt darin, die Werkzeuge klug einzusetzen und daraus etwas Eigenes zu formen.
 
 Reward Rover ist für mich genau das: ein Lernprojekt, das moderne Tools mit meiner eigenen Idee verbindet.
 Ich baue es, weil ich glaube, dass wir bessere Debatten über KI führen können, wenn wir verstehen, wie sie lernt.
 Und weil es einfach Spaß macht, dem Rover beim Scheitern und besser Werden zuzuschauen.
 
-## Mehr von mir
+– Maxim Leopold
 
-Du findest den **Reward Rover** auch direkt auf meiner Website:  
-👉 [https://www.maximleopold.com](https://www.maximleopold.com)  
+⸻
 
-Dort teile ich außerdem Artikel, Projekte und Gedanken rund um **Neuroscience, KI und Gesellschaft**.
+Mehr von mir
+
+Du findest den Reward Rover auch direkt auf meiner Website:
+👉 https://www.maximleopold.com
+
+Dort teile ich außerdem Artikel, Projekte und Gedanken rund um Neuroscience, KI und Gesellschaft.
+
+
+⸻
+
+🚀 Reward Rover (English Version)
+
+Reward Rover is my attempt to make Reinforcement Learning tangible.
+Not through endless formulas or dense research papers, but as an interactive game.
+A small rover moves across a grid, bumps into walls, collects penalties, finds rewards – and learns to make better decisions with every episode.
+
+⸻
+
+Why this project?
+
+Over the past years, I’ve spent a lot of time working on AI – from neural networks to the latest language models.
+But what fascinates me most is the core question: How do machines actually learn?
+Reinforcement Learning (RL) feels like one of the most honest paradigms, because it’s so close to the way we humans learn: trial and error, small rewards, big mistakes – and slowly a strategy emerges.
+
+That’s what Reward Rover is meant to show.
+No abstract buzzword, but an experience:
+You can literally watch an agent turn “mistakes” into something useful.
+And once you understand how this process works, you also understand a bit better how AI systems “see” their world – and why they sometimes make surprisingly good (or dumb) choices.
+
+⸻
+
+Features
+	•	Exploration vs. Exploitation
+The key trade-off in RL: Should the rover stick to safe strategies or try new ones?
+With each run, its behavior shifts – and you can watch it live.
+	•	Three modes
+	•	Playground: Build your own world, place walls, rewards, penalties, and portals.
+	•	Random mode: Generate worlds automatically – different each time.
+	•	Comparison mode: Run two rovers with different hyperparameters (exploration rate, learning rate, gamma) and see who learns faster.
+	•	Q-learning live
+	•	Show Q-values as numbers or as a heatmap.
+	•	Adjust key parameters:
+	•	Exploration rate (ε): How curious is the rover?
+	•	Learning rate (α): How strongly do new experiences overwrite old ones?
+	•	Discount factor (γ): Short-term gains vs. long-term strategy.
+	•	Levels & Statistics
+	•	Build your own maps or load preset levels.
+	•	After each episode: rewards, penalties, steps, time.
+	•	Highscores are stored locally so you can track progress.
+
+⸻
+
+How to play
+	1.	Run the project locally or open the hosted version.
+	2.	Choose a mode: Playground, Random, or Comparison.
+	3.	Place a few walls or just try the presets.
+	4.	Click Start – and watch the rover get smarter with each step.
+	5.	Adjust parameters and see how its behavior changes.
+
+⸻
+
+Why it matters
+
+We talk a lot about “artificial intelligence” these days.
+But it’s often unclear how machines really learn, why they sometimes generalize astonishingly well, and why they fail so spectacularly in other cases.
+RL provides a key: it shows that intelligence doesn’t come from magic, but from feedback, structure, and countless trials.
+
+Understanding this helps us see where today’s AI has limits – and where breakthroughs might come next.
+For me, Reward Rover is a small step in that direction: a tool to show how learning works, and to make conversations about AI more transparent.
+
+⸻
+
+Tech Stack
+	•	React + TypeScript
+	•	Vite
+	•	Tailwind CSS
+	•	shadcn/ui
+
+⸻
+
+Installation & Run
+
+If you want to try it yourself:
+
+```bash
+git clone https://github.com/maaxhe/reward-rover-playground.git
+cd reward-rover-playground
+npm install
+npm run dev
+```
+
+Then open http://localhost:5173.
+
+⸻
+
+Personal note
+
+This project wasn’t created “by hand” from scratch.
+I built it with the help of AI tools – for boilerplate code, UI ideas, and debugging.
+For me, the important part was to show that you don’t have to type every single line yourself to build something meaningful.
+The art lies in using the tools wisely and shaping something of your own.
+
+Reward Rover is exactly that for me: a learning project that combines modern tools with my own ideas.
+I built it because I believe we can have better debates about AI once we actually understand how it learns.
+And also because it’s just fun to watch the rover fail and improve.
+
+– Maxim Leopold
+
+⸻
+
+More from me
+
+You can also try the Reward Rover directly on my website:
+👉 https://www.maximleopold.com
+
+There I share articles, projects, and thoughts on neuroscience, AI, and society.
