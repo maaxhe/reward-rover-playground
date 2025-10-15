@@ -4,6 +4,8 @@
 Nicht in Form von endlosen Formeln oder komplizierten Papers, sondern als interaktives Spiel.  
 Ein kleiner Rover läuft über ein Grid, stolpert in Mauern, kassiert Strafen oder findet Belohnungen – und lernt dabei mit jeder Episode, bessere Entscheidungen zu treffen.
 
+Checke ihn hier aus: 👉 [https://rl-agent.maximleopold.com/](https://rl-agent.maximleopold.com/) 
+
 ---
 
 ## Warum dieses Projekt?
@@ -86,3 +88,23 @@ git clone https://github.com/maaxhe/reward-rover-playground.git
 cd reward-rover-playground
 npm install
 npm run dev
+```
+---
+
+## Persönliche Note
+
+Dieses Projekt ist nicht „von Hand“ aus dem Nichts entstanden.
+Ich habe beim Bauen KI-Tools zur Unterstützung genutzt – fürs Code-Schreiben, UI-Ideen und Debugging.
+Mir war wichtig, zu zeigen: Man muss heute nicht alles selbst tippen, um spannende Dinge zu erschaffen.
+Die Kunst liegt darin, die Werkzeuge schlau einzusetzen und daraus etwas Eigenes zu formen.
+
+Reward Rover ist für mich genau das: ein Lernprojekt, das moderne Tools mit meiner eigenen Idee verbindet.
+Ich baue es, weil ich glaube, dass wir bessere Debatten über KI führen können, wenn wir verstehen, wie sie lernt.
+Und weil es einfach Spaß macht, dem Rover beim Scheitern und besser Werden zuzuschauen.
+
+## Mehr von mir
+
+Du findest den **Reward Rover** auch direkt auf meiner Website:  
+👉 [https://www.maximleopold.com](https://www.maximleopold.com)  
+
+Dort teile ich außerdem Artikel, Projekte und Gedanken rund um **Neuroscience, KI und Gesellschaft**.
