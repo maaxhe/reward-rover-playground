@@ -89,9 +89,9 @@ npm run dev
 
 Danach findest du das Projekt unter http://localhost:5173.
 
-⸻
+---
 
-Persönliche Note
+## Persönliche Note
 
 Dieses Projekt ist nicht „von Hand“ aus dem Nichts entstanden.
 Ich habe beim Bauen KI-Tools zur Unterstützung genutzt – für Boilerplate-Code, UI-Ideen und Debugging.
@@ -104,9 +104,9 @@ Und weil es einfach Spaß macht, dem Rover beim Scheitern und besser Werden zuzu
 
 – Maxim Leopold
 
-⸻
+---
 
-Mehr von mir
+## Mehr von mir
 
 Du findest den Reward Rover auch direkt auf meiner Website:
 👉 https://www.maximleopold.com
@@ -116,15 +116,15 @@ Dort teile ich außerdem Artikel, Projekte und Gedanken rund um Neuroscience, KI
 
 ⸻
 
-🚀 Reward Rover (English Version)
+# 🚀 Reward Rover (English Version)
 
 Reward Rover is my attempt to make Reinforcement Learning tangible.
 Not through endless formulas or dense research papers, but as an interactive game.
 A small rover moves across a grid, bumps into walls, collects penalties, finds rewards – and learns to make better decisions with every episode.
 
-⸻
+---
 
-Why this project?
+## Why this project?
 
 Over the past years, I’ve spent a lot of time working on AI – from neural networks to the latest language models.
 But what fascinates me most is the core question: How do machines actually learn?
@@ -135,9 +135,9 @@ No abstract buzzword, but an experience:
 You can literally watch an agent turn “mistakes” into something useful.
 And once you understand how this process works, you also understand a bit better how AI systems “see” their world – and why they sometimes make surprisingly good (or dumb) choices.
 
-⸻
+---
 
-Features
+## Features
 	•	Exploration vs. Exploitation
 The key trade-off in RL: Should the rover stick to safe strategies or try new ones?
 With each run, its behavior shifts – and you can watch it live.
@@ -156,18 +156,18 @@ With each run, its behavior shifts – and you can watch it live.
 	•	After each episode: rewards, penalties, steps, time.
 	•	Highscores are stored locally so you can track progress.
 
-⸻
+---
 
-How to play
+## How to play
 	1.	Run the project locally or open the hosted version.
 	2.	Choose a mode: Playground, Random, or Comparison.
 	3.	Place a few walls or just try the presets.
 	4.	Click Start – and watch the rover get smarter with each step.
 	5.	Adjust parameters and see how its behavior changes.
 
-⸻
+---
 
-Why it matters
+## Why it matters
 
 We talk a lot about “artificial intelligence” these days.
 But it’s often unclear how machines really learn, why they sometimes generalize astonishingly well, and why they fail so spectacularly in other cases.
@@ -176,17 +176,17 @@ RL provides a key: it shows that intelligence doesn’t come from magic, but fro
 Understanding this helps us see where today’s AI has limits – and where breakthroughs might come next.
 For me, Reward Rover is a small step in that direction: a tool to show how learning works, and to make conversations about AI more transparent.
 
-⸻
+---
 
-Tech Stack
+## Tech Stack
 	•	React + TypeScript
 	•	Vite
 	•	Tailwind CSS
 	•	shadcn/ui
 
-⸻
+---
 
-Installation & Run
+## Installation & Run
 
 If you want to try it yourself:
 
@@ -199,9 +199,9 @@ npm run dev
 
 Then open http://localhost:5173.
 
-⸻
+---
 
-Personal note
+## Personal note
 
 This project wasn’t created “by hand” from scratch.
 I built it with the help of AI tools – for boilerplate code, UI ideas, and debugging.
@@ -214,9 +214,9 @@ And also because it’s just fun to watch the rover fail and improve.
 
 – Maxim Leopold
 
-⸻
+---
 
-More from me
+## More from me
 
 You can also try the Reward Rover directly on my website:
 👉 https://www.maximleopold.com
