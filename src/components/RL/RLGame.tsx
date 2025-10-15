@@ -2782,6 +2782,7 @@ const handleActiveBonusClick = useCallback(() => {
   }, [handleMouseUp]);
 
   useEffect(() => {
+    if (mode !== "random") return;
     if (randomState.episode === 0) return;
     const latest = randomState.episodeHistory[randomState.episodeHistory.length - 1];
     if (!latest || !latest.success) return;
@@ -2805,9 +2806,10 @@ const handleActiveBonusClick = useCallback(() => {
     requestAnimationFrame(() => {
       setCelebration({ title, steps: latest.steps, reward: latest.reward, rank, fact });
     });
-  }, [randomState.episodeHistory, randomState.episode, translate, language]);
+  }, [mode, randomState.episodeHistory, randomState.episode, translate, language]);
 
   useEffect(() => {
+    if (mode !== "playground") return;
     if (playgroundState.episode === 0) return;
     const latest = playgroundState.episodeHistory[playgroundState.episodeHistory.length - 1];
     if (!latest || !latest.success) return;
@@ -2831,7 +2833,7 @@ const handleActiveBonusClick = useCallback(() => {
     requestAnimationFrame(() => {
       setCelebration({ title, steps: latest.steps, reward: latest.reward, rank, fact });
     });
-  }, [playgroundState.episodeHistory, playgroundState.episode, translate, language]);
+  }, [mode, playgroundState.episodeHistory, playgroundState.episode, translate, language]);
 
   const handlePlaygroundStart = () =>
     setPlaygroundState((prev) => ({ ...prev, isRunning: true }));
