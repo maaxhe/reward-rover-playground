@@ -1981,7 +1981,6 @@ export function RLGame() {
   const [showRLSettings, setShowRLSettings] = useState(false);
   const [showRandomStatsCard, setShowRandomStatsCard] = useState(false);
   const [showPlaygroundStatsCard, setShowPlaygroundStatsCard] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(false);
   const [isReplaying, setIsReplaying] = useState(false);
   const [replayEpisode, setReplayEpisode] = useState<EpisodeStats | null>(null);
   const [replayStep, setReplayStep] = useState(0);
@@ -1993,9 +1992,6 @@ export function RLGame() {
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
   const [rewardAnimation, setRewardAnimation] = useState<{ x: number; y: number; type: "reward" | "punishment" } | null>(null);
-
-  // Persistent AudioContext for instant sound playback
-  const audioContextRef = useRef<AudioContext | null>(null);
   const [leftRewardAnimation, setLeftRewardAnimation] = useState<{ x: number; y: number; type: "reward" | "punishment" } | null>(null);
   const [rightRewardAnimation, setRightRewardAnimation] = useState<{ x: number; y: number; type: "reward" | "punishment" } | null>(null);
   const [celebration, setCelebration] = useState<{
@@ -2051,168 +2047,6 @@ export function RLGame() {
     },
   ], [translate]);
 
-  // Sound functions
-  const playSound = useCallback((type: "reward" | "punishment" | "goal" | "portal") => {
-    if (!soundEnabled) return;
-
-    try {
-      // Create or reuse AudioContext for instant playback
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
-      const audioContext = audioContextRef.current;
-
-      // Resume context if suspended (browser autoplay policy)
-      if (audioContext.state === 'suspended') {
-        audioContext.resume();
-      }
-
-      const mainGain = audioContext.createGain();
-      mainGain.connect(audioContext.destination);
-
-      if (type === "reward") {
-        // Cheerful coin/pickup sound - layered tones
-        const osc1 = audioContext.createOscillator();
-        const osc2 = audioContext.createOscillator();
-        const gain1 = audioContext.createGain();
-        const gain2 = audioContext.createGain();
-
-        osc1.connect(gain1);
-        osc2.connect(gain2);
-        gain1.connect(mainGain);
-        gain2.connect(mainGain);
-
-        osc1.type = "triangle";
-        osc2.type = "sine";
-
-        // First tone: C6 -> E6
-        osc1.frequency.setValueAtTime(1046.50, audioContext.currentTime);
-        osc1.frequency.exponentialRampToValueAtTime(1318.51, audioContext.currentTime + 0.08);
-
-        // Second tone: E6 -> G6 (delayed slightly for richness)
-        osc2.frequency.setValueAtTime(1318.51, audioContext.currentTime + 0.04);
-        osc2.frequency.exponentialRampToValueAtTime(1567.98, audioContext.currentTime + 0.12);
-
-        gain1.gain.setValueAtTime(0.15, audioContext.currentTime);
-        gain1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-        gain2.gain.setValueAtTime(0.12, audioContext.currentTime + 0.04);
-        gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.18);
-
-        osc1.start(audioContext.currentTime);
-        osc2.start(audioContext.currentTime + 0.04);
-        osc1.stop(audioContext.currentTime + 0.2);
-        osc2.stop(audioContext.currentTime + 0.2);
-
-      } else if (type === "punishment") {
-        // Dark "thud" with descending pitch
-        const osc1 = audioContext.createOscillator();
-        const osc2 = audioContext.createOscillator();
-        const gain1 = audioContext.createGain();
-        const gain2 = audioContext.createGain();
-
-        osc1.connect(gain1);
-        osc2.connect(gain2);
-        gain1.connect(mainGain);
-        gain2.connect(mainGain);
-
-        osc1.type = "sawtooth";
-        osc2.type = "square";
-
-        // Low thud: G3 -> C3
-        osc1.frequency.setValueAtTime(196.00, audioContext.currentTime);
-        osc1.frequency.exponentialRampToValueAtTime(130.81, audioContext.currentTime + 0.15);
-
-        // Dissonant overtone
-        osc2.frequency.setValueAtTime(220.00, audioContext.currentTime);
-        osc2.frequency.exponentialRampToValueAtTime(146.83, audioContext.currentTime + 0.15);
-
-        gain1.gain.setValueAtTime(0.2, audioContext.currentTime);
-        gain1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-        gain2.gain.setValueAtTime(0.08, audioContext.currentTime);
-        gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-
-        osc1.start(audioContext.currentTime);
-        osc2.start(audioContext.currentTime);
-        osc1.stop(audioContext.currentTime + 0.25);
-        osc2.stop(audioContext.currentTime + 0.25);
-
-      } else if (type === "goal") {
-        // Victory fanfare - major chord progression
-        const playNote = (freq: number, startTime: number, duration: number, oscType: OscillatorType = "triangle") => {
-          const osc = audioContext.createOscillator();
-          const gain = audioContext.createGain();
-          osc.connect(gain);
-          gain.connect(mainGain);
-          osc.type = oscType;
-          osc.frequency.setValueAtTime(freq, startTime);
-          gain.gain.setValueAtTime(0.15, startTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-          osc.start(startTime);
-          osc.stop(startTime + duration);
-        };
-
-        const now = audioContext.currentTime;
-        // C major chord arpeggio: C5 -> E5 -> G5 -> C6
-        playNote(523.25, now, 0.15); // C5
-        playNote(659.25, now + 0.08, 0.15); // E5
-        playNote(783.99, now + 0.16, 0.2); // G5
-        playNote(1046.50, now + 0.24, 0.3); // C6
-
-        // Add harmony
-        playNote(523.25, now + 0.24, 0.3, "sine"); // C5 harmony
-
-      } else if (type === "portal") {
-        // Sci-fi teleport whoosh with modulation
-        const osc1 = audioContext.createOscillator();
-        const osc2 = audioContext.createOscillator();
-        const lfo = audioContext.createOscillator();
-        const lfoGain = audioContext.createGain();
-        const gain1 = audioContext.createGain();
-        const gain2 = audioContext.createGain();
-
-        lfo.connect(lfoGain);
-        lfoGain.connect(osc1.frequency);
-        osc1.connect(gain1);
-        osc2.connect(gain2);
-        gain1.connect(mainGain);
-        gain2.connect(mainGain);
-
-        osc1.type = "sine";
-        osc2.type = "triangle";
-        lfo.type = "sine";
-
-        // Main swoosh: fast upward then down
-        osc1.frequency.setValueAtTime(200, audioContext.currentTime);
-        osc1.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.12);
-        osc1.frequency.exponentialRampToValueAtTime(300, audioContext.currentTime + 0.28);
-
-        // Secondary tone
-        osc2.frequency.setValueAtTime(400, audioContext.currentTime);
-        osc2.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.12);
-        osc2.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.28);
-
-        // LFO for wobble effect
-        lfo.frequency.setValueAtTime(8, audioContext.currentTime);
-        lfoGain.gain.setValueAtTime(30, audioContext.currentTime);
-
-        gain1.gain.setValueAtTime(0.18, audioContext.currentTime);
-        gain1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-        gain2.gain.setValueAtTime(0.12, audioContext.currentTime);
-        gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-
-        lfo.start(audioContext.currentTime);
-        osc1.start(audioContext.currentTime);
-        osc2.start(audioContext.currentTime);
-        lfo.stop(audioContext.currentTime + 0.35);
-        osc1.stop(audioContext.currentTime + 0.35);
-        osc2.stop(audioContext.currentTime + 0.35);
-      }
-
-    } catch (e) {
-      console.warn("Could not play sound", e);
-    }
-  }, [soundEnabled]);
-
   // Tutorial functions
   const closeTutorial = useCallback(() => {
     setTutorialOpen(false);
@@ -2248,21 +2082,6 @@ export function RLGame() {
       console.warn("Could not check tutorial status", e);
     }
   }, []);
-
-  // Initialize AudioContext when sound is enabled for instant playback
-  useEffect(() => {
-    if (soundEnabled && !audioContextRef.current) {
-      try {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        // Resume immediately to avoid delays
-        if (audioContextRef.current.state === 'suspended') {
-          audioContextRef.current.resume();
-        }
-      } catch (e) {
-        console.warn("Could not initialize AudioContext", e);
-      }
-    }
-  }, [soundEnabled]);
 
   // Theme effect
   useEffect(() => {
@@ -2637,20 +2456,14 @@ export function RLGame() {
         const effectiveExplorationRate = isReplaying ? 0 : explorationRate;
         const next = runPlaygroundStep(prev, effectiveExplorationRate, directionBias, consumeRewards, alpha, gamma);
 
-        // Check if portal teleport started (agent just stepped onto portal with full wait counter)
-        if (!prev.pendingPortalTeleport && next.pendingPortalTeleport && next.pendingPortalTeleport.waitCounter > 0) {
-          playSound("portal");
-        }
-
         // Check if agent moved to a reward or punishment tile
-        const tileType = prev.grid[next.agent.y][next.agent.x].type;
-        if (tileType === "reward" || tileType === "punishment") {
+        const tileType = next.grid[next.agent.y][next.agent.x].type;
+        const hasMoved = prev.agent.x !== next.agent.x || prev.agent.y !== next.agent.y;
+        if (hasMoved && (tileType === "reward" || tileType === "punishment")) {
           setRewardAnimation({ x: next.agent.x, y: next.agent.y, type: tileType });
-          playSound(tileType);
         }
         // Check if goal was reached
         if (next.agent.x === prev.goal.x && next.agent.y === prev.goal.y && (prev.agent.x !== prev.goal.x || prev.agent.y !== prev.goal.y)) {
-          playSound("goal");
           // Stop replay when goal is reached
           if (isReplaying) {
             setTimeout(() => {
@@ -2664,30 +2477,30 @@ export function RLGame() {
       });
     }, isReplaying ? 400 : 220); // Slower when replaying for better visibility
     return () => window.clearInterval(interval);
-  }, [mode, playgroundState.isRunning, explorationRate, directionBias, consumeRewards, alpha, gamma, playSound, isReplaying]);
+  }, [mode, playgroundState.isRunning, explorationRate, directionBias, consumeRewards, alpha, gamma, isReplaying]);
 
   useEffect(() => {
     if (mode !== "random" || !randomState.isRunning) return;
     const interval = window.setInterval(() => {
       setRandomState((prev) => {
         const next = runRandomModeStep(prev, explorationRate, directionBias, consumeRewards, alpha, gamma);
+
         // Check if agent moved to a reward or punishment tile
-        const tileType = prev.grid[next.agent.y][next.agent.x].type;
-        if (tileType === "reward" || tileType === "punishment") {
+        const tileType = next.grid[next.agent.y][next.agent.x].type;
+        const hasMoved = prev.agent.x !== next.agent.x || prev.agent.y !== next.agent.y;
+        if (hasMoved && (tileType === "reward" || tileType === "punishment")) {
           setRewardAnimation({ x: next.agent.x, y: next.agent.y, type: tileType });
-          playSound(tileType);
         }
         // Check if goal was reached
         const reachedGoal = prev.goals.some(goal => next.agent.x === goal.x && next.agent.y === goal.y) &&
                             !prev.goals.some(goal => prev.agent.x === goal.x && prev.agent.y === goal.y);
         if (reachedGoal) {
-          playSound("goal");
         }
         return next;
       });
     }, 220);
     return () => window.clearInterval(interval);
-  }, [mode, randomState.isRunning, explorationRate, directionBias, consumeRewards, alpha, gamma, playSound]);
+  }, [mode, randomState.isRunning, explorationRate, directionBias, consumeRewards, alpha, gamma]);
 
   useEffect(() => {
     if (mode !== "comparison" || (!comparisonState.left.isRunning && !comparisonState.right.isRunning)) return;
@@ -5025,31 +4838,6 @@ const handleActiveBonusClick = useCallback(() => {
               <h2 className="text-xl font-bold gradient-text">
                 {translate("⚙️ Einstellungen", "⚙️ Settings")}
               </h2>
-
-            {/* Sound Toggle */}
-            <Card className="rounded-2xl border border-border/50 bg-secondary/30 p-4 shadow-soft">
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-                <div className="flex items-center gap-1.5">
-                  <Label htmlFor="sound-toggle" className="text-sm font-semibold leading-tight">
-                    {translate("🔊 Sound-Effekte", "🔊 Sound Effects")}
-                  </Label>
-                </div>
-                <Switch
-                  id="sound-toggle"
-                  checked={soundEnabled}
-                  onCheckedChange={setSoundEnabled}
-                  aria-label={translate("Sound-Effekte umschalten", "Toggle sound effects")}
-                />
-              </div>
-              {soundEnabled && (
-                <p className="text-xs text-muted-foreground leading-relaxed mt-2 animate-in fade-in duration-200">
-                  {translate(
-                    "Spielt Töne bei Belohnungen, Strafen und beim Erreichen des Ziels ab.",
-                    "Plays sounds for rewards, punishments, and reaching the goal.",
-                  )}
-                </p>
-              )}
-            </Card>
 
             <Card className="rounded-2xl border border-border/50 bg-secondary/30 p-4 shadow-soft space-y-4">
               <div className="flex flex-wrap items-start justify-between gap-4">
