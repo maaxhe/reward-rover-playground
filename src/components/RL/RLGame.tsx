@@ -1974,11 +1974,21 @@ export function RLGame() {
   const [showQValuesInfo, setShowQValuesInfo] = useState(false);
   const [showHeatmapInfo, setShowHeatmapInfo] = useState(false);
   const [showConsumeRewardsInfo, setShowConsumeRewardsInfo] = useState(false);
+  const [showExplorationRateInfo, setShowExplorationRateInfo] = useState(false);
+  const [showAlphaInfo, setShowAlphaInfo] = useState(false);
+  const [showGammaInfo, setShowGammaInfo] = useState(false);
+  const [showComparisonLeftAlphaInfo, setShowComparisonLeftAlphaInfo] = useState(false);
+  const [showComparisonLeftGammaInfo, setShowComparisonLeftGammaInfo] = useState(false);
+  const [showComparisonLeftExplorationInfo, setShowComparisonLeftExplorationInfo] = useState(false);
+  const [showComparisonRightAlphaInfo, setShowComparisonRightAlphaInfo] = useState(false);
+  const [showComparisonRightGammaInfo, setShowComparisonRightGammaInfo] = useState(false);
+  const [showComparisonRightExplorationInfo, setShowComparisonRightExplorationInfo] = useState(false);
   const [showActionsInfo, setShowActionsInfo] = useState(false);
   const [showRLBasics, setShowRLBasics] = useState(true);
   const [showRLFormula, setShowRLFormula] = useState(false);
   const [showRLExamples, setShowRLExamples] = useState(false);
   const [showRLLoop, setShowRLLoop] = useState(false);
+  const [showRLParameters, setShowRLParameters] = useState(false);
   const [showRLSettings, setShowRLSettings] = useState(false);
   const [showRandomStatsCard, setShowRandomStatsCard] = useState(false);
   const [showPlaygroundStatsCard, setShowPlaygroundStatsCard] = useState(false);
@@ -2849,6 +2859,7 @@ const handleActiveBonusClick = useCallback(() => {
     setUndoStack([]);
     setIsReplaying(false);
     setReplayEpisode(null);
+    lastCelebratedEpisodeRef.current.playground = 0;
     setPlaygroundState(createInitialPlaygroundState(nextSize));
   }, [tileSize]);
 
@@ -2965,6 +2976,9 @@ const handleActiveBonusClick = useCallback(() => {
   const handleModeChange = (targetMode: Mode) => {
     setMode(targetMode);
     setCelebration(null);
+    // Reset celebration tracking when switching modes
+    lastCelebratedEpisodeRef.current.playground = 0;
+    lastCelebratedEpisodeRef.current.random = 0;
 
     // Stop all running modes
     setPlaygroundState((prev) => ({ ...prev, isRunning: false }));
@@ -3188,6 +3202,7 @@ const handleActiveBonusClick = useCallback(() => {
 
   const handleRandomReset = () => {
     setCelebration(null);
+    lastCelebratedEpisodeRef.current.random = 0;
     const baseSize = baseFieldSize;
     if (speedrunEnabled) {
       setRandomState((prev) =>
@@ -3677,6 +3692,180 @@ const handleActiveBonusClick = useCallback(() => {
                   </CollapsibleContent>
                 </Collapsible>
 
+                {/* Lernparameter im Detail */}
+                <Collapsible open={showRLParameters} onOpenChange={setShowRLParameters} className="space-y-3">
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-between rounded-xl border border-border/40 bg-background/60 font-semibold text-base hover:bg-background/80"
+                    >
+                      <span>{translate("🎛️ Lernparameter im Detail", "🎛️ Learning Parameters Explained")}</span>
+                      <ChevronDown
+                        className={cn("h-4 w-4 transition-transform duration-200", showRLParameters ? "rotate-180" : "")}
+                      />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+                    <div className="space-y-6 text-base leading-relaxed text-muted-foreground pt-3">
+
+                      {/* Exploration Rate (Entdeckungsrate) */}
+                      <div className="rounded-xl border border-border/60 bg-secondary/30 p-5 space-y-3">
+                        <h4 className="text-lg font-semibold text-foreground">
+                          {translate("🎲 Exploration Rate (Entdeckungsrate)", "🎲 Exploration Rate")}
+                        </h4>
+                        <p className="text-foreground font-medium">
+                          {translate(
+                            "Was macht dieser Parameter?",
+                            "What does this parameter do?"
+                          )}
+                        </p>
+                        <p>
+                          {translate(
+                            "Die Exploration Rate bestimmt, wie oft der Rover zufällige Aktionen ausprobiert, anstatt dem zu folgen, was er bereits gelernt hat. Bei 20% Exploration wird der Rover in 20% der Fälle etwas Neues versuchen und in 80% der Fälle seine beste bekannte Strategie nutzen.",
+                            "The exploration rate determines how often the rover tries random actions instead of following what it has already learned. At 20% exploration, the rover will try something new 20% of the time and use its best known strategy 80% of the time."
+                          )}
+                        </p>
+                        <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+                          <p className="font-semibold text-foreground mb-2">
+                            {translate("💡 Alltags-Analogie: Restaurant-Wahl", "💡 Real-Life Analogy: Restaurant Choice")}
+                          </p>
+                          <p>
+                            {translate(
+                              "Stell dir vor, du gehst jede Woche essen. Mit niedriger Exploration gehst du fast immer zu deinem Lieblingsrestaurant – sicher, aber du verpasst vielleicht tolle neue Orte. Mit hoher Exploration probierst du ständig neue Restaurants – spannend, aber manchmal enttäuschend. Die goldene Mitte: Du gehst meistens zu bewährten Orten, probierst aber ab und zu etwas Neues.",
+                              "Imagine you go out to eat every week. With low exploration, you almost always go to your favorite restaurant – safe, but you might miss great new places. With high exploration, you constantly try new restaurants – exciting, but sometimes disappointing. The sweet spot: You mostly go to proven places, but occasionally try something new."
+                            )}
+                          </p>
+                        </div>
+                        <p>
+                          <span className="font-semibold text-foreground">{translate("Praktischer Tipp:", "Practical Tip:")}</span>{" "}
+                          {translate(
+                            "Zu Beginn sollte die Exploration hoch sein (30-50%), damit der Rover viele verschiedene Strategien kennenlernt. Später kann sie niedriger sein (5-10%), damit er seine beste Strategie verfeinert.",
+                            "At the beginning, exploration should be high (30-50%) so the rover learns many different strategies. Later it can be lower (5-10%) so it refines its best strategy."
+                          )}
+                        </p>
+                      </div>
+
+                      {/* Learning Rate (Alpha) */}
+                      <div className="rounded-xl border border-border/60 bg-secondary/30 p-5 space-y-3">
+                        <h4 className="text-lg font-semibold text-foreground">
+                          {translate("📚 Learning Rate – Alpha (α)", "📚 Learning Rate – Alpha (α)")}
+                        </h4>
+                        <p className="text-foreground font-medium">
+                          {translate(
+                            "Was macht dieser Parameter?",
+                            "What does this parameter do?"
+                          )}
+                        </p>
+                        <p>
+                          {translate(
+                            "Die Lernrate bestimmt, wie stark neue Erfahrungen die bisherigen Überzeugungen des Rovers überschreiben. Bei Alpha = 0.1 werden neue Erkenntnisse zu 10% berücksichtigt und zu 90% bleibt das alte Wissen erhalten. Bei Alpha = 0.5 haben neue Erfahrungen ein viel größeres Gewicht.",
+                            "The learning rate determines how much new experiences override the rover's previous beliefs. At alpha = 0.1, new insights count for 10% and 90% of the old knowledge is retained. At alpha = 0.5, new experiences have much more weight."
+                          )}
+                        </p>
+                        <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+                          <p className="font-semibold text-foreground mb-2">
+                            {translate("💡 Alltags-Analogie: Meinungsbildung", "💡 Real-Life Analogy: Opinion Formation")}
+                          </p>
+                          <p>
+                            {translate(
+                              "Stell dir vor, du liest Produktbewertungen. Mit niedriger Lernrate bist du wie jemand, der sehr skeptisch ist: Eine einzelne negative Bewertung ändert deine Meinung über ein Produkt kaum, das du schon 10x gut erlebt hast. Mit hoher Lernrate bist du wie jemand, der sehr beeinflussbar ist: Eine einzige schlechte Erfahrung macht deine ganze vorherige positive Einstellung zunichte.",
+                              "Imagine you're reading product reviews. With a low learning rate, you're like someone who's very skeptical: A single negative review barely changes your opinion about a product you've had good experiences with 10 times. With a high learning rate, you're like someone who's easily influenced: A single bad experience negates all your previous positive attitude."
+                            )}
+                          </p>
+                        </div>
+                        <p>
+                          <span className="font-semibold text-foreground">{translate("Praktischer Tipp:", "Practical Tip:")}</span>{" "}
+                          {translate(
+                            "Hohe Lernraten (0.3-0.5) sind gut für sich schnell ändernde Umgebungen. Niedrige Lernraten (0.05-0.15) sind besser für stabile Umgebungen, wo der Rover Zeit hat, präzise zu lernen. Ein typischer Wert ist 0.1.",
+                            "High learning rates (0.3-0.5) are good for rapidly changing environments. Low learning rates (0.05-0.15) are better for stable environments where the rover has time to learn precisely. A typical value is 0.1."
+                          )}
+                        </p>
+                      </div>
+
+                      {/* Discount Factor (Gamma) */}
+                      <div className="rounded-xl border border-border/60 bg-secondary/30 p-5 space-y-3">
+                        <h4 className="text-lg font-semibold text-foreground">
+                          {translate("🔮 Discount Factor – Gamma (γ)", "🔮 Discount Factor – Gamma (γ)")}
+                        </h4>
+                        <p className="text-foreground font-medium">
+                          {translate(
+                            "Was macht dieser Parameter?",
+                            "What does this parameter do?"
+                          )}
+                        </p>
+                        <p>
+                          {translate(
+                            "Der Discount-Faktor bestimmt, wie wichtig zukünftige Belohnungen im Vergleich zu sofortigen Belohnungen sind. Bei Gamma = 0.9 ist eine Belohnung in 5 Schritten noch 59% so wertvoll wie eine sofortige Belohnung. Bei Gamma = 0.5 wäre sie nur noch 3% wert – der Rover denkt also sehr kurzfristig.",
+                            "The discount factor determines how important future rewards are compared to immediate rewards. At gamma = 0.9, a reward in 5 steps is still worth 59% of an immediate reward. At gamma = 0.5, it would only be worth 3% – so the rover thinks very short-term."
+                          )}
+                        </p>
+                        <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+                          <p className="font-semibold text-foreground mb-2">
+                            {translate("💡 Alltags-Analogie: Sparen vs. Ausgeben", "💡 Real-Life Analogy: Saving vs. Spending")}
+                          </p>
+                          <p>
+                            {translate(
+                              "Niedriges Gamma ist wie jemand, der sein Geld sofort ausgibt: 'Ich will jetzt Spaß haben, die Zukunft ist mir egal!' Hohes Gamma ist wie jemand, der für die Rente spart: 'Ich verzichte heute auf etwas, weil ich weiß, dass es mir später viel bringen wird.' Im Rover-Kontext: Niedriges Gamma → sammle schnell die nächste Belohnung ein. Hohes Gamma → plane eine langfristige Route zum größten Schatz, auch wenn du dafür erstmal an kleineren Belohnungen vorbei musst.",
+                              "Low gamma is like someone who spends their money immediately: 'I want fun now, I don't care about the future!' High gamma is like someone saving for retirement: 'I'm giving up something today because I know it will benefit me greatly later.' In the rover context: Low gamma → quickly collect the next reward. High gamma → plan a long-term route to the biggest treasure, even if you have to pass smaller rewards first."
+                            )}
+                          </p>
+                        </div>
+                        <p>
+                          <span className="font-semibold text-foreground">{translate("Praktischer Tipp:", "Practical Tip:")}</span>{" "}
+                          {translate(
+                            "Für Aufgaben mit klarem Endziel (wie unser Rover-Spiel) ist ein hohes Gamma (0.9-0.99) ideal. Für Aufgaben ohne Ende oder wo sofortige Belohnungen wichtig sind, kann ein niedrigeres Gamma (0.7-0.85) besser sein.",
+                            "For tasks with a clear end goal (like our rover game), a high gamma (0.9-0.99) is ideal. For endless tasks or where immediate rewards are important, a lower gamma (0.7-0.85) may be better."
+                          )}
+                        </p>
+                      </div>
+
+                      {/* Zusammenspiel der Parameter */}
+                      <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-3">
+                        <h4 className="text-lg font-semibold text-foreground">
+                          {translate("🎯 Das Zusammenspiel", "🎯 How They Work Together")}
+                        </h4>
+                        <p>
+                          {translate(
+                            "Diese drei Parameter arbeiten zusammen wie ein Team:",
+                            "These three parameters work together like a team:"
+                          )}
+                        </p>
+                        <ul className="space-y-2 list-disc pl-5">
+                          <li>
+                            <span className="font-semibold text-foreground">{translate("Exploration Rate", "Exploration Rate")}</span>
+                            {translate(
+                              " entscheidet, ob der Rover überhaupt etwas Neues lernen kann",
+                              " decides whether the rover can learn something new at all"
+                            )}
+                          </li>
+                          <li>
+                            <span className="font-semibold text-foreground">{translate("Learning Rate", "Learning Rate")}</span>
+                            {translate(
+                              " bestimmt, wie schnell das Gelernte ins Gedächtnis eingebrannt wird",
+                              " determines how quickly what is learned is burned into memory"
+                            )}
+                          </li>
+                          <li>
+                            <span className="font-semibold text-foreground">{translate("Discount Factor", "Discount Factor")}</span>
+                            {translate(
+                              " legt fest, ob der Rover in die Zukunft oder nur an 'jetzt' denkt",
+                              " determines whether the rover thinks about the future or only about 'now'"
+                            )}
+                          </li>
+                        </ul>
+                        <p className="text-foreground font-medium mt-4">
+                          {translate(
+                            "💡 Experimentiere mit den Werten und beobachte, wie sich das Verhalten des Rovers ändert!",
+                            "💡 Experiment with the values and observe how the rover's behavior changes!"
+                          )}
+                        </p>
+                      </div>
+
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+
                 {/* Der Lernprozess */}
                 <Collapsible open={showRLLoop} onOpenChange={setShowRLLoop} className="space-y-3">
                   <CollapsibleTrigger asChild>
@@ -3932,7 +4121,16 @@ const handleActiveBonusClick = useCallback(() => {
               <div className="mb-4 space-y-3 text-sm">
                 <div className="space-y-1">
                   <div className="flex justify-between">
-                    <span>{translate("Lernrate (α):", "Learning rate (α):")}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>{translate("Lernrate (α):", "Learning rate (α):")}</span>
+                      <button
+                        onClick={() => setShowComparisonLeftAlphaInfo(!showComparisonLeftAlphaInfo)}
+                        className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                        aria-label="Toggle info"
+                      >
+                        <Info className="h-4 w-4" />
+                      </button>
+                    </div>
                     <span className="font-bold">{comparisonState.left.alpha.toFixed(2)}</span>
                   </div>
                   <input
@@ -3950,10 +4148,27 @@ const handleActiveBonusClick = useCallback(() => {
                     className="input-slider w-full"
                     style={{ "--slider-value": comparisonState.left.alpha / 0.5 } as CSSProperties}
                   />
+                  {showComparisonLeftAlphaInfo && (
+                    <p className="text-sm text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
+                      {translate(
+                        "Bestimmt, wie stark neue Erfahrungen alte Werte überschreiben. Hohe Werte = schnelles Lernen, niedrige Werte = stabiles Lernen.",
+                        "Determines how much new experiences override old values. High values = fast learning, low values = stable learning."
+                      )}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <div className="flex justify-between">
-                    <span>{translate("Discount (γ):", "Discount (γ):")}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>{translate("Discount (γ):", "Discount (γ):")}</span>
+                      <button
+                        onClick={() => setShowComparisonLeftGammaInfo(!showComparisonLeftGammaInfo)}
+                        className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                        aria-label="Toggle info"
+                      >
+                        <Info className="h-4 w-4" />
+                      </button>
+                    </div>
                     <span className="font-bold">{comparisonState.left.gamma.toFixed(2)}</span>
                   </div>
                   <input
@@ -3971,10 +4186,27 @@ const handleActiveBonusClick = useCallback(() => {
                     className="input-slider w-full"
                     style={{ "--slider-value": comparisonState.left.gamma } as CSSProperties}
                   />
+                  {showComparisonLeftGammaInfo && (
+                    <p className="text-sm text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
+                      {translate(
+                        "Gewichtet zukünftige Belohnungen. Hohe Werte = langfristige Planung, niedrige Werte = kurzfristige Belohnungen bevorzugen.",
+                        "Weights future rewards. High values = long-term planning, low values = prefer immediate rewards."
+                      )}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <div className="flex justify-between">
-                    <span>{translate("Exploration:", "Exploration:")}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>{translate("Exploration:", "Exploration:")}</span>
+                      <button
+                        onClick={() => setShowComparisonLeftExplorationInfo(!showComparisonLeftExplorationInfo)}
+                        className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                        aria-label="Toggle info"
+                      >
+                        <Info className="h-4 w-4" />
+                      </button>
+                    </div>
                     <span className="font-bold">{Math.round(comparisonState.left.explorationRate * 100)}%</span>
                   </div>
                   <input
@@ -3992,6 +4224,14 @@ const handleActiveBonusClick = useCallback(() => {
                     className="input-slider w-full"
                     style={{ "--slider-value": comparisonState.left.explorationRate } as CSSProperties}
                   />
+                  {showComparisonLeftExplorationInfo && (
+                    <p className="text-sm text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
+                      {translate(
+                        "Bestimmt, wie oft der Rover neue Wege ausprobiert statt bekannte Routen zu nutzen. Hohe Werte = mehr Entdecken, niedrige Werte = mehr Ausbeuten bereits gelernter Strategien.",
+                        "Determines how often the rover tries new paths instead of using known routes. Higher values explore more, lower values exploit known strategies."
+                      )}
+                    </p>
+                  )}
                 </div>
                 <div className="flex justify-between pt-2 border-t border-border/30">
                   <span>{translate("Episode:", "Episode:")}</span>
@@ -4130,7 +4370,16 @@ const handleActiveBonusClick = useCallback(() => {
               <div className="mb-4 space-y-3 text-sm">
                 <div className="space-y-1">
                   <div className="flex justify-between">
-                    <span>{translate("Lernrate (α):", "Learning rate (α):")}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>{translate("Lernrate (α):", "Learning rate (α):")}</span>
+                      <button
+                        onClick={() => setShowComparisonRightAlphaInfo(!showComparisonRightAlphaInfo)}
+                        className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                        aria-label="Toggle info"
+                      >
+                        <Info className="h-4 w-4" />
+                      </button>
+                    </div>
                     <span className="font-bold">{comparisonState.right.alpha.toFixed(2)}</span>
                   </div>
                   <input
@@ -4148,10 +4397,27 @@ const handleActiveBonusClick = useCallback(() => {
                     className="input-slider w-full"
                     style={{ "--slider-value": comparisonState.right.alpha / 0.5 } as CSSProperties}
                   />
+                  {showComparisonRightAlphaInfo && (
+                    <p className="text-sm text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
+                      {translate(
+                        "Bestimmt, wie stark neue Erfahrungen alte Werte überschreiben. Hohe Werte = schnelles Lernen, niedrige Werte = stabiles Lernen.",
+                        "Determines how much new experiences override old values. High values = fast learning, low values = stable learning."
+                      )}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <div className="flex justify-between">
-                    <span>{translate("Discount (γ):", "Discount (γ):")}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>{translate("Discount (γ):", "Discount (γ):")}</span>
+                      <button
+                        onClick={() => setShowComparisonRightGammaInfo(!showComparisonRightGammaInfo)}
+                        className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                        aria-label="Toggle info"
+                      >
+                        <Info className="h-4 w-4" />
+                      </button>
+                    </div>
                     <span className="font-bold">{comparisonState.right.gamma.toFixed(2)}</span>
                   </div>
                   <input
@@ -4169,10 +4435,27 @@ const handleActiveBonusClick = useCallback(() => {
                     className="input-slider w-full"
                     style={{ "--slider-value": comparisonState.right.gamma } as CSSProperties}
                   />
+                  {showComparisonRightGammaInfo && (
+                    <p className="text-sm text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
+                      {translate(
+                        "Gewichtet zukünftige Belohnungen. Hohe Werte = langfristige Planung, niedrige Werte = kurzfristige Belohnungen bevorzugen.",
+                        "Weights future rewards. High values = long-term planning, low values = prefer immediate rewards."
+                      )}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <div className="flex justify-between">
-                    <span>{translate("Exploration:", "Exploration:")}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>{translate("Exploration:", "Exploration:")}</span>
+                      <button
+                        onClick={() => setShowComparisonRightExplorationInfo(!showComparisonRightExplorationInfo)}
+                        className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                        aria-label="Toggle info"
+                      >
+                        <Info className="h-4 w-4" />
+                      </button>
+                    </div>
                     <span className="font-bold">{Math.round(comparisonState.right.explorationRate * 100)}%</span>
                   </div>
                   <input
@@ -4190,6 +4473,14 @@ const handleActiveBonusClick = useCallback(() => {
                     className="input-slider w-full"
                     style={{ "--slider-value": comparisonState.right.explorationRate } as CSSProperties}
                   />
+                  {showComparisonRightExplorationInfo && (
+                    <p className="text-sm text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
+                      {translate(
+                        "Bestimmt, wie oft der Rover neue Wege ausprobiert statt bekannte Routen zu nutzen. Hohe Werte = mehr Entdecken, niedrige Werte = mehr Ausbeuten bereits gelernter Strategien.",
+                        "Determines how often the rover tries new paths instead of using known routes. Higher values explore more, lower values exploit known strategies."
+                      )}
+                    </p>
+                  )}
                 </div>
                 <div className="flex justify-between pt-2 border-t border-border/30">
                   <span>{translate("Episode:", "Episode:")}</span>
@@ -4984,9 +5275,18 @@ const handleActiveBonusClick = useCallback(() => {
                   <div className="space-y-3">
                     <div className={cn("space-y-2", mode === "comparison" && "opacity-50 pointer-events-none")}>
                       <div className="flex items-center justify-between">
-                        <Label className="text-base font-semibold text-foreground">
-                          {translate("Entdeckungsrate (Exploration Rate)", "Exploration rate")}
-                        </Label>
+                        <div className="flex items-center gap-1.5">
+                          <Label className="text-base font-semibold text-foreground">
+                            {translate("Entdeckungsrate (Exploration Rate)", "Exploration rate")}
+                          </Label>
+                          <button
+                            onClick={() => setShowExplorationRateInfo(!showExplorationRateInfo)}
+                            className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                            aria-label="Toggle info"
+                          >
+                            <Info className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                 <span className="text-base font-bold text-primary">
                   {Math.round(explorationRate * 100)}%
                 </span>
@@ -5002,19 +5302,30 @@ const handleActiveBonusClick = useCallback(() => {
                 style={{ "--slider-value": explorationRate } as CSSProperties}
                 disabled={mode === "comparison"}
               />
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {translate(
-                  "Hohe Werte = mehr Entdecken, niedrige Werte = mehr Ausbeuten bereits gelernter Strategien.",
-                  "Higher values explore more, lower values exploit known strategies.",
-                )}
-              </p>
+              {showExplorationRateInfo && (
+                <p className="text-sm text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
+                  {translate(
+                    "Bestimmt, wie oft der Rover neue Wege ausprobiert statt bekannte Routen zu nutzen. Hohe Werte = mehr Entdecken, niedrige Werte = mehr Ausbeuten bereits gelernter Strategien.",
+                    "Determines how often the rover tries new paths instead of using known routes. Higher values explore more, lower values exploit known strategies."
+                  )}
+                </p>
+              )}
             </div>
 
             <div className={cn("space-y-2", mode === "comparison" && "opacity-50 pointer-events-none")}>
               <div className="flex items-center justify-between">
-                <Label className="text-base font-semibold text-foreground">
-                  {translate("Lernrate (Alpha)", "Learning rate (Alpha)")}
-                </Label>
+                <div className="flex items-center gap-1.5">
+                  <Label className="text-base font-semibold text-foreground">
+                    {translate("Lernrate (Alpha)", "Learning rate (Alpha)")}
+                  </Label>
+                  <button
+                    onClick={() => setShowAlphaInfo(!showAlphaInfo)}
+                    className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                    aria-label="Toggle info"
+                  >
+                    <Info className="h-3.5 w-3.5" />
+                  </button>
+                </div>
                 <span className="text-base font-bold text-primary">
                   {alpha.toFixed(2)}
                 </span>
@@ -5030,19 +5341,30 @@ const handleActiveBonusClick = useCallback(() => {
                 style={{ "--slider-value": alpha / 0.5 } as CSSProperties}
                 disabled={mode === "comparison"}
               />
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {translate(
-                  "Bestimmt, wie stark neue Erfahrungen alte Werte überschreiben. Hohe Werte = schnelles Lernen, niedrige Werte = stabiles Lernen.",
-                  "Determines how much new experiences override old values. High values = fast learning, low values = stable learning.",
-                )}
-              </p>
+              {showAlphaInfo && (
+                <p className="text-sm text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
+                  {translate(
+                    "Bestimmt, wie stark neue Erfahrungen alte Werte überschreiben. Hohe Werte = schnelles Lernen, niedrige Werte = stabiles Lernen.",
+                    "Determines how much new experiences override old values. High values = fast learning, low values = stable learning."
+                  )}
+                </p>
+              )}
             </div>
 
             <div className={cn("space-y-2", mode === "comparison" && "opacity-50 pointer-events-none")}>
               <div className="flex items-center justify-between">
-                <Label className="text-base font-semibold text-foreground">
-                  {translate("Discount-Faktor (Gamma)", "Discount factor (Gamma)")}
-                </Label>
+                <div className="flex items-center gap-1.5">
+                  <Label className="text-base font-semibold text-foreground">
+                    {translate("Discount-Faktor (Gamma)", "Discount factor (Gamma)")}
+                  </Label>
+                  <button
+                    onClick={() => setShowGammaInfo(!showGammaInfo)}
+                    className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                    aria-label="Toggle info"
+                  >
+                    <Info className="h-3.5 w-3.5" />
+                  </button>
+                </div>
                 <span className="text-base font-bold text-primary">
                   {gamma.toFixed(2)}
                 </span>
@@ -5058,12 +5380,14 @@ const handleActiveBonusClick = useCallback(() => {
                 style={{ "--slider-value": gamma } as CSSProperties}
                 disabled={mode === "comparison"}
               />
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {translate(
-                  "Gewichtet zukünftige Belohnungen. Hohe Werte = langfristige Planung, niedrige Werte = kurzfristige Belohnungen bevorzugen.",
-                  "Weights future rewards. High values = long-term planning, low values = prefer immediate rewards.",
-                    )}
-                  </p>
+              {showGammaInfo && (
+                <p className="text-sm text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
+                  {translate(
+                    "Gewichtet zukünftige Belohnungen. Hohe Werte = langfristige Planung, niedrige Werte = kurzfristige Belohnungen bevorzugen.",
+                    "Weights future rewards. High values = long-term planning, low values = prefer immediate rewards."
+                  )}
+                </p>
+              )}
                 </div>
                   </div>
                 </CollapsibleContent>
