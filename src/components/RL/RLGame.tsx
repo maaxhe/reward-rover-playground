@@ -32,6 +32,10 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useLanguage } from "@/contexts/LanguageContext";
 
+// Import refactored RL modules (grid utils, Q-learning, portal utils are now in separate tested modules)
+// These modules are available in @/lib/rl/* for future refactoring
+// See @/lib/rl/index.ts for all available exports
+
 const TILE_SIZE_MAP = {
   s: 6,
   m: 9,
@@ -458,6 +462,152 @@ const PRESET_LEVELS: PresetLevel[] = [
     ],
     agent: { x: 1, y: 1 },
     goal: { x: 12, y: 12 },
+  },
+  {
+    key: "spiral",
+    name: { de: "🌀 Spirale", en: "🌀 Spiral" },
+    description: {
+      de: "Eine gefährliche Spirale mit Portalen im Zentrum – nur die klügsten Rover finden den Weg!",
+      en: "A dangerous spiral with portals at the center – only the smartest rovers find the way!",
+    },
+    size: 9,
+    tiles: [
+      // Outer ring (gap at top left for entry at 1,2)
+      { x: 1, y: 1, type: "obstacle" },
+      // Gap at x: 2, y: 1 for entry
+      { x: 3, y: 1, type: "obstacle" },
+      { x: 4, y: 1, type: "obstacle" },
+      { x: 5, y: 1, type: "obstacle" },
+      { x: 6, y: 1, type: "obstacle" },
+      { x: 7, y: 1, type: "obstacle" },
+      { x: 7, y: 2, type: "obstacle" },
+      { x: 7, y: 3, type: "obstacle" },
+      { x: 7, y: 4, type: "obstacle" },
+      { x: 7, y: 5, type: "obstacle" },
+      { x: 7, y: 6, type: "obstacle" },
+      { x: 7, y: 7, type: "obstacle" },
+      { x: 6, y: 7, type: "obstacle" },
+      { x: 5, y: 7, type: "obstacle" },
+      { x: 4, y: 7, type: "obstacle" },
+      { x: 3, y: 7, type: "obstacle" },
+      { x: 2, y: 7, type: "obstacle" },
+      { x: 1, y: 7, type: "obstacle" },
+      { x: 1, y: 6, type: "obstacle" },
+      { x: 1, y: 5, type: "obstacle" },
+      { x: 1, y: 4, type: "obstacle" },
+      { x: 1, y: 3, type: "obstacle" },
+      { x: 1, y: 2, type: "obstacle" },
+
+      // Second ring - creates spiral (accessible center)
+      { x: 3, y: 3, type: "obstacle" },
+      { x: 4, y: 3, type: "obstacle" },
+      { x: 5, y: 3, type: "obstacle" },
+      { x: 5, y: 4, type: "obstacle" },
+      { x: 5, y: 5, type: "obstacle" },
+      // Gap at (4,5) to access center portal
+      { x: 3, y: 5, type: "obstacle" },
+      { x: 3, y: 4, type: "obstacle" },
+
+      // Rewards along the spiral path
+      { x: 2, y: 1, type: "reward" },  // Entry reward top left
+      { x: 2, y: 4, type: "reward" },  // Along the path
+      { x: 4, y: 2, type: "reward" },  // Inner area
+      { x: 6, y: 4, type: "reward" },  // Near center
+
+      // Portals - center portal now accessible
+      { x: 4, y: 4, type: "portal" },  // Now accessible from (4,5) gap
+      { x: 6, y: 6, type: "portal" },
+
+      // Punishments for risk
+      { x: 2, y: 2, type: "punishment" },
+      { x: 6, y: 2, type: "punishment" },
+      { x: 6, y: 5, type: "punishment" },
+    ],
+    agent: { x: 0, y: 0 },
+    goal: { x: 8, y: 8 },
+  },
+  {
+    key: "crossroads",
+    name: { de: "⚡ Kreuzung", en: "⚡ Crossroads" },
+    description: {
+      de: "Vier Wege, eine Entscheidung – welcher Pfad führt zum Sieg?",
+      en: "Four paths, one decision – which path leads to victory?",
+    },
+    size: 11,
+    tiles: [
+      // Center cross structure - The Hub
+      { x: 5, y: 3, type: "obstacle" },
+      { x: 5, y: 4, type: "obstacle" },
+      { x: 5, y: 6, type: "obstacle" },
+      { x: 5, y: 7, type: "obstacle" },
+      { x: 3, y: 5, type: "obstacle" },
+      { x: 4, y: 5, type: "obstacle" },
+      { x: 6, y: 5, type: "obstacle" },
+      { x: 7, y: 5, type: "obstacle" },
+      { x: 5, y: 5, type: "portal" },  // Center portal!
+
+      // North path - The Gauntlet (high risk, high reward)
+      { x: 5, y: 0, type: "reward" },
+      { x: 5, y: 1, type: "portal" },
+      { x: 5, y: 2, type: "punishment" },
+      { x: 4, y: 0, type: "punishment" },
+      { x: 6, y: 0, type: "punishment" },
+      { x: 4, y: 1, type: "obstacle" },
+      { x: 6, y: 1, type: "obstacle" },
+      { x: 4, y: 2, type: "reward" },
+      { x: 6, y: 2, type: "reward" },
+
+      // South path - The Maze (safe but complex)
+      { x: 5, y: 8, type: "reward" },
+      { x: 5, y: 9, type: "reward" },
+      { x: 5, y: 10, type: "portal" },
+      { x: 4, y: 8, type: "obstacle" },
+      { x: 6, y: 8, type: "obstacle" },
+      { x: 4, y: 9, type: "reward" },
+      { x: 6, y: 9, type: "reward" },
+      { x: 3, y: 9, type: "obstacle" },
+      { x: 7, y: 9, type: "obstacle" },
+
+      // East path - Portal Highway (shortcuts everywhere)
+      { x: 8, y: 5, type: "portal" },
+      { x: 9, y: 5, type: "portal" },
+      { x: 10, y: 5, type: "reward" },
+      { x: 8, y: 4, type: "reward" },
+      { x: 8, y: 6, type: "reward" },
+      { x: 9, y: 4, type: "obstacle" },
+      { x: 9, y: 6, type: "obstacle" },
+      { x: 10, y: 4, type: "punishment" },
+      { x: 10, y: 6, type: "punishment" },
+
+      // West path - The Trap (looks easy, but punishing)
+      { x: 2, y: 5, type: "punishment" },
+      { x: 1, y: 5, type: "punishment" },
+      { x: 0, y: 5, type: "portal" },
+      { x: 1, y: 4, type: "obstacle" },
+      { x: 1, y: 6, type: "obstacle" },
+      { x: 2, y: 4, type: "punishment" },
+      { x: 2, y: 6, type: "punishment" },
+      { x: 0, y: 4, type: "reward" },
+      { x: 0, y: 6, type: "reward" },
+
+      // Corner power-ups (high value targets)
+      { x: 1, y: 1, type: "reward" },
+      { x: 9, y: 1, type: "reward" },
+      { x: 1, y: 9, type: "reward" },
+      { x: 9, y: 9, type: "reward" },
+
+      // Diagonal obstacles (create strategic choices)
+      { x: 3, y: 3, type: "obstacle" },
+      { x: 7, y: 3, type: "obstacle" },
+      { x: 3, y: 7, type: "obstacle" },
+      { x: 7, y: 7, type: "obstacle" },
+      { x: 2, y: 2, type: "portal" },
+      { x: 8, y: 2, type: "portal" },
+      { x: 2, y: 8, type: "punishment" },
+      { x: 8, y: 8, type: "punishment" },
+    ],
+    agent: { x: 0, y: 0 },
+    goal: { x: 10, y: 10 },
   },
 ];
 
