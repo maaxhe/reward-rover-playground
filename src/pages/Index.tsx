@@ -6,11 +6,13 @@ const IndexContent = () => {
   const { translate } = useLanguage();
 
   return (
-    <div className="min-h-screen">
-      <RLGame />
+    <div className="min-h-screen flex flex-col">
+      <main className="flex flex-col">
+        <RLGame />
+      </main>
 
       {/* Über mich Box */}
-      <div className="max-w-7xl mx-auto px-4 pb-12">
+      <section className="max-w-7xl mx-auto px-4 pb-12">
         <div className="rounded-3xl border border-border bg-card/95 p-6 shadow-xl backdrop-blur-sm text-center transition-colors duration-200 hover:border-primary/30">
           <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wide">
             👋 {translate("Über mich", "About me")}
@@ -30,7 +32,7 @@ const IndexContent = () => {
             👉 {translate("Mehr auf meiner Website", "More on my website")}
           </Button>
         </div>
-      </div>
+      </section>
     </div>
   );
 };

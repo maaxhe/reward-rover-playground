@@ -4612,7 +4612,7 @@ const handleActiveBonusClick = useCallback(() => {
         </DialogContent>
       </Dialog>
 
-      <div className="min-h-screen bg-[var(--gradient-main)] pb-12">
+      <div className="bg-[var(--gradient-main)] pb-12">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 pt-6">
         {/* Hero Section */}
         <div className="rounded-3xl border border-border bg-card/95 p-8 shadow-xl backdrop-blur-sm">
