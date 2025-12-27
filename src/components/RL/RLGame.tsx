@@ -2437,7 +2437,6 @@ export function RLGame() {
   const [hasLoadedGlobalEnv, setHasLoadedGlobalEnv] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const [googleReady, setGoogleReady] = useState(false);
-  const [appleReady, setAppleReady] = useState(false);
   const googleButtonRef = useRef<HTMLDivElement | null>(null);
   const [environmentName, setEnvironmentName] = useState("");
   const [saveEnvError, setSaveEnvError] = useState<string | null>(null);
@@ -2450,8 +2449,6 @@ export function RLGame() {
     SIMULATION_SPEEDS.find((speed) => speed.key === simulationSpeed)?.delayMs ?? SIMULATION_SPEEDS[0].delayMs;
   const apiBase = import.meta.env.VITE_API_BASE ?? "";
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
-  const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID as string | undefined;
-  const appleRedirectUri = (import.meta.env.VITE_APPLE_REDIRECT_URI as string | undefined) ?? "";
   const isAdmin = authUser?.role === "admin";
   const introToggleLabel = showIntro
     ? translate("Anleitung ausblenden", "Hide guide")
@@ -2504,21 +2501,6 @@ export function RLGame() {
     document.head.appendChild(script);
   }, [googleClientId]);
 
-  useEffect(() => {
-    if (!appleClientId) return;
-    if (document.getElementById("apple-id-js")) {
-      setAppleReady(true);
-      return;
-    }
-    const script = document.createElement("script");
-    script.id = "apple-id-js";
-    script.src = "https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js";
-    script.async = true;
-    script.defer = true;
-    script.onload = () => setAppleReady(true);
-    document.head.appendChild(script);
-  }, [appleClientId]);
-
   const applyAuthPayload = useCallback(
     (payload: { token?: string; user?: AuthUser }, title?: { de: string; en: string }) => {
       if (!payload?.token || !payload?.user) {
@@ -2538,7 +2520,7 @@ export function RLGame() {
   );
 
   const handleOAuthLogin = useCallback(
-    async (provider: "google" | "apple", idToken: string) => {
+    async (provider: "google", idToken: string) => {
       if (!idToken) return;
       setAuthError(null);
       try {
@@ -2560,36 +2542,6 @@ export function RLGame() {
     },
     [apiBase, applyAuthPayload, translate],
   );
-
-  const handleAppleLogin = useCallback(async () => {
-    if (!appleClientId || !appleReady) {
-      setAuthError(translate("Apple-Login ist nicht konfiguriert.", "Apple login is not configured."));
-      return;
-    }
-    try {
-      const AppleID = (window as typeof window & { AppleID?: any }).AppleID;
-      if (!AppleID) {
-        setAuthError(translate("Apple-Login konnte nicht geladen werden.", "Apple login could not be loaded."));
-        return;
-      }
-      const redirectUri = appleRedirectUri || window.location.origin;
-      AppleID.auth.init({
-        clientId: appleClientId,
-        scope: "name email",
-        redirectURI: redirectUri,
-        usePopup: true,
-      });
-      const response = await AppleID.auth.signIn();
-      const token = response?.authorization?.id_token;
-      if (!token) {
-        setAuthError(translate("Apple-Login fehlgeschlagen.", "Apple login failed."));
-        return;
-      }
-      await handleOAuthLogin("apple", token);
-    } catch (error) {
-      setAuthError(translate("Apple-Login abgebrochen.", "Apple login cancelled."));
-    }
-  }, [appleClientId, appleRedirectUri, appleReady, handleOAuthLogin, translate]);
 
   const handleLogout = useCallback(() => {
     setAuthToken(null);
@@ -4530,27 +4482,18 @@ const handleActiveBonusClick = useCallback(() => {
                 <span className="h-px flex-1 bg-border/60" />
               </div>
               {googleClientId ? (
-                <div ref={googleButtonRef} className="flex justify-center" />
+                <div className="space-y-2">
+                  <div ref={googleButtonRef} className="flex justify-center min-h-[44px]" />
+                  {!googleReady && (
+                    <Button variant="outline" className="w-full" disabled>
+                      {translate("Google lädt…", "Loading Google…")}
+                    </Button>
+                  )}
+                </div>
               ) : (
                 <Button variant="outline" className="w-full" disabled>
                   {translate("Google nicht konfiguriert", "Google not configured")}
                 </Button>
-              )}
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={handleAppleLogin}
-                disabled={!appleClientId || !appleReady}
-              >
-                {translate("Mit Apple anmelden", "Continue with Apple")}
-              </Button>
-              {!appleClientId && (
-                <p className="text-[11px] text-muted-foreground">
-                  {translate(
-                    "Apple-Login erfordert VITE_APPLE_CLIENT_ID.",
-                    "Apple login requires VITE_APPLE_CLIENT_ID.",
-                  )}
-                </p>
               )}
             </div>
           </div>
