@@ -2651,7 +2651,7 @@ export function RLGame() {
       googleAccounts.renderButton(container, {
         theme: "outline",
         size: "large",
-        width: 320,
+        width: 340,
       });
       setGoogleRendered(true);
     };
@@ -4510,16 +4510,16 @@ const handleActiveBonusClick = useCallback(() => {
               </div>
               {googleClientId ? (
                 <div className="space-y-3">
-                  <div className="mx-auto w-full max-w-[360px] rounded-2xl border border-white/70 bg-white/5 px-4 py-3 backdrop-blur-sm shadow-[0_0_0_1px_rgba(255,255,255,0.15)]">
-                    <div ref={googleButtonRef} className="flex justify-center min-h-[52px]" />
+                  <div className="group mx-auto w-full max-w-[380px] rounded-2xl border border-white/20 bg-white/5 px-5 py-4 shadow-[0_0_0_1px_rgba(255,255,255,0.08)] transition-all duration-200 hover:border-white/70 hover:bg-white hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
+                    <div ref={googleButtonRef} className="flex justify-center min-h-[56px]" />
                   </div>
                   {!googleReady && (
-                    <Button variant="outline" className="w-full max-w-[360px] mx-auto" disabled>
+                    <Button variant="outline" className="w-full max-w-[380px] mx-auto" disabled>
                       {translate("Google lädt…", "Loading Google…")}
                     </Button>
                   )}
                   {googleReady && !googleRendered && (
-                    <Button variant="outline" className="w-full max-w-[360px] mx-auto" disabled>
+                    <Button variant="outline" className="w-full max-w-[380px] mx-auto" disabled>
                       {googleRenderFailed
                         ? translate("Google konnte nicht geladen werden", "Google failed to load")
                         : translate("Google lädt…", "Loading Google…")}
