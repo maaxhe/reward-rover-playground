@@ -4509,8 +4509,10 @@ const handleActiveBonusClick = useCallback(() => {
                 <span className="h-px flex-1 bg-border/60" />
               </div>
               {googleClientId ? (
-                <div className="space-y-2">
-                  <div ref={googleButtonRef} className="flex justify-center min-h-[44px]" />
+                <div className="space-y-3">
+                  <div className="rounded-2xl border border-white/80 bg-white/95 px-4 py-3 shadow-sm">
+                    <div ref={googleButtonRef} className="flex justify-center min-h-[48px]" />
+                  </div>
                   {!googleReady && (
                     <Button variant="outline" className="w-full" disabled>
                       {translate("Google lädt…", "Loading Google…")}
