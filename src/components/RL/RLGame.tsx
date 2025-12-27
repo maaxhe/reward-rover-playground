@@ -370,9 +370,8 @@ const PRESET_LEVELS: PresetLevel[] = [
     },
     size: 6,
     tiles: [
-      // Raum um das Ziel
+      // Raum um das Ziel (eine Öffnung bleibt frei)
       { x: 4, y: 5, type: "obstacle" },
-      { x: 5, y: 4, type: "obstacle" },
       { x: 3, y: 5, type: "obstacle" },
       { x: 5, y: 3, type: "obstacle" },
       // Türsteher-Strafe am Eingang
@@ -6666,17 +6665,6 @@ const PlaygroundControls = ({
           ))}
         </div>
       </div>
-
-      {canPublishGlobal && (
-        <Button
-          variant="default"
-          size="lg"
-          onClick={onPublishGlobal}
-          className="w-full font-semibold"
-        >
-          🌍 {translate("Als globale Challenge veröffentlichen", "Publish as Global Challenge")}
-        </Button>
-      )}
 
       <Collapsible open={presetsOpen} onOpenChange={setPresetsOpen} className="space-y-2">
         <CollapsibleTrigger asChild>
