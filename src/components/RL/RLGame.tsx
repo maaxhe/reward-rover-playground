@@ -2651,7 +2651,7 @@ export function RLGame() {
       googleAccounts.renderButton(container, {
         theme: "outline",
         size: "large",
-        width: 380,
+        width: 360,
       });
       setGoogleRendered(true);
     };
@@ -4453,65 +4453,82 @@ const handleActiveBonusClick = useCallback(() => {
           }
         }}
       >
-        <DialogContent className="max-w-md min-h-[620px]">
+        <DialogContent className="max-w-md min-h-[620px] bg-slate-900 border border-slate-800 shadow-2xl p-8">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">
+            <DialogTitle className="text-2xl font-bold text-white">
               {authIsRegistering
                 ? translate("Account erstellen", "Create account")
                 : translate("Login", "Login")}
             </DialogTitle>
-            <DialogDescription className="text-base">
+            <DialogDescription className="text-sm text-slate-400">
               {translate(
                 "Melde dich an, um globale Challenges zu veröffentlichen.",
                 "Sign in to publish global challenges.",
               )}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="auth-username">{translate("Nutzername", "Username")}</Label>
+              <Label
+                htmlFor="auth-username"
+                className="text-xs font-semibold text-slate-400 uppercase tracking-wider"
+              >
+                {translate("Nutzername", "Username")}
+              </Label>
               <Input
                 id="auth-username"
                 value={authUsername}
                 onChange={(event) => setAuthUsername(event.target.value)}
                 placeholder="max"
+                className="h-12 rounded-lg bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-transparent"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="auth-password">{translate("Passwort", "Password")}</Label>
+              <Label
+                htmlFor="auth-password"
+                className="text-xs font-semibold text-slate-400 uppercase tracking-wider"
+              >
+                {translate("Passwort", "Password")}
+              </Label>
               <Input
                 id="auth-password"
                 type="password"
                 value={authPassword}
                 onChange={(event) => setAuthPassword(event.target.value)}
+                className="h-12 rounded-lg bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-transparent"
               />
             </div>
             {authError && <p className="text-xs text-red-500">{authError}</p>}
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <Button onClick={handleAuthSubmit} className="font-semibold">
+            <div className="space-y-3">
+              <Button
+                onClick={handleAuthSubmit}
+                className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors"
+              >
                 {authIsRegistering ? translate("Registrieren", "Register") : translate("Login", "Login")}
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
+                type="button"
                 onClick={() => setAuthIsRegistering((prev) => !prev)}
-                className="text-xs"
+                className="mx-auto text-sm text-slate-400 hover:text-white transition-colors"
               >
                 {authIsRegistering
-                  ? translate("Schon registriert? Login", "Already registered? Login")
-                  : translate("Neu hier? Registrieren", "New here? Register")}
-              </Button>
+                  ? translate("Schon registriert? ", "Already registered? ")
+                  : translate("Neu hier? ", "New here? ")}
+                <span className="text-blue-400 hover:text-blue-300">
+                  {authIsRegistering ? translate("Login", "Login") : translate("Registrieren", "Register")}
+                </span>
+              </button>
             </div>
             <div className="space-y-3 pt-2">
-              <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="h-px flex-1 bg-border/60" />
-                {translate("oder", "or")}
-                <span className="h-px flex-1 bg-border/60" />
+              <div className="relative flex items-center py-2 text-xs text-slate-400">
+                <div className="flex-grow border-t border-slate-700" />
+                <span className="flex-shrink mx-4">{translate("oder", "or")}</span>
+                <div className="flex-grow border-t border-slate-700" />
               </div>
               {googleClientId ? (
                 <div className="space-y-3">
-                  <div className="group relative mx-auto w-full max-w-[380px]">
-                    <div className="flex items-center justify-center gap-3 rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-foreground/90 shadow-[0_0_0_1px_rgba(255,255,255,0.08)] transition-all duration-200 group-hover:border-white/70 group-hover:bg-white group-hover:text-slate-900 group-hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)] pointer-events-none">
+                  <div className="group relative w-full">
+                    <div className="flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-slate-700 bg-slate-50 text-sm font-semibold text-slate-900 shadow-sm transition-all duration-200 group-hover:border-white group-hover:bg-white group-hover:shadow-lg pointer-events-none">
                       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-sm">
                         <svg viewBox="0 0 48 48" className="h-4 w-4" aria-hidden>
                           <path
@@ -4540,12 +4557,12 @@ const handleActiveBonusClick = useCallback(() => {
                     />
                   </div>
                   {!googleReady && (
-                    <Button variant="outline" className="w-full max-w-[380px] mx-auto" disabled>
+                    <Button variant="outline" className="w-full" disabled>
                       {translate("Google lädt…", "Loading Google…")}
                     </Button>
                   )}
                   {googleReady && !googleRendered && (
-                    <Button variant="outline" className="w-full max-w-[380px] mx-auto" disabled>
+                    <Button variant="outline" className="w-full" disabled>
                       {googleRenderFailed
                         ? translate("Google konnte nicht geladen werden", "Google failed to load")
                         : translate("Google lädt…", "Loading Google…")}
