@@ -2998,20 +2998,6 @@ export function RLGame() {
     loadSavedEnvironments();
   }, [authToken, loadSavedEnvironments]);
 
-  const handleLoadSavedEnvironment = useCallback(
-    (env: { name: string; gridConfig: GridConfig; progressData: any }) => {
-      handleLoadEnvironment(env.gridConfig, env.progressData);
-      toast({
-        title: translate("Umgebung geladen", "Environment loaded"),
-        description: translate(
-          `"${env.name}" ist bereit im Playground.`,
-          `"${env.name}" is ready in the playground.`,
-        ),
-      });
-    },
-    [handleLoadEnvironment, translate],
-  );
-
   const handleSaveEnvironment = useCallback(async () => {
     const trimmed = environmentName.trim();
     if (!trimmed) {
@@ -3883,6 +3869,20 @@ const handleActiveBonusClick = useCallback(() => {
       }));
     }
   }, [applyGridConfig]);
+
+  const handleLoadSavedEnvironment = useCallback(
+    (env: { name: string; gridConfig: GridConfig; progressData: any }) => {
+      handleLoadEnvironment(env.gridConfig, env.progressData);
+      toast({
+        title: translate("Umgebung geladen", "Environment loaded"),
+        description: translate(
+          `"${env.name}" ist bereit im Playground.`,
+          `"${env.name}" is ready in the playground.`,
+        ),
+      });
+    },
+    [handleLoadEnvironment, translate],
+  );
 
   useEffect(() => {
     if (hasLoadedGlobalEnv) return;
