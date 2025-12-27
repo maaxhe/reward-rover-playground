@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { EnvironmentBrowser } from "./EnvironmentBrowser";
 import {
   Dialog,
   DialogContent,
@@ -2411,6 +2412,7 @@ export function RLGame() {
   const [speedrunEnabled, setSpeedrunEnabled] = useState(false);
   const [rlDialogOpen, setRlDialogOpen] = useState(false);
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const [envBrowserOpen, setEnvBrowserOpen] = useState(false);
   const [authUsername, setAuthUsername] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authIsRegistering, setAuthIsRegistering] = useState(false);
@@ -2431,9 +2433,22 @@ export function RLGame() {
   });
   const [hasLoadedGlobalEnv, setHasLoadedGlobalEnv] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
+  const [googleReady, setGoogleReady] = useState(false);
+  const [appleReady, setAppleReady] = useState(false);
+  const googleButtonRef = useRef<HTMLDivElement | null>(null);
+  const [environmentName, setEnvironmentName] = useState("");
+  const [saveEnvError, setSaveEnvError] = useState<string | null>(null);
+  const [isSavingEnv, setIsSavingEnv] = useState(false);
+  const [isLoadingEnvs, setIsLoadingEnvs] = useState(false);
+  const [savedEnvironments, setSavedEnvironments] = useState<
+    Array<{ id: number; name: string; gridConfig: GridConfig; createdAt: string }>
+  >([]);
   const simulationDelayMs =
     SIMULATION_SPEEDS.find((speed) => speed.key === simulationSpeed)?.delayMs ?? SIMULATION_SPEEDS[0].delayMs;
   const apiBase = import.meta.env.VITE_API_BASE ?? "";
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+  const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID as string | undefined;
+  const appleRedirectUri = (import.meta.env.VITE_APPLE_REDIRECT_URI as string | undefined) ?? "";
   const isAdmin = authUser?.role === "admin";
   const introToggleLabel = showIntro
     ? translate("Anleitung ausblenden", "Hide guide")
@@ -2471,6 +2486,108 @@ export function RLGame() {
     }
   }, [authUser]);
 
+  useEffect(() => {
+    if (!googleClientId) return;
+    if (document.getElementById("google-identity")) {
+      setGoogleReady(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "google-identity";
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => setGoogleReady(true);
+    document.head.appendChild(script);
+  }, [googleClientId]);
+
+  useEffect(() => {
+    if (!appleClientId) return;
+    if (document.getElementById("apple-id-js")) {
+      setAppleReady(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "apple-id-js";
+    script.src = "https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => setAppleReady(true);
+    document.head.appendChild(script);
+  }, [appleClientId]);
+
+  const applyAuthPayload = useCallback(
+    (payload: { token?: string; user?: AuthUser }, title?: { de: string; en: string }) => {
+      if (!payload?.token || !payload?.user) {
+        setAuthError(translate("Unerwartete Antwort vom Server.", "Unexpected server response."));
+        return;
+      }
+      setAuthToken(payload.token);
+      setAuthUser(payload.user);
+      setAuthDialogOpen(false);
+      setAuthPassword("");
+      toast({
+        title: title ? translate(title.de, title.en) : translate("Willkommen zurück!", "Welcome back!"),
+        description: translate("Du bist jetzt eingeloggt.", "You are now logged in."),
+      });
+    },
+    [translate],
+  );
+
+  const handleOAuthLogin = useCallback(
+    async (provider: "google" | "apple", idToken: string) => {
+      if (!idToken) return;
+      setAuthError(null);
+      try {
+        const response = await fetch(`${apiBase}/api/auth/oauth/${provider}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ idToken }),
+        });
+        if (!response.ok) {
+          const errorBody = await response.json().catch(() => ({}));
+          setAuthError(errorBody.error || translate("Login fehlgeschlagen.", "Login failed."));
+          return;
+        }
+        const payload = await response.json();
+        applyAuthPayload(payload, { de: "Erfolgreich angemeldet!", en: "Signed in successfully!" });
+      } catch {
+        setAuthError(translate("Server nicht erreichbar.", "Server not reachable."));
+      }
+    },
+    [apiBase, applyAuthPayload, translate],
+  );
+
+  const handleAppleLogin = useCallback(async () => {
+    if (!appleClientId || !appleReady) {
+      setAuthError(translate("Apple-Login ist nicht konfiguriert.", "Apple login is not configured."));
+      return;
+    }
+    try {
+      const AppleID = (window as typeof window & { AppleID?: any }).AppleID;
+      if (!AppleID) {
+        setAuthError(translate("Apple-Login konnte nicht geladen werden.", "Apple login could not be loaded."));
+        return;
+      }
+      const redirectUri = appleRedirectUri || window.location.origin;
+      AppleID.auth.init({
+        clientId: appleClientId,
+        scope: "name email",
+        redirectURI: redirectUri,
+        usePopup: true,
+      });
+      const response = await AppleID.auth.signIn();
+      const token = response?.authorization?.id_token;
+      if (!token) {
+        setAuthError(translate("Apple-Login fehlgeschlagen.", "Apple login failed."));
+        return;
+      }
+      await handleOAuthLogin("apple", token);
+    } catch (error) {
+      setAuthError(translate("Apple-Login abgebrochen.", "Apple login cancelled."));
+    }
+  }, [appleClientId, appleRedirectUri, appleReady, handleOAuthLogin, translate]);
+
   const handleLogout = useCallback(() => {
     setAuthToken(null);
     setAuthUser(null);
@@ -2497,29 +2614,130 @@ export function RLGame() {
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}));
-        setAuthError(errorBody.error || translate("Login fehlgeschlagen.", "Login failed."));
+        if (response.status === 404) {
+          setAuthError(
+            translate(
+              "API nicht erreichbar. Starte den Server oder prüfe die URL.",
+              "API not reachable. Start the server or check the URL.",
+            ),
+          );
+          return;
+        }
+        setAuthError(
+          errorBody.error ||
+            (authIsRegistering
+              ? translate("Registrierung fehlgeschlagen.", "Registration failed.")
+              : translate("Login fehlgeschlagen.", "Login failed.")),
+        );
         return;
       }
 
       const payload = await response.json();
-      if (payload?.token && payload?.user) {
-        setAuthToken(payload.token);
-        setAuthUser(payload.user);
-        setAuthDialogOpen(false);
-        setAuthPassword("");
-        toast({
-          title: authIsRegistering
-            ? translate("Account erstellt!", "Account created!")
-            : translate("Willkommen zurück!", "Welcome back!"),
-          description: translate("Du bist jetzt eingeloggt.", "You are now logged in."),
-        });
-      } else {
-        setAuthError(translate("Unerwartete Antwort vom Server.", "Unexpected server response."));
-      }
+      applyAuthPayload(
+        payload,
+        authIsRegistering
+          ? { de: "Account erstellt!", en: "Account created!" }
+          : { de: "Willkommen zurück!", en: "Welcome back!" },
+      );
     } catch (error) {
       setAuthError(translate("Server nicht erreichbar.", "Server not reachable."));
     }
-  }, [authIsRegistering, authPassword, authUsername, apiBase, translate]);
+  }, [authIsRegistering, authPassword, authUsername, apiBase, applyAuthPayload, translate]);
+
+  const loadSavedEnvironments = useCallback(async () => {
+    if (!authToken) return;
+    setIsLoadingEnvs(true);
+    try {
+      const response = await fetch(`${apiBase}/api/load`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      if (!response.ok) {
+        setIsLoadingEnvs(false);
+        return;
+      }
+      const payload = await response.json();
+      setSavedEnvironments(
+        (payload?.items ?? []).map((item: any) => ({
+          id: item.id,
+          name: item.name || translate("Unbenannt", "Untitled"),
+          gridConfig: item.gridConfig,
+          createdAt: item.createdAt,
+        })),
+      );
+    } catch {
+      // ignore load errors
+    } finally {
+      setIsLoadingEnvs(false);
+    }
+  }, [apiBase, authToken, translate]);
+
+  useEffect(() => {
+    if (!authToken) {
+      setSavedEnvironments([]);
+      return;
+    }
+    loadSavedEnvironments();
+  }, [authToken, loadSavedEnvironments]);
+
+  const handleSaveEnvironment = useCallback(async () => {
+    const trimmed = environmentName.trim();
+    if (!trimmed) {
+      setSaveEnvError(translate("Bitte gib einen Namen ein.", "Please enter a name."));
+      return;
+    }
+    if (!authToken) {
+      setAuthDialogOpen(true);
+      return;
+    }
+    setSaveEnvError(null);
+    setIsSavingEnv(true);
+    try {
+      const gridConfig = buildGridConfigFromState(playgroundState);
+      const response = await fetch(`${apiBase}/api/save`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ name: trimmed, gridConfig }),
+      });
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        setSaveEnvError(errorBody.error || translate("Speichern fehlgeschlagen.", "Save failed."));
+        return;
+      }
+      setEnvironmentName("");
+      await loadSavedEnvironments();
+      toast({
+        title: translate("Umgebung gespeichert", "Environment saved"),
+        description: translate("Du findest sie in deinen Umgebungen.", "You can find it in your environments."),
+      });
+    } catch {
+      setSaveEnvError(translate("Server nicht erreichbar.", "Server not reachable."));
+    } finally {
+      setIsSavingEnv(false);
+    }
+  }, [apiBase, authToken, buildGridConfigFromState, environmentName, loadSavedEnvironments, playgroundState, translate]);
+
+  useEffect(() => {
+    if (!authDialogOpen || !googleReady || !googleClientId) return;
+    const google = (window as typeof window & { google?: any }).google;
+    if (!google || !googleButtonRef.current) return;
+    googleButtonRef.current.innerHTML = "";
+    google.accounts.id.initialize({
+      client_id: googleClientId,
+      callback: (response: { credential?: string }) => {
+        if (response?.credential) {
+          handleOAuthLogin("google", response.credential);
+        }
+      },
+    });
+    google.accounts.id.renderButton(googleButtonRef.current, {
+      theme: "outline",
+      size: "large",
+      width: 260,
+    });
+  }, [authDialogOpen, googleReady, googleClientId, handleOAuthLogin]);
 
   // Tutorial Slides
   const tutorialSlides = useMemo(() => [
@@ -3521,6 +3739,63 @@ const handleActiveBonusClick = useCallback(() => {
     };
   }, []);
 
+  const getPreviewTileClass = useCallback((type: TileType | "goal" | "agent") => {
+    switch (type) {
+      case "reward":
+        return "bg-tile-reward";
+      case "punishment":
+        return "bg-tile-punishment";
+      case "obstacle":
+        return "bg-tile-obstacle";
+      case "portal":
+        return "bg-tile-portal";
+      case "goal":
+        return "bg-tile-goal";
+      case "agent":
+        return "bg-tile-agent";
+      default:
+        return "bg-tile-empty";
+    }
+  }, []);
+
+  const renderEnvironmentPreview = useCallback(
+    (config: GridConfig) => {
+      const size = config.size;
+      const tileSize = Math.max(6, Math.floor(80 / size));
+      const tileLookup = new Map<string, TileType>();
+      config.tiles.forEach((tile) => {
+        tileLookup.set(`${tile.x}-${tile.y}`, tile.type);
+      });
+
+      return (
+        <div
+          className="grid bg-tile-bg rounded-md overflow-hidden"
+          style={{
+            gridTemplateColumns: `repeat(${size}, ${tileSize}px)`,
+            gridTemplateRows: `repeat(${size}, ${tileSize}px)`,
+            gap: "1px",
+          }}
+        >
+          {Array.from({ length: size * size }, (_, index) => {
+            const x = index % size;
+            const y = Math.floor(index / size);
+            const isAgent = config.agent?.x === x && config.agent?.y === y;
+            const isGoal = config.goal?.x === x && config.goal?.y === y;
+            const tileType = isGoal ? "goal" : isAgent ? "agent" : tileLookup.get(`${x}-${y}`) || "empty";
+            return (
+              <div
+                key={`${x}-${y}`}
+                className={cn("rounded-[2px]", getPreviewTileClass(tileType))}
+                style={{ width: tileSize, height: tileSize }}
+              />
+            );
+          })}
+        </div>
+      );
+    },
+    [getPreviewTileClass],
+  );
+
   const handlePublishGlobal = useCallback(async () => {
     if (!authToken) {
       setAuthDialogOpen(true);
@@ -3570,6 +3845,18 @@ const handleActiveBonusClick = useCallback(() => {
       });
     }
   }, [apiBase, authToken, buildGridConfigFromState, isAdmin, playgroundState, translate]);
+
+  const handleLoadEnvironment = useCallback((gridConfig: any, progressData: any) => {
+    if (gridConfig) {
+      applyGridConfig(gridConfig);
+    }
+    if (progressData?.episodeHistory) {
+      setPlaygroundState((prev) => ({
+        ...prev,
+        episodeHistory: progressData.episodeHistory || [],
+      }));
+    }
+  }, [applyGridConfig]);
 
   useEffect(() => {
     if (hasLoadedGlobalEnv) return;
@@ -3828,7 +4115,14 @@ const handleActiveBonusClick = useCallback(() => {
 
   const handleRandomStep = () =>
     setRandomState((prev) => {
-      const next = runRandomModeStep({ ...prev, isRunning: true }, explorationRate, directionBias, consumeRewards, alpha, gamma);
+      const next = runRandomModeStep(
+        { ...prev, isRunning: true },
+        explorationRate,
+        directionBias,
+        consumeRewards,
+        alpha,
+        gamma,
+      );
       return {
         ...next,
         isRunning: prev.isRunning,
@@ -4203,9 +4497,52 @@ const handleActiveBonusClick = useCallback(() => {
                   : translate("Neu hier? Registrieren", "New here? Register")}
               </Button>
             </div>
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="h-px flex-1 bg-border/60" />
+                {translate("oder", "or")}
+                <span className="h-px flex-1 bg-border/60" />
+              </div>
+              {googleClientId ? (
+                <div ref={googleButtonRef} className="flex justify-center" />
+              ) : (
+                <Button variant="outline" className="w-full" disabled>
+                  {translate("Google nicht konfiguriert", "Google not configured")}
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleAppleLogin}
+                disabled={!appleClientId || !appleReady}
+              >
+                {translate("Mit Apple anmelden", "Continue with Apple")}
+              </Button>
+              {!appleClientId && (
+                <p className="text-[11px] text-muted-foreground">
+                  {translate(
+                    "Apple-Login erfordert VITE_APPLE_CLIENT_ID.",
+                    "Apple login requires VITE_APPLE_CLIENT_ID.",
+                  )}
+                </p>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      <EnvironmentBrowser
+        open={envBrowserOpen}
+        onOpenChange={setEnvBrowserOpen}
+        authToken={authToken}
+        apiBase={apiBase}
+        onLoadEnvironment={handleLoadEnvironment}
+        currentGridConfig={buildGridConfigFromState(playgroundState)}
+        currentProgressData={{
+          episodeHistory: playgroundState.episodeHistory,
+        }}
+        translate={translate}
+      />
 
       <div className="min-h-screen bg-[var(--gradient-main)] pb-12">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 pt-6">
@@ -4245,14 +4582,26 @@ const handleActiveBonusClick = useCallback(() => {
             </div>
             <div className="flex flex-wrap items-center gap-3">
               {authUser ? (
-                <div className="flex items-center gap-2">
+                <>
                   <Badge variant="secondary" className="bg-foreground/10 text-foreground border-foreground/15">
                     {authUser.username}
                   </Badge>
+                  <Button variant="outline" size="sm" onClick={() => setEnvBrowserOpen(true)}>
+                    {translate("Meine Umgebungen", "My Environments")}
+                  </Button>
+                  {isAdmin && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open("/admin", "_blank")}
+                    >
+                      {translate("Admin Panel", "Admin Panel")}
+                    </Button>
+                  )}
                   <Button variant="outline" size="sm" onClick={handleLogout}>
                     {translate("Logout", "Logout")}
                   </Button>
-                </div>
+                </>
               ) : (
                 <Button variant="outline" size="sm" onClick={() => setAuthDialogOpen(true)}>
                   {translate("Login", "Login")}
@@ -5856,6 +6205,89 @@ const handleActiveBonusClick = useCallback(() => {
               </div>
             </div>
             </div>
+
+            {mode === "playground" && (
+              <div className="mt-4 space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-semibold text-foreground">
+                    {translate("Umgebung speichern", "Save environment")}
+                  </Label>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Input
+                      value={environmentName}
+                      onChange={(event) => setEnvironmentName(event.target.value)}
+                      placeholder={translate("Name eingeben…", "Enter name…")}
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={handleSaveEnvironment}
+                      disabled={isSavingEnv}
+                      className="font-semibold"
+                    >
+                      {isSavingEnv ? translate("Speichert…", "Saving…") : translate("Speichern", "Save")}
+                    </Button>
+                  </div>
+                  {saveEnvError && <p className="text-xs text-red-500">{saveEnvError}</p>}
+                  {!authUser && (
+                    <p className="text-xs text-muted-foreground">
+                      {translate(
+                        "Zum Speichern bitte einloggen.",
+                        "Please log in to save environments.",
+                      )}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-foreground">
+                      {translate("Meine Umgebungen", "My environments")}
+                    </h3>
+                    {authUser && (
+                      <Badge variant="secondary" className="bg-foreground/10 text-foreground border-foreground/15">
+                        {savedEnvironments.length}
+                      </Badge>
+                    )}
+                  </div>
+                  {isLoadingEnvs ? (
+                    <p className="text-xs text-muted-foreground">
+                      {translate("Umgebungen werden geladen…", "Loading environments…")}
+                    </p>
+                  ) : !authUser ? (
+                    <p className="text-xs text-muted-foreground">
+                      {translate(
+                        "Zum Anzeigen deiner Umgebungen bitte einloggen.",
+                        "Log in to see your environments.",
+                      )}
+                    </p>
+                  ) : savedEnvironments.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      {translate(
+                        "Noch keine gespeicherten Umgebungen.",
+                        "No saved environments yet.",
+                      )}
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {savedEnvironments.map((env) => (
+                        <div
+                          key={env.id}
+                          className="flex items-center gap-3 rounded-xl border border-border/40 bg-background/60 p-3"
+                        >
+                          {renderEnvironmentPreview(env.gridConfig)}
+                          <div className="flex flex-col gap-1">
+                            <span className="text-sm font-semibold text-foreground">{env.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {env.gridConfig.size} × {env.gridConfig.size}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </Card>
           </div>
 
