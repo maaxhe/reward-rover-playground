@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
@@ -228,6 +229,14 @@ const safeLocalStorageGet = (key: string) => {
   if (typeof window === "undefined") return null;
   try {
     return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+const safeSessionStorageGet = (key: string) => {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(key);
   } catch {
     return null;
   }
@@ -2422,11 +2431,18 @@ export function RLGame() {
   const [authPassword, setAuthPassword] = useState("");
   const [authIsRegistering, setAuthIsRegistering] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [rememberMe, setRememberMe] = useState(() => {
+    const localToken = safeLocalStorageGet(AUTH_TOKEN_KEY);
+    if (localToken) return true;
+    const sessionToken = safeSessionStorageGet(AUTH_TOKEN_KEY);
+    if (sessionToken) return false;
+    return true;
+  });
   const [authToken, setAuthToken] = useState<string | null>(() => {
-    return safeLocalStorageGet(AUTH_TOKEN_KEY);
+    return safeLocalStorageGet(AUTH_TOKEN_KEY) ?? safeSessionStorageGet(AUTH_TOKEN_KEY);
   });
   const [authUser, setAuthUser] = useState<AuthUser | null>(() => {
-    const raw = safeLocalStorageGet(AUTH_USER_KEY);
+    const raw = safeLocalStorageGet(AUTH_USER_KEY) ?? safeSessionStorageGet(AUTH_USER_KEY);
     if (!raw) return null;
     try {
       return JSON.parse(raw) as AuthUser;
@@ -2465,28 +2481,34 @@ export function RLGame() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
+      const persist = rememberMe ? window.localStorage : window.sessionStorage;
+      const clear = rememberMe ? window.sessionStorage : window.localStorage;
       if (authToken) {
-        localStorage.setItem(AUTH_TOKEN_KEY, authToken);
+        persist.setItem(AUTH_TOKEN_KEY, authToken);
       } else {
-        localStorage.removeItem(AUTH_TOKEN_KEY);
+        persist.removeItem(AUTH_TOKEN_KEY);
       }
+      clear.removeItem(AUTH_TOKEN_KEY);
     } catch (e) {
       console.warn("Could not persist auth token", e);
     }
-  }, [authToken]);
+  }, [authToken, rememberMe]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
+      const persist = rememberMe ? window.localStorage : window.sessionStorage;
+      const clear = rememberMe ? window.sessionStorage : window.localStorage;
       if (authUser) {
-        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(authUser));
+        persist.setItem(AUTH_USER_KEY, JSON.stringify(authUser));
       } else {
-        localStorage.removeItem(AUTH_USER_KEY);
+        persist.removeItem(AUTH_USER_KEY);
       }
+      clear.removeItem(AUTH_USER_KEY);
     } catch (e) {
       console.warn("Could not persist auth user", e);
     }
-  }, [authUser]);
+  }, [authUser, rememberMe]);
 
   useEffect(() => {
     if (!googleClientId) return;
@@ -4497,6 +4519,17 @@ const handleActiveBonusClick = useCallback(() => {
                 onChange={(event) => setAuthPassword(event.target.value)}
                 className="h-12 rounded-lg bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:border-transparent"
               />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="remember-me"
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked === true)}
+                className="border-slate-600 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              />
+              <Label htmlFor="remember-me" className="text-sm text-slate-300">
+                {translate("Eingeloggt bleiben", "Stay signed in")}
+              </Label>
             </div>
             {authError && <p className="text-xs text-red-400">{authError}</p>}
             <div className="space-y-3">
