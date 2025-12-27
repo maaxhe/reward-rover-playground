@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REMOTE_HOST="max@91.99.236.172"
-REMOTE_PATH="~/reward-rover/server"
+REMOTE_PATH="~/reward-rover"
 
 echo "Building frontend..."
 cd "$ROOT_DIR"

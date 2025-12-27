@@ -2650,80 +2650,21 @@ export function RLGame() {
     }
   }, [authIsRegistering, authPassword, authUsername, apiBase, applyAuthPayload, translate]);
 
-  const loadSavedEnvironments = useCallback(async () => {
-    if (!authToken) return;
-    setIsLoadingEnvs(true);
-    try {
-      const response = await fetch(`${apiBase}/api/load`, {
-        headers: { Authorization: `Bearer ${authToken}` },
+  const buildGridConfigFromState = useCallback((state: PlaygroundState): GridConfig => {
+    const tiles: GridConfig["tiles"] = [];
+    state.grid.forEach((row, y) => {
+      row.forEach((cell, x) => {
+        if (cell.type === "empty" || cell.type === "goal") return;
+        tiles.push({ x, y, type: cell.type });
       });
-      if (!response.ok) {
-        setIsLoadingEnvs(false);
-        return;
-      }
-      const payload = await response.json();
-      setSavedEnvironments(
-        (payload?.items ?? []).map((item: any) => ({
-          id: item.id,
-          name: item.name || translate("Unbenannt", "Untitled"),
-          gridConfig: item.gridConfig,
-          createdAt: item.createdAt,
-        })),
-      );
-    } catch {
-      // ignore load errors
-    } finally {
-      setIsLoadingEnvs(false);
-    }
-  }, [apiBase, authToken, translate]);
-
-  useEffect(() => {
-    if (!authToken) {
-      setSavedEnvironments([]);
-      return;
-    }
-    loadSavedEnvironments();
-  }, [authToken, loadSavedEnvironments]);
-
-  const handleSaveEnvironment = useCallback(async () => {
-    const trimmed = environmentName.trim();
-    if (!trimmed) {
-      setSaveEnvError(translate("Bitte gib einen Namen ein.", "Please enter a name."));
-      return;
-    }
-    if (!authToken) {
-      setAuthDialogOpen(true);
-      return;
-    }
-    setSaveEnvError(null);
-    setIsSavingEnv(true);
-    try {
-      const gridConfig = buildGridConfigFromState(playgroundState);
-      const response = await fetch(`${apiBase}/api/save`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({ name: trimmed, gridConfig }),
-      });
-      if (!response.ok) {
-        const errorBody = await response.json().catch(() => ({}));
-        setSaveEnvError(errorBody.error || translate("Speichern fehlgeschlagen.", "Save failed."));
-        return;
-      }
-      setEnvironmentName("");
-      await loadSavedEnvironments();
-      toast({
-        title: translate("Umgebung gespeichert", "Environment saved"),
-        description: translate("Du findest sie in deinen Umgebungen.", "You can find it in your environments."),
-      });
-    } catch {
-      setSaveEnvError(translate("Server nicht erreichbar.", "Server not reachable."));
-    } finally {
-      setIsSavingEnv(false);
-    }
-  }, [apiBase, authToken, buildGridConfigFromState, environmentName, loadSavedEnvironments, playgroundState, translate]);
+    });
+    return {
+      size: state.grid.length,
+      tiles,
+      agent: state.agent,
+      goal: state.goal,
+    };
+  }, []);
 
   useEffect(() => {
     if (!authDialogOpen || !googleReady || !googleClientId) return;
@@ -3023,6 +2964,81 @@ export function RLGame() {
     rightMoveStats.episodes,
     numberFormatter,
   ]);
+
+  const loadSavedEnvironments = useCallback(async () => {
+    if (!authToken) return;
+    setIsLoadingEnvs(true);
+    try {
+      const response = await fetch(`${apiBase}/api/load`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      if (!response.ok) {
+        setIsLoadingEnvs(false);
+        return;
+      }
+      const payload = await response.json();
+      setSavedEnvironments(
+        (payload?.items ?? []).map((item: any) => ({
+          id: item.id,
+          name: item.name || translate("Unbenannt", "Untitled"),
+          gridConfig: item.gridConfig,
+          createdAt: item.createdAt,
+        })),
+      );
+    } catch {
+      // ignore load errors
+    } finally {
+      setIsLoadingEnvs(false);
+    }
+  }, [apiBase, authToken, translate]);
+
+  useEffect(() => {
+    if (!authToken) {
+      setSavedEnvironments([]);
+      return;
+    }
+    loadSavedEnvironments();
+  }, [authToken, loadSavedEnvironments]);
+
+  const handleSaveEnvironment = useCallback(async () => {
+    const trimmed = environmentName.trim();
+    if (!trimmed) {
+      setSaveEnvError(translate("Bitte gib einen Namen ein.", "Please enter a name."));
+      return;
+    }
+    if (!authToken) {
+      setAuthDialogOpen(true);
+      return;
+    }
+    setSaveEnvError(null);
+    setIsSavingEnv(true);
+    try {
+      const gridConfig = buildGridConfigFromState(playgroundState);
+      const response = await fetch(`${apiBase}/api/save`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ name: trimmed, gridConfig }),
+      });
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        setSaveEnvError(errorBody.error || translate("Speichern fehlgeschlagen.", "Save failed."));
+        return;
+      }
+      setEnvironmentName("");
+      await loadSavedEnvironments();
+      toast({
+        title: translate("Umgebung gespeichert", "Environment saved"),
+        description: translate("Du findest sie in deinen Umgebungen.", "You can find it in your environments."),
+      });
+    } catch {
+      setSaveEnvError(translate("Server nicht erreichbar.", "Server not reachable."));
+    } finally {
+      setIsSavingEnv(false);
+    }
+  }, [apiBase, authToken, buildGridConfigFromState, environmentName, loadSavedEnvironments, playgroundState, translate]);
   const moveComparisonRows = useMemo(
     () => [
       {
@@ -3728,22 +3744,6 @@ const handleActiveBonusClick = useCallback(() => {
   const handleLoadPreset = useCallback((preset: PresetLevel) => {
     applyGridConfig(preset);
   }, [applyGridConfig]);
-
-  const buildGridConfigFromState = useCallback((state: PlaygroundState): GridConfig => {
-    const tiles: GridConfig["tiles"] = [];
-    state.grid.forEach((row, y) => {
-      row.forEach((cell, x) => {
-        if (cell.type === "empty" || cell.type === "goal") return;
-        tiles.push({ x, y, type: cell.type });
-      });
-    });
-    return {
-      size: state.grid.length,
-      tiles,
-      agent: state.agent,
-      goal: state.goal,
-    };
-  }, []);
 
   const getPreviewTileClass = useCallback((type: TileType | "goal" | "agent") => {
     switch (type) {
