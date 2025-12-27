@@ -4453,7 +4453,7 @@ const handleActiveBonusClick = useCallback(() => {
           }
         }}
       >
-        <DialogContent className="max-w-md min-h-[620px] bg-primary/20 border border-primary/30 shadow-2xl p-8 text-primary-foreground">
+        <DialogContent className="max-w-md min-h-[620px] bg-primary/95 border border-primary/60 shadow-2xl p-8 text-primary-foreground">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-primary-foreground">
               {authIsRegistering
