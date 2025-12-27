@@ -2437,6 +2437,8 @@ export function RLGame() {
   const [hasLoadedGlobalEnv, setHasLoadedGlobalEnv] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const [googleReady, setGoogleReady] = useState(false);
+  const [googleRendered, setGoogleRendered] = useState(false);
+  const [googleRenderFailed, setGoogleRenderFailed] = useState(false);
   const googleButtonRef = useRef<HTMLDivElement | null>(null);
   const [environmentName, setEnvironmentName] = useState("");
   const [saveEnvError, setSaveEnvError] = useState<string | null>(null);
@@ -2617,22 +2619,47 @@ export function RLGame() {
 
   useEffect(() => {
     if (!authDialogOpen || !googleReady || !googleClientId) return;
-    const google = (window as typeof window & { google?: any }).google;
-    if (!google || !googleButtonRef.current) return;
-    googleButtonRef.current.innerHTML = "";
-    google.accounts.id.initialize({
-      client_id: googleClientId,
-      callback: (response: { credential?: string }) => {
-        if (response?.credential) {
-          handleOAuthLogin("google", response.credential);
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 8;
+    setGoogleRendered(false);
+    setGoogleRenderFailed(false);
+
+    const tryRender = () => {
+      if (cancelled) return;
+      const google = (window as typeof window & { google?: any }).google;
+      const container = googleButtonRef.current;
+      const googleAccounts = google?.accounts?.id;
+      if (!googleAccounts || !container) {
+        if (attempts < maxAttempts) {
+          attempts += 1;
+          window.setTimeout(tryRender, 50);
+        } else {
+          setGoogleRenderFailed(true);
         }
-      },
-    });
-    google.accounts.id.renderButton(googleButtonRef.current, {
-      theme: "outline",
-      size: "large",
-      width: 260,
-    });
+        return;
+      }
+      container.innerHTML = "";
+      googleAccounts.initialize({
+        client_id: googleClientId,
+        callback: (response: { credential?: string }) => {
+          if (response?.credential) {
+            handleOAuthLogin("google", response.credential);
+          }
+        },
+      });
+      googleAccounts.renderButton(container, {
+        theme: "outline",
+        size: "large",
+        width: 260,
+      });
+      setGoogleRendered(true);
+    };
+
+    tryRender();
+    return () => {
+      cancelled = true;
+    };
   }, [authDialogOpen, googleReady, googleClientId, handleOAuthLogin]);
 
   // Tutorial Slides
@@ -4487,6 +4514,13 @@ const handleActiveBonusClick = useCallback(() => {
                   {!googleReady && (
                     <Button variant="outline" className="w-full" disabled>
                       {translate("Google lädt…", "Loading Google…")}
+                    </Button>
+                  )}
+                  {googleReady && !googleRendered && (
+                    <Button variant="outline" className="w-full" disabled>
+                      {googleRenderFailed
+                        ? translate("Google konnte nicht geladen werden", "Google failed to load")
+                        : translate("Google lädt…", "Loading Google…")}
                     </Button>
                   )}
                 </div>
