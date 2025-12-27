@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Tile, TileType } from "./Tile";
@@ -212,6 +213,18 @@ const BONUS_WEIGHTS: Record<BonusType, number> = {
   teleport: 2,
 };
 
+type SimulationSpeed = "1x" | "2x" | "5x" | "max";
+
+const SIMULATION_SPEEDS: Array<{ key: SimulationSpeed; label: string; delayMs: number }> = [
+  { key: "1x", label: "1x", delayMs: 220 },
+  { key: "2x", label: "2x", delayMs: 110 },
+  { key: "5x", label: "5x", delayMs: 44 },
+  { key: "max", label: "Max", delayMs: 20 },
+];
+
+const AUTH_TOKEN_KEY = "rr_token";
+const AUTH_USER_KEY = "rr_user";
+
 // Preset-Level-Definitionen
 interface PresetLevel {
   key: string;
@@ -222,6 +235,14 @@ interface PresetLevel {
   agent?: { x: number; y: number };
   goal?: { x: number; y: number };
 }
+
+type GridConfig = Pick<PresetLevel, "size" | "tiles" | "agent" | "goal">;
+
+type AuthUser = {
+  id: number;
+  username: string;
+  role: "admin" | "user";
+};
 
 const PRESET_LEVELS: PresetLevel[] = [
   {
@@ -332,6 +353,44 @@ const PRESET_LEVELS: PresetLevel[] = [
     goal: { x: 5, y: 2 },
   },
   {
+    key: "bouncer",
+    name: { de: "🚪 Der Türsteher", en: "🚪 The Bouncer" },
+    description: {
+      de: "Das Ziel ist blockiert – nur durch eine Strafe führt der einzige Eingang.",
+      en: "The goal is blocked — only a penalty opens the only entrance.",
+    },
+    size: 6,
+    tiles: [
+      // Raum um das Ziel
+      { x: 4, y: 5, type: "obstacle" },
+      { x: 5, y: 4, type: "obstacle" },
+      { x: 3, y: 5, type: "obstacle" },
+      { x: 5, y: 3, type: "obstacle" },
+      // Türsteher-Strafe am Eingang
+      { x: 4, y: 4, type: "punishment" },
+    ],
+    agent: { x: 0, y: 0 },
+    goal: { x: 5, y: 5 },
+  },
+  {
+    key: "portalJump",
+    name: { de: "🌀 Portal-Sprung", en: "🌀 Portal Jump" },
+    description: {
+      de: "Eine Mauer trennt das Feld – nur ein Portal führt auf die andere Seite.",
+      en: "A solid wall splits the field — only a portal lets you pass.",
+    },
+    size: 6,
+    tiles: [
+      // Trennwand
+      ...Array.from({ length: 6 }, (_, y) => ({ x: 3, y, type: "obstacle" as const })),
+      // Portal-Paar
+      { x: 1, y: 2, type: "portal" },
+      { x: 4, y: 2, type: "portal" },
+    ],
+    agent: { x: 0, y: 0 },
+    goal: { x: 5, y: 5 },
+  },
+  {
     key: "arena",
     name: { de: "🏟️ Arena", en: "🏟️ Arena" },
     description: {
@@ -377,6 +436,188 @@ const PRESET_LEVELS: PresetLevel[] = [
     ],
     agent: { x: 4, y: 8 },
     goal: { x: 4, y: 0 },
+  },
+  {
+    key: "riskyBridge",
+    name: { de: "🌉 Die unsichere Brücke", en: "🌉 The Risky Bridge" },
+    description: {
+      de: "Ein schmaler Steg führt direkt zum Ziel, doch Strafen flankieren ihn – der sichere Umweg ist viel länger.",
+      en: "A one-tile bridge heads straight for the goal, but penalties flank it – the safe detour is much longer.",
+    },
+    size: 9,
+    tiles: [
+      // Brücke und riskanter Fluss
+      ...Array.from({ length: 7 }, (_, x) => ({ x: x + 1, y: 2, type: "obstacle" as const })),
+      ...Array.from({ length: 7 }, (_, x) => ({ x: x + 1, y: 6, type: "obstacle" as const })),
+      ...Array.from({ length: 7 }, (_, x) => ({ x: x + 1, y: 3, type: "punishment" as const })),
+      ...Array.from({ length: 7 }, (_, x) => ({ x: x + 1, y: 5, type: "punishment" as const })),
+    ],
+    agent: { x: 0, y: 4 },
+    goal: { x: 8, y: 4 },
+  },
+  {
+    key: "trappedMaze",
+    name: { de: "🧩 Labyrinth mit Fallen", en: "🧩 Trapped Maze" },
+    description: {
+      de: "Belohnungen stecken in Sackgassen, doch das Ziel in der Mitte erfordert einen riskanten Schritt.",
+      en: "Rewards hide in dead ends, but the central goal demands a risky step.",
+    },
+    size: 9,
+    tiles: [
+      // Labyrinth-Wände
+      { x: 2, y: 0, type: "obstacle" },
+      { x: 2, y: 1, type: "obstacle" },
+      { x: 2, y: 2, type: "obstacle" },
+      { x: 2, y: 4, type: "obstacle" },
+      { x: 2, y: 5, type: "obstacle" },
+      { x: 2, y: 6, type: "obstacle" },
+      { x: 2, y: 8, type: "obstacle" },
+      { x: 6, y: 0, type: "obstacle" },
+      { x: 6, y: 1, type: "obstacle" },
+      { x: 6, y: 2, type: "obstacle" },
+      { x: 6, y: 3, type: "obstacle" },
+      { x: 6, y: 4, type: "obstacle" },
+      { x: 6, y: 6, type: "obstacle" },
+      { x: 6, y: 7, type: "obstacle" },
+      { x: 6, y: 8, type: "obstacle" },
+      { x: 3, y: 2, type: "obstacle" },
+      { x: 5, y: 2, type: "obstacle" },
+      { x: 3, y: 6, type: "obstacle" },
+      { x: 4, y: 6, type: "obstacle" },
+      // Zielkammer - nur von oben erreichbar
+      { x: 3, y: 4, type: "obstacle" },
+      { x: 5, y: 4, type: "obstacle" },
+      { x: 4, y: 5, type: "obstacle" },
+      // Belohnungen in Sackgassen
+      { x: 1, y: 1, type: "reward" },
+      { x: 1, y: 7, type: "reward" },
+      { x: 7, y: 1, type: "reward" },
+      { x: 7, y: 7, type: "reward" },
+      // Fallen auf dem Weg
+      { x: 4, y: 3, type: "punishment" },
+      { x: 7, y: 5, type: "punishment" },
+    ],
+    agent: { x: 0, y: 8 },
+    goal: { x: 4, y: 4 },
+  },
+  {
+    key: "twoRooms",
+    name: { de: "🚪 Zwei Räume", en: "🚪 Two Rooms" },
+    description: {
+      de: "Eine Wand teilt das Feld, nur ein Durchgang führt in den lohnenden zweiten Raum.",
+      en: "A wall splits the field; only one doorway leads to the rewarding second room.",
+    },
+    size: 9,
+    tiles: [
+      // Trennwand mit Durchgang
+      { x: 4, y: 0, type: "obstacle" },
+      { x: 4, y: 1, type: "obstacle" },
+      { x: 4, y: 2, type: "obstacle" },
+      { x: 4, y: 3, type: "obstacle" },
+      { x: 4, y: 5, type: "obstacle" },
+      { x: 4, y: 6, type: "obstacle" },
+      { x: 4, y: 7, type: "obstacle" },
+      { x: 4, y: 8, type: "obstacle" },
+      // Raum 1 - kleine Strafen
+      { x: 1, y: 2, type: "punishment" },
+      { x: 2, y: 5, type: "punishment" },
+      { x: 3, y: 7, type: "punishment" },
+      // Raum 2 - gemischte Anreize
+      { x: 6, y: 2, type: "reward" },
+      { x: 7, y: 5, type: "reward" },
+      { x: 5, y: 7, type: "reward" },
+      { x: 6, y: 6, type: "punishment" },
+      { x: 7, y: 3, type: "punishment" },
+    ],
+    agent: { x: 1, y: 7 },
+    goal: { x: 7, y: 1 },
+  },
+  {
+    key: "fourRooms",
+    name: { de: "🏠 Vier Räume", en: "🏠 Four Rooms" },
+    description: {
+      de: "Der Klassiker: Vier Räume mit engen Durchgängen zwischen den Quadranten.",
+      en: "A classic benchmark: four rooms with narrow doorways between quadrants.",
+    },
+    size: 9,
+    tiles: [
+      // Kreuzwände mit Durchgängen
+      ...Array.from({ length: 9 }, (_, y) => ({ x: 4, y, type: "obstacle" as const })).filter(({ y }) => y !== 2),
+      ...Array.from({ length: 9 }, (_, x) => ({ x, y: 4, type: "obstacle" as const })).filter(({ x }) => x !== 6),
+    ],
+    agent: { x: 0, y: 0 },
+    goal: { x: 8, y: 8 },
+  },
+  {
+    key: "lavaBridge",
+    name: { de: "🌋 Die Lavabrücke", en: "🌋 Lava Bridge" },
+    description: {
+      de: "Ein schmaler Steg führt durch Lava – der sichere Umweg kostet wertvolle Schritte.",
+      en: "A narrow bridge crosses lava — the safe detour costs many steps.",
+    },
+    size: 9,
+    tiles: [
+      // Lavafelder
+      ...Array.from({ length: 7 }, (_, x) => ({ x: x + 1, y: 3, type: "punishment" as const })),
+      ...Array.from({ length: 7 }, (_, x) => ({ x: x + 1, y: 5, type: "punishment" as const })),
+      // Umwege mit Mauern in den Außenbereichen
+      { x: 1, y: 0, type: "obstacle" },
+      { x: 2, y: 0, type: "obstacle" },
+      { x: 6, y: 0, type: "obstacle" },
+      { x: 7, y: 0, type: "obstacle" },
+      { x: 1, y: 1, type: "obstacle" },
+      { x: 4, y: 1, type: "obstacle" },
+      { x: 7, y: 1, type: "obstacle" },
+      { x: 0, y: 2, type: "obstacle" },
+      { x: 3, y: 2, type: "obstacle" },
+      { x: 5, y: 2, type: "obstacle" },
+      { x: 8, y: 2, type: "obstacle" },
+      { x: 0, y: 6, type: "obstacle" },
+      { x: 3, y: 6, type: "obstacle" },
+      { x: 5, y: 6, type: "obstacle" },
+      { x: 8, y: 6, type: "obstacle" },
+      { x: 1, y: 7, type: "obstacle" },
+      { x: 4, y: 7, type: "obstacle" },
+      { x: 7, y: 7, type: "obstacle" },
+      { x: 2, y: 8, type: "obstacle" },
+      { x: 6, y: 8, type: "obstacle" },
+    ],
+    agent: { x: 0, y: 4 },
+    goal: { x: 8, y: 4 },
+  },
+  {
+    key: "islandHopping",
+    name: { de: "🏝️ Insel-Hopping", en: "🏝️ Island Hopping" },
+    description: {
+      de: "Drei Inseln sind nur über Portale verbunden – ohne Sprünge bleibt der Rover stecken.",
+      en: "Three islands are linked only by portals — without jumps the rover is stuck.",
+    },
+    size: 9,
+    tiles: [
+      // Inseln freilassen, alles dazwischen blockieren
+      ...Array.from({ length: 9 }, (_, y) =>
+        Array.from({ length: 9 }, (_, x) => ({ x, y, type: "obstacle" as const })),
+      )
+        .flat()
+        .filter(
+          ({ x, y }) =>
+            !(
+              (x <= 2 && y <= 2) ||
+              (x >= 3 && x <= 5 && y >= 3 && y <= 5) ||
+              (x >= 6 && y >= 6)
+            ),
+        ),
+      // Portal-Paar A (Insel 1 -> Insel 2)
+      { x: 2, y: 1, type: "portal" },
+      { x: 3, y: 3, type: "portal" },
+      // Portal-Paar B (Insel 2 -> Insel 3)
+      { x: 5, y: 5, type: "portal" },
+      { x: 7, y: 7, type: "portal" },
+      // Belohnung in Insel 2
+      { x: 4, y: 4, type: "reward" },
+    ],
+    agent: { x: 0, y: 0 },
+    goal: { x: 8, y: 8 },
   },
   {
     key: "labyrinthXL",
@@ -1131,6 +1372,7 @@ const runPlaygroundStep = (
   consumeRewards = true,
   alpha = 0.1,
   gamma = 0.85,
+  autoRestart = false,
 ): PlaygroundState => {
   const current = state.agent;
   let nextPos = current;
@@ -1221,7 +1463,7 @@ const runPlaygroundStep = (
       agent: { ...state.spawn },
       grid: newGrid,
       totalReward: 0,
-      isRunning: false,
+      isRunning: autoRestart,
       episode: state.episode + 1,
       currentSteps: 0,
       episodeHistory: newHistory,
@@ -1248,6 +1490,7 @@ const runRandomModeStep = (
   consumeRewards = true,
   alpha = 0.1,
   gamma = 0.85,
+  autoRestart = false,
 ): RandomModeState => {
   const current = state.agent;
   let nextPos = chooseAction(state.grid, current, explorationRate, bias);
@@ -1350,7 +1593,7 @@ const runRandomModeStep = (
       agent: { ...state.spawn },
       grid: newGrid,
       totalReward: 0,
-      isRunning: false,
+      isRunning: autoRestart,
       episode: state.episode + 1,
       currentSteps: 0,
       episodeHistory: newHistory,
@@ -2112,12 +2355,14 @@ export function RLGame() {
   const [placementMode, setPlacementModeState] = useState<PlaceableTile>("obstacle");
   const [challengeMode, setChallengeModeState] = useState<ChallengeTile | null>(null);
   const [explorationRate, setExplorationRate] = useState(0.2);
+  const [simulationSpeed, setSimulationSpeed] = useState<SimulationSpeed>("1x");
   const [showValues, setShowValues] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(true);
   const [showStatistics, setShowStatistics] = useState(true);
   const [showActions, setShowActions] = useState(false);
   const [consumeRewards, setConsumeRewards] = useState(true);
+  const [isAutoRestartEnabled, setIsAutoRestartEnabled] = useState(false);
   const [showRewardHistory, setShowRewardHistory] = useState(true);
   const [showLegend, setShowLegend] = useState(false);
   const [showLearningParams, setShowLearningParams] = useState(false);
@@ -2165,6 +2410,116 @@ export function RLGame() {
   const [directionBias, setDirectionBias] = useState<Position | null>(null);
   const [speedrunEnabled, setSpeedrunEnabled] = useState(false);
   const [rlDialogOpen, setRlDialogOpen] = useState(false);
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const [authUsername, setAuthUsername] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authIsRegistering, setAuthIsRegistering] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authToken, setAuthToken] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(AUTH_TOKEN_KEY);
+  });
+  const [authUser, setAuthUser] = useState<AuthUser | null>(() => {
+    if (typeof window === "undefined") return null;
+    const raw = localStorage.getItem(AUTH_USER_KEY);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as AuthUser;
+    } catch {
+      return null;
+    }
+  });
+  const [hasLoadedGlobalEnv, setHasLoadedGlobalEnv] = useState(false);
+  const [showIntro, setShowIntro] = useState(false);
+  const simulationDelayMs =
+    SIMULATION_SPEEDS.find((speed) => speed.key === simulationSpeed)?.delayMs ?? SIMULATION_SPEEDS[0].delayMs;
+  const apiBase = import.meta.env.VITE_API_BASE ?? "";
+  const isAdmin = authUser?.role === "admin";
+  const introToggleLabel = showIntro
+    ? translate("Anleitung ausblenden", "Hide guide")
+    : translate("Anleitung & Infos anzeigen", "Show guide & info");
+
+  useEffect(() => {
+    if (isAutoRestartEnabled) {
+      setCelebration(null);
+    }
+  }, [isAutoRestartEnabled]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (authToken) {
+        localStorage.setItem(AUTH_TOKEN_KEY, authToken);
+      } else {
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+      }
+    } catch (e) {
+      console.warn("Could not persist auth token", e);
+    }
+  }, [authToken]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (authUser) {
+        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(authUser));
+      } else {
+        localStorage.removeItem(AUTH_USER_KEY);
+      }
+    } catch (e) {
+      console.warn("Could not persist auth user", e);
+    }
+  }, [authUser]);
+
+  const handleLogout = useCallback(() => {
+    setAuthToken(null);
+    setAuthUser(null);
+    setAuthPassword("");
+    setAuthUsername("");
+    setAuthError(null);
+  }, []);
+
+  const handleAuthSubmit = useCallback(async () => {
+    const trimmedUsername = authUsername.trim();
+    if (!trimmedUsername || !authPassword) {
+      setAuthError(translate("Bitte Nutzername und Passwort eingeben.", "Enter username and password."));
+      return;
+    }
+
+    setAuthError(null);
+    try {
+      const endpoint = authIsRegistering ? "/api/auth/register" : "/api/auth/login";
+      const response = await fetch(`${apiBase}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: trimmedUsername, password: authPassword }),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        setAuthError(errorBody.error || translate("Login fehlgeschlagen.", "Login failed."));
+        return;
+      }
+
+      const payload = await response.json();
+      if (payload?.token && payload?.user) {
+        setAuthToken(payload.token);
+        setAuthUser(payload.user);
+        setAuthDialogOpen(false);
+        setAuthPassword("");
+        toast({
+          title: authIsRegistering
+            ? translate("Account erstellt!", "Account created!")
+            : translate("Willkommen zurück!", "Welcome back!"),
+          description: translate("Du bist jetzt eingeloggt.", "You are now logged in."),
+        });
+      } else {
+        setAuthError(translate("Unerwartete Antwort vom Server.", "Unexpected server response."));
+      }
+    } catch (error) {
+      setAuthError(translate("Server nicht erreichbar.", "Server not reachable."));
+    }
+  }, [authIsRegistering, authPassword, authUsername, apiBase, translate]);
 
   // Tutorial Slides
   const tutorialSlides = useMemo(() => [
@@ -2610,7 +2965,15 @@ export function RLGame() {
       setPlaygroundState((prev) => {
         // Use 0% exploration when replaying
         const effectiveExplorationRate = isReplaying ? 0 : explorationRate;
-        const next = runPlaygroundStep(prev, effectiveExplorationRate, directionBias, consumeRewards, alpha, gamma);
+        const next = runPlaygroundStep(
+          prev,
+          effectiveExplorationRate,
+          directionBias,
+          consumeRewards,
+          alpha,
+          gamma,
+          isAutoRestartEnabled && !isReplaying,
+        );
 
         // Check if agent moved to a reward or punishment tile
         const tileType = next.grid[next.agent.y][next.agent.x].type;
@@ -2631,15 +2994,34 @@ export function RLGame() {
         }
         return next;
       });
-    }, isReplaying ? 400 : 220); // Slower when replaying for better visibility
+    }, isReplaying ? 400 : simulationDelayMs); // Slower when replaying for better visibility
     return () => window.clearInterval(interval);
-  }, [mode, playgroundState.isRunning, explorationRate, directionBias, consumeRewards, alpha, gamma, isReplaying]);
+  }, [
+    mode,
+    playgroundState.isRunning,
+    explorationRate,
+    directionBias,
+    consumeRewards,
+    alpha,
+    gamma,
+    isAutoRestartEnabled,
+    isReplaying,
+    simulationDelayMs,
+  ]);
 
   useEffect(() => {
     if (mode !== "random" || !randomState.isRunning) return;
     const interval = window.setInterval(() => {
       setRandomState((prev) => {
-        const next = runRandomModeStep(prev, explorationRate, directionBias, consumeRewards, alpha, gamma);
+        const next = runRandomModeStep(
+          prev,
+          explorationRate,
+          directionBias,
+          consumeRewards,
+          alpha,
+          gamma,
+          isAutoRestartEnabled,
+        );
 
         // Check if agent moved to a reward or punishment tile
         const tileType = next.grid[next.agent.y][next.agent.x].type;
@@ -2656,7 +3038,7 @@ export function RLGame() {
       });
     }, 220);
     return () => window.clearInterval(interval);
-  }, [mode, randomState.isRunning, explorationRate, directionBias, consumeRewards, alpha, gamma]);
+  }, [mode, randomState.isRunning, explorationRate, directionBias, consumeRewards, alpha, gamma, isAutoRestartEnabled]);
 
   useEffect(() => {
     if (mode !== "comparison" || (!comparisonState.left.isRunning && !comparisonState.right.isRunning)) return;
@@ -2943,6 +3325,11 @@ const handleActiveBonusClick = useCallback(() => {
     const latest = randomState.episodeHistory[randomState.episodeHistory.length - 1];
     if (!latest || !latest.success) return;
     if (latest.episode <= lastCelebratedEpisodeRef.current.random) return;
+    if (isAutoRestartEnabled) {
+      lastCelebratedEpisodeRef.current.random = latest.episode;
+      setCelebration(null);
+      return;
+    }
     lastCelebratedEpisodeRef.current.random = latest.episode;
     const title = getEpisodeTitle(latest.episode, language);
     const sortedHistory = [...randomState.episodeHistory].sort((a, b) => {
@@ -2962,7 +3349,7 @@ const handleActiveBonusClick = useCallback(() => {
     requestAnimationFrame(() => {
       setCelebration({ title, steps: latest.steps, reward: latest.reward, rank, fact });
     });
-  }, [mode, randomState.episodeHistory, randomState.episode, translate, language]);
+  }, [mode, randomState.episodeHistory, randomState.episode, translate, language, isAutoRestartEnabled]);
 
   useEffect(() => {
     if (mode !== "playground") return;
@@ -2970,6 +3357,11 @@ const handleActiveBonusClick = useCallback(() => {
     const latest = playgroundState.episodeHistory[playgroundState.episodeHistory.length - 1];
     if (!latest || !latest.success) return;
     if (latest.episode <= lastCelebratedEpisodeRef.current.playground) return;
+    if (isAutoRestartEnabled) {
+      lastCelebratedEpisodeRef.current.playground = latest.episode;
+      setCelebration(null);
+      return;
+    }
     lastCelebratedEpisodeRef.current.playground = latest.episode;
     const title = getEpisodeTitle(latest.episode, language);
     const sortedHistory = [...playgroundState.episodeHistory].sort((a, b) => {
@@ -2989,7 +3381,7 @@ const handleActiveBonusClick = useCallback(() => {
     requestAnimationFrame(() => {
       setCelebration({ title, steps: latest.steps, reward: latest.reward, rank, fact });
     });
-  }, [mode, playgroundState.episodeHistory, playgroundState.episode, translate, language]);
+  }, [mode, playgroundState.episodeHistory, playgroundState.episode, translate, language, isAutoRestartEnabled]);
 
   const handlePlaygroundStart = () =>
     setPlaygroundState((prev) => ({ ...prev, isRunning: true }));
@@ -3059,19 +3451,23 @@ const handleActiveBonusClick = useCallback(() => {
     setPlaygroundState(prev => ({ ...prev, isRunning: false }));
   }, []);
 
-  const handleLoadPreset = useCallback((preset: PresetLevel) => {
+  const applyGridConfig = useCallback((config: GridConfig) => {
     setCelebration(null);
     setUndoStack([]);
+    setIsReplaying(false);
+    setReplayEpisode(null);
+    lastCelebratedEpisodeRef.current.playground = 0;
     const sizeOptionEntry = (Object.entries(TILE_SIZE_MAP) as Array<[TileSizeOption, number]>).find(
-      ([, value]) => value === preset.size,
+      ([, value]) => value === config.size,
     );
     const targetSize = sizeOptionEntry?.[0] ?? "s";
     setTileSize(targetSize);
 
-    const grid = createEmptyGrid(preset.size);
+    const grid = createEmptyGrid(config.size);
 
     // Platziere Tiles
-    preset.tiles.forEach(({ x, y, type }) => {
+    config.tiles.forEach(({ x, y, type }) => {
+      if (!grid[y] || !grid[y][x]) return;
       grid[y][x] = {
         type,
         qValue: 0,
@@ -3080,8 +3476,8 @@ const handleActiveBonusClick = useCallback(() => {
       };
     });
 
-    const agent = preset.agent || { x: 0, y: preset.size - 1 };
-    const goal = preset.goal || { x: preset.size - 1, y: 0 };
+    const agent = config.agent || { x: 0, y: config.size - 1 };
+    const goal = config.goal || { x: config.size - 1, y: 0 };
 
     grid[goal.y][goal.x] = {
       type: "goal",
@@ -3101,8 +3497,101 @@ const handleActiveBonusClick = useCallback(() => {
       currentSteps: 0,
       episodeHistory: [],
       portalCooldowns: {},
+      pendingPortalTeleport: null,
     });
   }, []);
+
+  const handleLoadPreset = useCallback((preset: PresetLevel) => {
+    applyGridConfig(preset);
+  }, [applyGridConfig]);
+
+  const buildGridConfigFromState = useCallback((state: PlaygroundState): GridConfig => {
+    const tiles: GridConfig["tiles"] = [];
+    state.grid.forEach((row, y) => {
+      row.forEach((cell, x) => {
+        if (cell.type === "empty" || cell.type === "goal") return;
+        tiles.push({ x, y, type: cell.type });
+      });
+    });
+    return {
+      size: state.grid.length,
+      tiles,
+      agent: state.agent,
+      goal: state.goal,
+    };
+  }, []);
+
+  const handlePublishGlobal = useCallback(async () => {
+    if (!authToken) {
+      setAuthDialogOpen(true);
+      return;
+    }
+    if (!isAdmin) {
+      toast({
+        title: translate("Nur für Admins", "Admins only"),
+        description: translate(
+          "Du brauchst Admin-Rechte, um eine globale Challenge zu veröffentlichen.",
+          "You need admin rights to publish a global challenge.",
+        ),
+      });
+      return;
+    }
+
+    const config = buildGridConfigFromState(playgroundState);
+    try {
+      const response = await fetch(`${apiBase}/api/admin/global-env`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ config }),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.error || "Publish failed");
+      }
+
+      toast({
+        title: translate("Global Challenge veröffentlicht", "Global challenge published"),
+        description: translate(
+          "Dein Setup ist jetzt die Challenge des Tages.",
+          "Your setup is now the challenge of the day.",
+        ),
+      });
+    } catch (error) {
+      toast({
+        title: translate("Veröffentlichung fehlgeschlagen", "Publish failed"),
+        description: translate(
+          "Bitte prüfe die Serververbindung und versuche es erneut.",
+          "Check the server connection and try again.",
+        ),
+      });
+    }
+  }, [apiBase, authToken, buildGridConfigFromState, isAdmin, playgroundState, translate]);
+
+  useEffect(() => {
+    if (hasLoadedGlobalEnv) return;
+    const controller = new AbortController();
+    const loadGlobalEnv = async () => {
+      try {
+        const response = await fetch(`${apiBase}/api/global-env`, { signal: controller.signal });
+        if (!response.ok) return;
+        const payload = await response.json();
+        if (payload?.config) {
+          applyGridConfig(payload.config);
+        }
+      } catch {
+        // Ignore network errors on initial load.
+      } finally {
+        setHasLoadedGlobalEnv(true);
+      }
+    };
+
+    loadGlobalEnv();
+    return () => controller.abort();
+  }, [apiBase, applyGridConfig, hasLoadedGlobalEnv]);
 
   const handleTileSizeChange = useCallback(
     (size: TileSizeOption) => {
@@ -3655,6 +4144,69 @@ const handleActiveBonusClick = useCallback(() => {
         </DialogContent>
       </Dialog>
 
+      <Dialog
+        open={authDialogOpen}
+        onOpenChange={(open) => {
+          setAuthDialogOpen(open);
+          if (!open) {
+            setAuthError(null);
+            setAuthPassword("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold">
+              {authIsRegistering
+                ? translate("Account erstellen", "Create account")
+                : translate("Login", "Login")}
+            </DialogTitle>
+            <DialogDescription className="text-base">
+              {translate(
+                "Melde dich an, um globale Challenges zu veröffentlichen.",
+                "Sign in to publish global challenges.",
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="auth-username">{translate("Nutzername", "Username")}</Label>
+              <Input
+                id="auth-username"
+                value={authUsername}
+                onChange={(event) => setAuthUsername(event.target.value)}
+                placeholder="max"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="auth-password">{translate("Passwort", "Password")}</Label>
+              <Input
+                id="auth-password"
+                type="password"
+                value={authPassword}
+                onChange={(event) => setAuthPassword(event.target.value)}
+              />
+            </div>
+            {authError && <p className="text-xs text-red-500">{authError}</p>}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Button onClick={handleAuthSubmit} className="font-semibold">
+                {authIsRegistering ? translate("Registrieren", "Register") : translate("Login", "Login")}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setAuthIsRegistering((prev) => !prev)}
+                className="text-xs"
+              >
+                {authIsRegistering
+                  ? translate("Schon registriert? Login", "Already registered? Login")
+                  : translate("Neu hier? Registrieren", "New here? Register")}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="min-h-screen bg-[var(--gradient-main)] pb-12">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 pt-6">
         {/* Hero Section */}
@@ -3682,13 +4234,30 @@ const handleActiveBonusClick = useCallback(() => {
             <div className="flex flex-wrap items-center gap-3">
               <Button
                 variant="outline"
-                onClick={() => setRlDialogOpen(true)}
-                className="font-semibold"
+                onClick={() => setShowIntro((prev) => !prev)}
+                className="font-semibold flex items-center gap-2"
               >
-                {translate("Mehr über Reinforcement Learning", "Learn more about reinforcement learning")}
+                {introToggleLabel}
+                <ChevronDown
+                  className={cn("h-4 w-4 transition-transform duration-200", showIntro ? "rotate-180" : "")}
+                />
               </Button>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              {authUser ? (
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="bg-foreground/10 text-foreground border-foreground/15">
+                    {authUser.username}
+                  </Badge>
+                  <Button variant="outline" size="sm" onClick={handleLogout}>
+                    {translate("Logout", "Logout")}
+                  </Button>
+                </div>
+              ) : (
+                <Button variant="outline" size="sm" onClick={() => setAuthDialogOpen(true)}>
+                  {translate("Login", "Login")}
+                </Button>
+              )}
               <button
                 onClick={toggleTheme}
                 className="flex items-center gap-2 rounded-full border border-border/60 bg-card/70 px-3 py-1.5 hover:bg-card transition-colors"
@@ -4128,71 +4697,85 @@ const handleActiveBonusClick = useCallback(() => {
             </DialogContent>
           </Dialog>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card className="rounded-2xl border border-border bg-secondary/40 p-5 shadow-soft transform transition-transform transition-colors duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/10 hover:shadow-xl">
-              <h3 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
-                {translate(
-                  "🎯 Entdecken (Exploration) vs. Ausbeuten (Exploitation)",
-                  "🎯 Exploration vs. Exploitation",
-                )}
-              </h3>
-              <p className="text-base text-muted-foreground leading-relaxed">
-                {isEnglish ? (
-                  <>
-                    Imagine visiting a restaurant: exploitation means
-                    <strong className="text-foreground"> ordering your favourite dish </strong>
-                    every time – safe and familiar. Exploration means
-                    <strong className="text-foreground"> trying something new </strong>
-                    – maybe you discover something even better! The rover has to strike the same balance:
-                    rely on learned strategies or explore unknown territory.
-                  </>
-                ) : (
-                  <>
-                    Stell dir vor, du gehst in ein Restaurant: Ausbeuten (Exploitation) bedeutet,
-                    <strong className="text-foreground"> immer dein Lieblingsgericht </strong>
-                    zu bestellen – sicher und vertraut. Entdecken (Exploration) heißt,
-                    <strong className="text-foreground"> mutig etwas Neues zu probieren </strong>
-                    – vielleicht entdeckst du etwas noch Besseres! Der Rover muss genau diese Balance finden:
-                    Nutzt er, was er schon weiß, oder wagt er neue Wege?
-                  </>
-                )}
-              </p>
-            </Card>
-            <Card className="rounded-2xl border border-border bg-secondary/40 p-5 shadow-soft transform transition-transform transition-colors duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/10 hover:shadow-xl">
-              <h3 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
-                {translate("🚀 Drei Modi zum Ausprobieren", "🚀 Three modes to explore")}
-              </h3>
-              <div className="text-base text-muted-foreground leading-relaxed space-y-2">
-                <p>
-                  <strong className="text-foreground">
-                    {translate("Playground:", "Playground:")}
-                  </strong>{" "}
-                  {translate(
-                    "Baue deine eigene Welt und platziere Mauern, Belohnungen oder Strafen ganz nach deinen Regeln.",
-                    "Build your own world and place walls, rewards, or penalties however you like.",
-                  )}
-                </p>
-                <p>
-                  <strong className="text-foreground">
-                    {translate("Zufallsmodus:", "Random mode:")}
-                  </strong>{" "}
-                  {translate(
-                    "Lass den Rover in prozedural erzeugten Labyrinthen trainieren – jede Episode ist anders.",
-                    "Let the rover train inside procedurally generated mazes – every episode is different.",
-                  )}
-                </p>
-                <p>
-                  <strong className="text-foreground">
-                    {translate("Vergleichsmodus:", "Comparison mode:")}
-                  </strong>{" "}
-                  {translate(
-                    "Starte zwei Rover mit unterschiedlichen Hyperparametern und beobachte ihre Fortschritte im direkten Vergleich.",
-                    "Launch two rovers with different hyperparameters and watch their progress side by side.",
-                  )}
-                </p>
+          <Collapsible open={showIntro} onOpenChange={setShowIntro}>
+            <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card className="rounded-2xl border border-border bg-secondary/40 p-5 shadow-soft transform transition-transform transition-colors duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/10 hover:shadow-xl">
+                  <h3 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
+                    {translate(
+                      "🎯 Entdecken (Exploration) vs. Ausbeuten (Exploitation)",
+                      "🎯 Exploration vs. Exploitation",
+                    )}
+                  </h3>
+                  <p className="text-base text-muted-foreground leading-relaxed">
+                    {isEnglish ? (
+                      <>
+                        Imagine visiting a restaurant: exploitation means
+                        <strong className="text-foreground"> ordering your favourite dish </strong>
+                        every time – safe and familiar. Exploration means
+                        <strong className="text-foreground"> trying something new </strong>
+                        – maybe you discover something even better! The rover has to strike the same balance:
+                        rely on learned strategies or explore unknown territory.
+                      </>
+                    ) : (
+                      <>
+                        Stell dir vor, du gehst in ein Restaurant: Ausbeuten (Exploitation) bedeutet,
+                        <strong className="text-foreground"> immer dein Lieblingsgericht </strong>
+                        zu bestellen – sicher und vertraut. Entdecken (Exploration) heißt,
+                        <strong className="text-foreground"> mutig etwas Neues zu probieren </strong>
+                        – vielleicht entdeckst du etwas noch Besseres! Der Rover muss genau diese Balance finden:
+                        Nutzt er, was er schon weiß, oder wagt er neue Wege?
+                      </>
+                    )}
+                  </p>
+                </Card>
+                <Card className="rounded-2xl border border-border bg-secondary/40 p-5 shadow-soft transform transition-transform transition-colors duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/10 hover:shadow-xl">
+                  <h3 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
+                    {translate("🚀 Drei Modi zum Ausprobieren", "🚀 Three modes to explore")}
+                  </h3>
+                  <div className="text-base text-muted-foreground leading-relaxed space-y-2">
+                    <p>
+                      <strong className="text-foreground">
+                        {translate("Playground:", "Playground:")}
+                      </strong>{" "}
+                      {translate(
+                        "Baue deine eigene Welt und platziere Mauern, Belohnungen oder Strafen ganz nach deinen Regeln.",
+                        "Build your own world and place walls, rewards, or penalties however you like.",
+                      )}
+                    </p>
+                    <p>
+                      <strong className="text-foreground">
+                        {translate("Zufallsmodus:", "Random mode:")}
+                      </strong>{" "}
+                      {translate(
+                        "Lass den Rover in prozedural erzeugten Labyrinthen trainieren – jede Episode ist anders.",
+                        "Let the rover train inside procedurally generated mazes – every episode is different.",
+                      )}
+                    </p>
+                    <p>
+                      <strong className="text-foreground">
+                        {translate("Vergleichsmodus:", "Comparison mode:")}
+                      </strong>{" "}
+                      {translate(
+                        "Starte zwei Rover mit unterschiedlichen Hyperparametern und beobachte ihre Fortschritte im direkten Vergleich.",
+                        "Launch two rovers with different hyperparameters and watch their progress side by side.",
+                      )}
+                    </p>
+                  </div>
+                </Card>
               </div>
-            </Card>
-          </div>
+              <div className="flex justify-end pt-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setRlDialogOpen(true)}
+                  className="text-xs"
+                >
+                  {translate("Mehr über Reinforcement Learning", "Learn more about reinforcement learning")}
+                </Button>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
 
         <ControlBar
@@ -4915,6 +5498,10 @@ const handleActiveBonusClick = useCallback(() => {
                 placementMode={placementMode}
                 onPlacementModeChange={changePlacementMode}
                 onExplorationRateChange={setExplorationRate}
+                simulationSpeed={simulationSpeed}
+                onSimulationSpeedChange={setSimulationSpeed}
+                canPublishGlobal={isAdmin}
+                onPublishGlobal={handlePublishGlobal}
                 showValues={showValues}
                 onShowValuesChange={setShowValues}
                 translate={translate}
@@ -5404,6 +5991,19 @@ const handleActiveBonusClick = useCallback(() => {
                       </p>
                     )}
                   </div>
+                  <div className="space-y-1">
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+                      <Label htmlFor="auto-restart-settings" className="text-xs font-semibold leading-tight">
+                        {translate("Auto-Restart bei Ziel", "Auto-restart at goal")}
+                      </Label>
+                      <Switch
+                        id="auto-restart-settings"
+                        checked={isAutoRestartEnabled}
+                        onCheckedChange={setIsAutoRestartEnabled}
+                        aria-label={translate("Auto-Restart umschalten", "Toggle auto-restart")}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="my-3 h-px w-full bg-border/60" />
@@ -5668,6 +6268,10 @@ type PlaygroundControlsProps = {
   placementMode: PlaceableTile;
   onPlacementModeChange: (type: PlaceableTile) => void;
   onExplorationRateChange: (value: number) => void;
+  simulationSpeed: SimulationSpeed;
+  onSimulationSpeedChange: (speed: SimulationSpeed) => void;
+  canPublishGlobal: boolean;
+  onPublishGlobal: () => void;
   showValues: boolean;
   onShowValuesChange: (show: boolean) => void;
   translate: (de: string, en: string) => string;
@@ -5694,6 +6298,10 @@ const PlaygroundControls = ({
   placementMode,
   onPlacementModeChange,
   onExplorationRateChange,
+  simulationSpeed,
+  onSimulationSpeedChange,
+  canPublishGlobal,
+  onPublishGlobal,
   showValues,
   onShowValuesChange,
   translate,
@@ -5745,6 +6353,36 @@ const PlaygroundControls = ({
           </Button>
         )}
       </div>
+
+      <div className="space-y-2">
+        <Label className="text-base font-semibold text-foreground">
+          {translate("🚀 Geschwindigkeit", "🚀 Speed")}
+        </Label>
+        <div className="grid grid-cols-4 gap-2">
+          {SIMULATION_SPEEDS.map((option) => (
+            <Button
+              key={option.key}
+              variant={simulationSpeed === option.key ? "default" : "outline"}
+              size="sm"
+              onClick={() => onSimulationSpeedChange(option.key)}
+              className="text-xs font-semibold"
+            >
+              {option.label}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {canPublishGlobal && (
+        <Button
+          variant="default"
+          size="lg"
+          onClick={onPublishGlobal}
+          className="w-full font-semibold"
+        >
+          🌍 {translate("Als globale Challenge veröffentlichen", "Publish as Global Challenge")}
+        </Button>
+      )}
 
       <Collapsible open={presetsOpen} onOpenChange={setPresetsOpen} className="space-y-2">
         <CollapsibleTrigger asChild>
