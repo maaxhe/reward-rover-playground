@@ -2651,7 +2651,7 @@ export function RLGame() {
       googleAccounts.renderButton(container, {
         theme: "outline",
         size: "large",
-        width: 340,
+        width: 380,
       });
       setGoogleRendered(true);
     };
@@ -4510,8 +4510,34 @@ const handleActiveBonusClick = useCallback(() => {
               </div>
               {googleClientId ? (
                 <div className="space-y-3">
-                  <div className="group mx-auto w-full max-w-[380px] rounded-2xl border border-white/20 bg-white/5 px-5 py-4 shadow-[0_0_0_1px_rgba(255,255,255,0.08)] transition-all duration-200 hover:border-white/70 hover:bg-white hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)]">
-                    <div ref={googleButtonRef} className="flex justify-center min-h-[56px]" />
+                  <div className="group relative mx-auto w-full max-w-[380px]">
+                    <div className="flex items-center justify-center gap-3 rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-foreground/90 shadow-[0_0_0_1px_rgba(255,255,255,0.08)] transition-all duration-200 group-hover:border-white/70 group-hover:bg-white group-hover:text-slate-900 group-hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)] pointer-events-none">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-sm">
+                        <svg viewBox="0 0 48 48" className="h-4 w-4" aria-hidden>
+                          <path
+                            fill="#EA4335"
+                            d="M24 9.5c3.54 0 6.73 1.23 9.23 3.65l6.9-6.9C35.45 2.43 30 0 24 0 14.64 0 6.44 5.36 2.52 13.19l8.3 6.45C12.73 13.09 17.93 9.5 24 9.5z"
+                          />
+                          <path
+                            fill="#34A853"
+                            d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.12h12.98c-.56 3.03-2.26 5.6-4.78 7.31l7.5 5.82c4.38-4.04 6.28-9.98 6.28-17.7z"
+                          />
+                          <path
+                            fill="#4A90E2"
+                            d="M10.82 28.77c-.48-1.41-.76-2.9-.76-4.47s.27-3.06.76-4.47l-8.3-6.45C.93 16.07 0 19 0 22.3c0 3.3.93 6.23 2.52 8.92l8.3-6.45z"
+                          />
+                          <path
+                            fill="#FBBC05"
+                            d="M24 48c6 0 11.04-1.98 14.72-5.39l-7.5-5.82c-2.08 1.39-4.74 2.2-7.22 2.2-6.07 0-11.27-3.59-13.18-8.69l-8.3 6.45C6.44 42.64 14.64 48 24 48z"
+                          />
+                        </svg>
+                      </span>
+                      <span>{translate("Mit Google anmelden", "Log in with Google")}</span>
+                    </div>
+                    <div
+                      ref={googleButtonRef}
+                      className="absolute inset-0 z-10 flex items-center justify-center opacity-0"
+                    />
                   </div>
                   {!googleReady && (
                     <Button variant="outline" className="w-full max-w-[380px] mx-auto" disabled>
