@@ -59,6 +59,63 @@ export const EnvironmentBrowser = ({
   const [saveName, setSaveName] = useState("");
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
+  const getPreviewTileClass = (type: string) => {
+    switch (type) {
+      case "reward":
+        return "bg-tile-reward";
+      case "punishment":
+        return "bg-tile-punishment";
+      case "obstacle":
+        return "bg-tile-obstacle";
+      case "portal":
+        return "bg-tile-portal";
+      case "goal":
+        return "bg-tile-goal";
+      case "agent":
+        return "bg-tile-agent";
+      default:
+        return "bg-tile-empty";
+    }
+  };
+
+  const renderEnvironmentPreview = (gridConfig: SavedEnvironment["gridConfig"]) => {
+    if (!gridConfig?.size) return null;
+    const size = gridConfig.size;
+    const tileSize = Math.max(6, Math.floor(80 / size));
+    const tileLookup = new Map<string, string>();
+    if (Array.isArray(gridConfig.tiles)) {
+      gridConfig.tiles.forEach((tile: { x: number; y: number; type: string }) => {
+        tileLookup.set(`${tile.x}-${tile.y}`, tile.type);
+      });
+    }
+
+    return (
+      <div
+        className="grid bg-tile-bg rounded-md overflow-hidden"
+        style={{
+          gridTemplateColumns: `repeat(${size}, ${tileSize}px)`,
+          gridTemplateRows: `repeat(${size}, ${tileSize}px)`,
+          gap: "1px",
+        }}
+      >
+        {Array.from({ length: size * size }, (_, index) => {
+          const x = index % size;
+          const y = Math.floor(index / size);
+          const isAgent = gridConfig.agent?.x === x && gridConfig.agent?.y === y;
+          const isGoal = gridConfig.goal?.x === x && gridConfig.goal?.y === y;
+          const tileType = isGoal ? "goal" : isAgent ? "agent" : tileLookup.get(`${x}-${y}`) || "empty";
+          return (
+            <div
+              key={`${x}-${y}`}
+              className={`rounded-[2px] ${getPreviewTileClass(tileType)}`}
+              style={{ width: tileSize, height: tileSize }}
+            />
+          );
+        })}
+      </div>
+    );
+  };
+
   useEffect(() => {
     if (open && authToken) {
       loadEnvironments();
@@ -226,18 +283,20 @@ export const EnvironmentBrowser = ({
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      <div className="flex gap-2 flex-wrap">
-                        {env.gridConfig?.size && (
-                          <Badge variant="secondary" className="text-xs">
-                            {translate("Größe", "Size")}: {env.gridConfig.size}x
-                            {env.gridConfig.size}
-                          </Badge>
-                        )}
-                        {env.progressData && (
-                          <Badge variant="outline" className="text-xs">
-                            {translate("Mit Fortschritt", "With Progress")}
-                          </Badge>
-                        )}
+                      <div className="flex flex-wrap items-start gap-3">
+                        {renderEnvironmentPreview(env.gridConfig)}
+                        <div className="flex flex-col gap-2">
+                          {env.gridConfig?.size && (
+                            <span className="text-xs text-muted-foreground">
+                              {translate("Größe", "Size")}: {env.gridConfig.size} x {env.gridConfig.size}
+                            </span>
+                          )}
+                          {env.progressData && (
+                            <Badge variant="outline" className="text-xs w-fit">
+                              {translate("Mit Fortschritt", "With Progress")}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

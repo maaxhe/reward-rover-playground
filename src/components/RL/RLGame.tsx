@@ -2445,10 +2445,6 @@ export function RLGame() {
   const [environmentName, setEnvironmentName] = useState("");
   const [saveEnvError, setSaveEnvError] = useState<string | null>(null);
   const [isSavingEnv, setIsSavingEnv] = useState(false);
-  const [isLoadingEnvs, setIsLoadingEnvs] = useState(false);
-  const [savedEnvironments, setSavedEnvironments] = useState<
-    Array<{ id: number; name: string; gridConfig: GridConfig; createdAt: string }>
-  >([]);
   const simulationDelayMs =
     SIMULATION_SPEEDS.find((speed) => speed.key === simulationSpeed)?.delayMs ?? SIMULATION_SPEEDS[0].delayMs;
   const apiBase = import.meta.env.VITE_API_BASE ?? "";
@@ -2965,41 +2961,6 @@ export function RLGame() {
     numberFormatter,
   ]);
 
-  const loadSavedEnvironments = useCallback(async () => {
-    if (!authToken) return;
-    setIsLoadingEnvs(true);
-    try {
-      const response = await fetch(`${apiBase}/api/load`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
-      if (!response.ok) {
-        setIsLoadingEnvs(false);
-        return;
-      }
-      const payload = await response.json();
-      setSavedEnvironments(
-        (payload?.items ?? []).map((item: any) => ({
-          id: item.id,
-          name: item.name || translate("Unbenannt", "Untitled"),
-          gridConfig: item.gridConfig,
-          createdAt: item.createdAt,
-        })),
-      );
-    } catch {
-      // ignore load errors
-    } finally {
-      setIsLoadingEnvs(false);
-    }
-  }, [apiBase, authToken, translate]);
-
-  useEffect(() => {
-    if (!authToken) {
-      setSavedEnvironments([]);
-      return;
-    }
-    loadSavedEnvironments();
-  }, [authToken, loadSavedEnvironments]);
-
   const handleSaveEnvironment = useCallback(async () => {
     const trimmed = environmentName.trim();
     if (!trimmed) {
@@ -3028,7 +2989,6 @@ export function RLGame() {
         return;
       }
       setEnvironmentName("");
-      await loadSavedEnvironments();
       toast({
         title: translate("Umgebung gespeichert", "Environment saved"),
         description: translate("Du findest sie in deinen Umgebungen.", "You can find it in your environments."),
@@ -3038,7 +2998,7 @@ export function RLGame() {
     } finally {
       setIsSavingEnv(false);
     }
-  }, [apiBase, authToken, buildGridConfigFromState, environmentName, loadSavedEnvironments, playgroundState, translate]);
+  }, [apiBase, authToken, buildGridConfigFromState, environmentName, playgroundState, translate]);
   const moveComparisonRows = useMemo(
     () => [
       {
@@ -3744,63 +3704,6 @@ const handleActiveBonusClick = useCallback(() => {
   const handleLoadPreset = useCallback((preset: PresetLevel) => {
     applyGridConfig(preset);
   }, [applyGridConfig]);
-
-  const getPreviewTileClass = useCallback((type: TileType | "goal" | "agent") => {
-    switch (type) {
-      case "reward":
-        return "bg-tile-reward";
-      case "punishment":
-        return "bg-tile-punishment";
-      case "obstacle":
-        return "bg-tile-obstacle";
-      case "portal":
-        return "bg-tile-portal";
-      case "goal":
-        return "bg-tile-goal";
-      case "agent":
-        return "bg-tile-agent";
-      default:
-        return "bg-tile-empty";
-    }
-  }, []);
-
-  const renderEnvironmentPreview = useCallback(
-    (config: GridConfig) => {
-      const size = config.size;
-      const tileSize = Math.max(6, Math.floor(80 / size));
-      const tileLookup = new Map<string, TileType>();
-      config.tiles.forEach((tile) => {
-        tileLookup.set(`${tile.x}-${tile.y}`, tile.type);
-      });
-
-      return (
-        <div
-          className="grid bg-tile-bg rounded-md overflow-hidden"
-          style={{
-            gridTemplateColumns: `repeat(${size}, ${tileSize}px)`,
-            gridTemplateRows: `repeat(${size}, ${tileSize}px)`,
-            gap: "1px",
-          }}
-        >
-          {Array.from({ length: size * size }, (_, index) => {
-            const x = index % size;
-            const y = Math.floor(index / size);
-            const isAgent = config.agent?.x === x && config.agent?.y === y;
-            const isGoal = config.goal?.x === x && config.goal?.y === y;
-            const tileType = isGoal ? "goal" : isAgent ? "agent" : tileLookup.get(`${x}-${y}`) || "empty";
-            return (
-              <div
-                key={`${x}-${y}`}
-                className={cn("rounded-[2px]", getPreviewTileClass(tileType))}
-                style={{ width: tileSize, height: tileSize }}
-              />
-            );
-          })}
-        </div>
-      );
-    },
-    [getPreviewTileClass],
-  );
 
   const handlePublishGlobal = useCallback(async () => {
     if (!authToken) {
@@ -6228,6 +6131,7 @@ const handleActiveBonusClick = useCallback(() => {
                     <Button
                       onClick={handleSaveEnvironment}
                       disabled={isSavingEnv}
+                      variant="secondary"
                       className="font-semibold"
                     >
                       {isSavingEnv ? translate("Speichert…", "Saving…") : translate("Speichern", "Save")}
@@ -6244,54 +6148,6 @@ const handleActiveBonusClick = useCallback(() => {
                   )}
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-foreground">
-                      {translate("Meine Umgebungen", "My environments")}
-                    </h3>
-                    {authUser && (
-                      <Badge variant="secondary" className="bg-foreground/10 text-foreground border-foreground/15">
-                        {savedEnvironments.length}
-                      </Badge>
-                    )}
-                  </div>
-                  {isLoadingEnvs ? (
-                    <p className="text-xs text-muted-foreground">
-                      {translate("Umgebungen werden geladen…", "Loading environments…")}
-                    </p>
-                  ) : !authUser ? (
-                    <p className="text-xs text-muted-foreground">
-                      {translate(
-                        "Zum Anzeigen deiner Umgebungen bitte einloggen.",
-                        "Log in to see your environments.",
-                      )}
-                    </p>
-                  ) : savedEnvironments.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">
-                      {translate(
-                        "Noch keine gespeicherten Umgebungen.",
-                        "No saved environments yet.",
-                      )}
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
-                      {savedEnvironments.map((env) => (
-                        <div
-                          key={env.id}
-                          className="flex items-center gap-3 rounded-xl border border-border/40 bg-background/60 p-3"
-                        >
-                          {renderEnvironmentPreview(env.gridConfig)}
-                          <div className="flex flex-col gap-1">
-                            <span className="text-sm font-semibold text-foreground">{env.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {env.gridConfig.size} × {env.gridConfig.size}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
             )}
           </Card>
