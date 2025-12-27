@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REMOTE_HOST="max@91.99.236.172"
 REMOTE_PATH="~/reward-rover"
+REMOTE_SSH_KEY="${HOME}/ssh_keys"
 
 echo "Building frontend..."
 cd "$ROOT_DIR"
@@ -16,6 +17,7 @@ cp -R "$ROOT_DIR/dist/." "$ROOT_DIR/server/public/"
 
 echo "Uploading server directory to $REMOTE_HOST..."
 rsync -avz \
+  -e "ssh -i ${REMOTE_SSH_KEY}" \
   --exclude "node_modules" \
   --exclude "data" \
   --exclude ".env" \
