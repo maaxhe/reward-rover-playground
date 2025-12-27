@@ -4453,14 +4453,14 @@ const handleActiveBonusClick = useCallback(() => {
           }
         }}
       >
-        <DialogContent className="max-w-md min-h-[620px] bg-primary/95 border border-primary/60 shadow-2xl p-8 text-primary-foreground">
+        <DialogContent className="max-w-md min-h-[620px] bg-slate-900 border border-slate-800 shadow-2xl p-8 text-slate-100">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-primary-foreground">
+            <DialogTitle className="text-2xl font-bold text-white">
               {authIsRegistering
                 ? translate("Account erstellen", "Create account")
                 : translate("Login", "Login")}
             </DialogTitle>
-            <DialogDescription className="text-sm text-primary-foreground/80">
+            <DialogDescription className="text-sm text-slate-400">
               {translate(
                 "Melde dich an, um globale Challenges zu veröffentlichen.",
                 "Sign in to publish global challenges.",
@@ -4471,7 +4471,7 @@ const handleActiveBonusClick = useCallback(() => {
             <div className="space-y-2">
               <Label
                 htmlFor="auth-username"
-                className="text-xs font-semibold text-primary-foreground/80 uppercase tracking-wider"
+                className="text-xs font-semibold text-slate-400 uppercase tracking-wider"
               >
                 {translate("Nutzername", "Username")}
               </Label>
@@ -4480,13 +4480,13 @@ const handleActiveBonusClick = useCallback(() => {
                 value={authUsername}
                 onChange={(event) => setAuthUsername(event.target.value)}
                 placeholder="max"
-                className="h-12 rounded-lg bg-white/10 border-white/25 text-primary-foreground placeholder:text-primary-foreground/60 focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:border-transparent"
+                className="h-12 rounded-lg bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:border-transparent"
               />
             </div>
             <div className="space-y-2">
               <Label
                 htmlFor="auth-password"
-                className="text-xs font-semibold text-primary-foreground/80 uppercase tracking-wider"
+                className="text-xs font-semibold text-slate-400 uppercase tracking-wider"
               >
                 {translate("Passwort", "Password")}
               </Label>
@@ -4495,10 +4495,10 @@ const handleActiveBonusClick = useCallback(() => {
                 type="password"
                 value={authPassword}
                 onChange={(event) => setAuthPassword(event.target.value)}
-                className="h-12 rounded-lg bg-white/10 border-white/25 text-primary-foreground placeholder:text-primary-foreground/60 focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:border-transparent"
+                className="h-12 rounded-lg bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:border-transparent"
               />
             </div>
-            {authError && <p className="text-xs text-red-200">{authError}</p>}
+            {authError && <p className="text-xs text-red-400">{authError}</p>}
             <div className="space-y-3">
               <Button
                 onClick={handleAuthSubmit}
@@ -4509,26 +4509,26 @@ const handleActiveBonusClick = useCallback(() => {
               <button
                 type="button"
                 onClick={() => setAuthIsRegistering((prev) => !prev)}
-                className="mx-auto text-sm text-primary-foreground/80 hover:text-primary-foreground transition-colors"
+                className="mx-auto text-sm text-slate-400 hover:text-white transition-colors"
               >
                 {authIsRegistering
                   ? translate("Schon registriert? ", "Already registered? ")
                   : translate("Neu hier? ", "New here? ")}
-                <span className="text-white/90 hover:text-white">
+                <span className="text-primary/90 hover:text-primary">
                   {authIsRegistering ? translate("Login", "Login") : translate("Registrieren", "Register")}
                 </span>
               </button>
             </div>
             <div className="space-y-3 pt-2">
-              <div className="relative flex items-center py-2 text-xs text-primary-foreground/70">
-                <div className="flex-grow border-t border-white/30" />
+              <div className="relative flex items-center py-2 text-xs text-slate-400">
+                <div className="flex-grow border-t border-slate-700" />
                 <span className="flex-shrink mx-4">{translate("oder", "or")}</span>
-                <div className="flex-grow border-t border-white/30" />
+                <div className="flex-grow border-t border-slate-700" />
               </div>
               {googleClientId ? (
                 <div className="space-y-3">
                   <div className="group relative w-full">
-                    <div className="flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-white/40 bg-white/95 text-sm font-semibold text-slate-900 shadow-sm transition-all duration-200 group-hover:border-white group-hover:bg-white group-hover:shadow-xl pointer-events-none">
+                    <div className="flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-slate-700 bg-slate-50 text-sm font-semibold text-slate-900 shadow-sm transition-all duration-200 group-hover:border-white group-hover:bg-white group-hover:shadow-xl pointer-events-none">
                       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-sm">
                         <svg viewBox="0 0 48 48" className="h-4 w-4" aria-hidden>
                           <path
