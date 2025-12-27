@@ -55,8 +55,29 @@ db.exec(`
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
+  CREATE TABLE IF NOT EXISTS DailyChallenges (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date_key TEXT NOT NULL UNIQUE,
+    seed INTEGER NOT NULL,
+    config_json TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS DailySubmissions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    challenge_id INTEGER NOT NULL,
+    score REAL NOT NULL,
+    steps INTEGER NOT NULL,
+    replay_json TEXT NOT NULL,
+    UNIQUE(user_id, challenge_id),
+    FOREIGN KEY(user_id) REFERENCES Users(id) ON DELETE CASCADE,
+    FOREIGN KEY(challenge_id) REFERENCES DailyChallenges(id) ON DELETE CASCADE
+  );
+
   CREATE INDEX IF NOT EXISTS idx_savedstates_user_id ON SavedStates(user_id);
   CREATE INDEX IF NOT EXISTS idx_templates_global ON EnvironmentTemplates(is_global);
+  CREATE INDEX IF NOT EXISTS idx_daily_submissions_challenge_score
+    ON DailySubmissions (challenge_id, score DESC, steps ASC);
 `);
 
 const userColumns = db.prepare("PRAGMA table_info(Users)").all().map((col) => col.name);
@@ -128,6 +149,28 @@ const statements = {
      VALUES (@key, @value, CURRENT_TIMESTAMP)
      ON CONFLICT(key)
      DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP`,
+  ),
+  getDailyByDate: db.prepare("SELECT id, date_key, seed, config_json FROM DailyChallenges WHERE date_key = ?"),
+  getDailyById: db.prepare("SELECT id, date_key, seed, config_json FROM DailyChallenges WHERE id = ?"),
+  createDaily: db.prepare(
+    "INSERT INTO DailyChallenges (date_key, seed, config_json) VALUES (@date_key, @seed, @config_json)",
+  ),
+  getDailySubmissionByUser: db.prepare(
+    "SELECT id, score, steps FROM DailySubmissions WHERE user_id = ? AND challenge_id = ?",
+  ),
+  createDailySubmission: db.prepare(
+    "INSERT INTO DailySubmissions (user_id, challenge_id, score, steps, replay_json) VALUES (@user_id, @challenge_id, @score, @steps, @replay_json)",
+  ),
+  updateDailySubmission: db.prepare(
+    "UPDATE DailySubmissions SET score = @score, steps = @steps, replay_json = @replay_json WHERE id = @id",
+  ),
+  listDailyLeaderboard: db.prepare(
+    `SELECT ds.user_id, ds.score, ds.steps, ds.replay_json, u.username
+     FROM DailySubmissions ds
+     JOIN Users u ON ds.user_id = u.id
+     WHERE ds.challenge_id = ?
+     ORDER BY ds.score DESC, ds.steps ASC
+     LIMIT 50`,
   ),
 };
 

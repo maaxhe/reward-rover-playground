@@ -11,6 +11,7 @@ import appleSignin from "apple-signin-auth";
 import { statements } from "./db.js";
 import { authenticate, getJwtSecret } from "./middleware/auth.js";
 import { isAdmin } from "./middleware/isAdmin.js";
+import dailyRoutes from "./routes/daily.js";
 
 dotenv.config();
 
@@ -343,6 +344,8 @@ app.delete(`${API_PREFIX}/admin/templates/:id`, authenticate, isAdmin, (req, res
   }
   return res.status(200).json({ ok: true });
 });
+
+app.use(API_PREFIX, dailyRoutes);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
