@@ -225,6 +225,14 @@ const SIMULATION_SPEEDS: Array<{ key: SimulationSpeed; label: string; delayMs: n
 
 const AUTH_TOKEN_KEY = "rr_token";
 const AUTH_USER_KEY = "rr_user";
+const safeLocalStorageGet = (key: string) => {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
 
 // Preset-Level-Definitionen
 interface PresetLevel {
@@ -2343,7 +2351,7 @@ export function RLGame() {
   const settingsScrollRef = useRef<HTMLDivElement>(null);
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("theme");
+      const stored = safeLocalStorageGet("theme");
       if (stored === "light" || stored === "dark") return stored;
       return "dark"; // Default immer dark
     }
@@ -2418,12 +2426,10 @@ export function RLGame() {
   const [authIsRegistering, setAuthIsRegistering] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authToken, setAuthToken] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(AUTH_TOKEN_KEY);
+    return safeLocalStorageGet(AUTH_TOKEN_KEY);
   });
   const [authUser, setAuthUser] = useState<AuthUser | null>(() => {
-    if (typeof window === "undefined") return null;
-    const raw = localStorage.getItem(AUTH_USER_KEY);
+    const raw = safeLocalStorageGet(AUTH_USER_KEY);
     if (!raw) return null;
     try {
       return JSON.parse(raw) as AuthUser;
