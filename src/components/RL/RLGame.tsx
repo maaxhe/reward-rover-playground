@@ -1472,7 +1472,7 @@ const runPlaygroundStep = (
       success: true,
       mode: "playground",
     };
-    const newHistory = [...state.episodeHistory.slice(-19), episodeStat];
+    const newHistory = [...state.episodeHistory, episodeStat];
 
     return {
       ...state,
@@ -1697,7 +1697,7 @@ const runComparisonRoverStep = (
       success: true,
       mode: "playground",
     };
-    const newHistory = [...state.episodeHistory.slice(-19), episodeStat];
+    const newHistory = [...state.episodeHistory, episodeStat];
 
     return {
       ...state,
@@ -2372,6 +2372,7 @@ export function RLGame() {
   const [challengeMode, setChallengeModeState] = useState<ChallengeTile | null>(null);
   const [explorationRate, setExplorationRate] = useState(0.2);
   const [simulationSpeed, setSimulationSpeed] = useState<SimulationSpeed>("1x");
+  const [comparisonSpeed, setComparisonSpeed] = useState<SimulationSpeed>("1x");
   const [showValues, setShowValues] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(true);
@@ -2394,6 +2395,7 @@ export function RLGame() {
   const [showComparisonRightAlphaInfo, setShowComparisonRightAlphaInfo] = useState(false);
   const [showComparisonRightGammaInfo, setShowComparisonRightGammaInfo] = useState(false);
   const [showComparisonRightExplorationInfo, setShowComparisonRightExplorationInfo] = useState(false);
+  const [comparisonPresetsOpen, setComparisonPresetsOpen] = useState(false);
   const [showActionsInfo, setShowActionsInfo] = useState(false);
   const [showRLBasics, setShowRLBasics] = useState(true);
   const [showRLFormula, setShowRLFormula] = useState(false);
@@ -2465,6 +2467,8 @@ export function RLGame() {
   >([]);
   const simulationDelayMs =
     SIMULATION_SPEEDS.find((speed) => speed.key === simulationSpeed)?.delayMs ?? SIMULATION_SPEEDS[0].delayMs;
+  const comparisonDelayMs =
+    SIMULATION_SPEEDS.find((speed) => speed.key === comparisonSpeed)?.delayMs ?? SIMULATION_SPEEDS[0].delayMs;
   const apiBase = import.meta.env.VITE_API_BASE ?? "";
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
   const isAdmin = authUser?.role === "admin";
@@ -3312,9 +3316,9 @@ export function RLGame() {
 
         return { left: nextLeft, right: nextRight };
       });
-    }, 220);
+    }, comparisonDelayMs);
     return () => window.clearInterval(interval);
-  }, [mode, comparisonState.left.isRunning, comparisonState.right.isRunning, consumeRewards]);
+  }, [mode, comparisonState.left.isRunning, comparisonState.right.isRunning, consumeRewards, comparisonDelayMs]);
 
   useEffect(() => {
     if (mode !== "random") return;
@@ -3698,18 +3702,7 @@ const handleActiveBonusClick = useCallback(() => {
     setPlaygroundState(prev => ({ ...prev, isRunning: false }));
   }, []);
 
-  const applyGridConfig = useCallback((config: GridConfig) => {
-    setCelebration(null);
-    setUndoStack([]);
-    setIsReplaying(false);
-    setReplayEpisode(null);
-    lastCelebratedEpisodeRef.current.playground = 0;
-    const sizeOptionEntry = (Object.entries(TILE_SIZE_MAP) as Array<[TileSizeOption, number]>).find(
-      ([, value]) => value === config.size,
-    );
-    const targetSize = sizeOptionEntry?.[0] ?? "s";
-    setTileSize(targetSize);
-
+  const buildGridFromConfig = useCallback((config: GridConfig) => {
     const grid = createEmptyGrid(config.size);
 
     // Platziere Tiles
@@ -3733,6 +3726,23 @@ const handleActiveBonusClick = useCallback(() => {
       value: levelValue("goal"),
     };
 
+    return { grid, agent, goal };
+  }, []);
+
+  const applyGridConfig = useCallback((config: GridConfig) => {
+    setCelebration(null);
+    setUndoStack([]);
+    setIsReplaying(false);
+    setReplayEpisode(null);
+    lastCelebratedEpisodeRef.current.playground = 0;
+    const sizeOptionEntry = (Object.entries(TILE_SIZE_MAP) as Array<[TileSizeOption, number]>).find(
+      ([, value]) => value === config.size,
+    );
+    const targetSize = sizeOptionEntry?.[0] ?? "s";
+    setTileSize(targetSize);
+
+    const { grid, agent, goal } = buildGridFromConfig(config);
+
     setPlaygroundState({
       agent,
       goal,
@@ -3746,11 +3756,62 @@ const handleActiveBonusClick = useCallback(() => {
       portalCooldowns: {},
       pendingPortalTeleport: null,
     });
-  }, []);
+  }, [buildGridFromConfig]);
 
   const handleLoadPreset = useCallback((preset: PresetLevel) => {
     applyGridConfig(preset);
   }, [applyGridConfig]);
+
+  const applyComparisonConfig = useCallback((config: GridConfig) => {
+    const sizeOptionEntry = (Object.entries(TILE_SIZE_MAP) as Array<[TileSizeOption, number]>).find(
+      ([, value]) => value === config.size,
+    );
+    const targetSize = sizeOptionEntry?.[0] ?? "s";
+    setTileSize(targetSize);
+
+    const { grid, agent, goal } = buildGridFromConfig(config);
+    const leftGrid = cloneGrid(grid);
+    const rightGrid = cloneGrid(grid);
+    const leftAgent = { ...agent };
+    const rightAgent = { ...agent };
+    const leftGoal = { ...goal };
+    const rightGoal = { ...goal };
+
+    setLeftRewardAnimation(null);
+    setRightRewardAnimation(null);
+    setComparisonState((prev) => ({
+      left: {
+        ...prev.left,
+        agent: leftAgent,
+        goal: leftGoal,
+        spawn: leftAgent,
+        grid: leftGrid,
+        isRunning: false,
+        episode: 0,
+        totalReward: 0,
+        currentSteps: 0,
+        episodeHistory: [],
+        portalCooldowns: {},
+      },
+      right: {
+        ...prev.right,
+        agent: rightAgent,
+        goal: rightGoal,
+        spawn: rightAgent,
+        grid: rightGrid,
+        isRunning: false,
+        episode: 0,
+        totalReward: 0,
+        currentSteps: 0,
+        episodeHistory: [],
+        portalCooldowns: {},
+      },
+    }));
+  }, [buildGridFromConfig]);
+
+  const handleLoadComparisonPreset = useCallback((preset: PresetLevel) => {
+    applyComparisonConfig(preset);
+  }, [applyComparisonConfig]);
 
   const getPreviewTileClass = useCallback((type: TileType | "goal" | "agent") => {
     switch (type) {
@@ -5243,6 +5304,65 @@ const handleActiveBonusClick = useCallback(() => {
                 <span aria-hidden>🔁</span>
                 {translate("Wiederholung", "Restart comparison")}
               </Button>
+            </div>
+            <div className="grid gap-3 md:grid-cols-[2fr_1fr]">
+              <Card className="rounded-2xl border border-border/50 bg-secondary/30 p-4 shadow-soft">
+                <Collapsible open={comparisonPresetsOpen} onOpenChange={setComparisonPresetsOpen} className="space-y-2">
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-between rounded-xl border border-border/40 bg-background/60 font-semibold text-base"
+                    >
+                      <span>{translate("🎯 Preset-Levels", "🎯 Preset Levels")}</span>
+                      <ChevronDown
+                        className={cn("h-4 w-4 transition-transform duration-200", comparisonPresetsOpen ? "rotate-180" : "")}
+                      />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      {PRESET_LEVELS.map((preset) => (
+                        <TooltipProvider key={preset.key}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleLoadComparisonPreset(preset)}
+                                className="text-xs font-semibold h-auto py-2"
+                              >
+                                {preset.name[language]}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="text-xs">{preset.description[language]}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ))}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </Card>
+              <Card className="rounded-2xl border border-border/50 bg-secondary/30 p-4 shadow-soft">
+                <Label className="text-base font-semibold text-foreground">
+                  {translate("🚀 Geschwindigkeit", "🚀 Speed")}
+                </Label>
+                <div className="mt-2 grid grid-cols-4 gap-2">
+                  {SIMULATION_SPEEDS.map((option) => (
+                    <Button
+                      key={option.key}
+                      variant={comparisonSpeed === option.key ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setComparisonSpeed(option.key)}
+                      className="text-xs font-semibold"
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </div>
+              </Card>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
             {/* Left Rover */}
