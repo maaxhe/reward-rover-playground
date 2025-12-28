@@ -5174,7 +5174,7 @@ const handleActiveBonusClick = useCallback(() => {
 
           <Collapsible open={showIntro} onOpenChange={setShowIntro}>
             <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid md:grid-cols-2 gap-6 pt-3">
                 <Card className="rounded-2xl border border-border bg-secondary/40 p-5 shadow-soft transform transition-transform transition-colors duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/10 hover:shadow-xl">
                   <h3 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
                     {translate(
