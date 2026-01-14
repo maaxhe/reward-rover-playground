@@ -4012,25 +4012,10 @@ const handleActiveBonusClick = useCallback(() => {
 
   useEffect(() => {
     if (hasLoadedGlobalEnv) return;
-    const controller = new AbortController();
-    const loadGlobalEnv = async () => {
-      try {
-        const response = await fetch(`${apiBase}/api/global-env`, { signal: controller.signal });
-        if (!response.ok) return;
-        const payload = await response.json();
-        if (payload?.config) {
-          applyGridConfig(payload.config);
-        }
-      } catch {
-        // Ignore network errors on initial load.
-      } finally {
-        setHasLoadedGlobalEnv(true);
-      }
-    };
-
-    loadGlobalEnv();
-    return () => controller.abort();
-  }, [apiBase, applyGridConfig, hasLoadedGlobalEnv]);
+    // Don't auto-load global env on initial page load to preserve "zwei wege" preset for small field
+    // Users can manually load saved environments if needed
+    setHasLoadedGlobalEnv(true);
+  }, [hasLoadedGlobalEnv]);
 
   const handleTileSizeChange = useCallback(
     (size: TileSizeOption) => {
