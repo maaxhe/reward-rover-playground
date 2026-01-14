@@ -557,9 +557,11 @@ const PRESET_LEVELS: PresetLevel[] = [
     },
     size: 9,
     tiles: [
-      // Kreuzwände mit Durchgängen
-      ...Array.from({ length: 9 }, (_, y) => ({ x: 4, y, type: "obstacle" as const })).filter(({ y }) => y !== 2),
-      ...Array.from({ length: 9 }, (_, x) => ({ x, y: 4, type: "obstacle" as const })).filter(({ x }) => x !== 6),
+      // Kreuzwände mit Durchgängen - Alle 4 Räume sind jetzt erreichbar
+      // Vertikale Wand (x=4) mit Öffnungen bei y=2 und y=6
+      ...Array.from({ length: 9 }, (_, y) => ({ x: 4, y, type: "obstacle" as const })).filter(({ y }) => y !== 2 && y !== 6),
+      // Horizontale Wand (y=4) mit Öffnungen bei x=2 und x=6
+      ...Array.from({ length: 9 }, (_, x) => ({ x, y: 4, type: "obstacle" as const })).filter(({ x }) => x !== 2 && x !== 6),
     ],
     agent: { x: 0, y: 0 },
     goal: { x: 8, y: 8 },
@@ -1721,7 +1723,56 @@ const runComparisonRoverStep = (
   };
 };
 
+// Helper function to build grid from config (static version without hooks)
+const buildGridFromConfigStatic = (config: GridConfig) => {
+  const grid = createEmptyGrid(config.size);
+
+  // Platziere Tiles
+  config.tiles.forEach(({ x, y, type }) => {
+    if (!grid[y] || !grid[y][x]) return;
+    grid[y][x] = {
+      type,
+      qValue: 0,
+      visits: 0,
+      value: levelValue(type),
+    };
+  });
+
+  const agent = config.agent || { x: 0, y: config.size - 1 };
+  const goal = config.goal || { x: config.size - 1, y: 0 };
+
+  grid[goal.y][goal.x] = {
+    type: "goal",
+    qValue: GOAL_REWARD,
+    visits: 0,
+    value: levelValue("goal"),
+  };
+
+  return { grid, agent, goal };
+};
+
 const createInitialPlaygroundState = (size: number): PlaygroundState => {
+  // Load "Zwei Wege" preset as default
+  const defaultPreset = PRESET_LEVELS.find(p => p.key === "twopaths");
+
+  if (defaultPreset) {
+    const { grid, agent, goal } = buildGridFromConfigStatic(defaultPreset);
+    return {
+      agent: { ...agent },
+      goal,
+      grid,
+      isRunning: false,
+      episode: 0,
+      totalReward: 0,
+      currentSteps: 0,
+      episodeHistory: [],
+      spawn: agent,
+      portalCooldowns: {},
+      pendingPortalTeleport: null,
+    };
+  }
+
+  // Fallback to empty grid if preset not found
   const safeSize = Math.max(size, 4);
   const spawn: Position = { x: Math.min(1, safeSize - 1), y: Math.min(1, safeSize - 1) };
   const goal: Position = { x: Math.max(safeSize - 2, 0), y: Math.max(safeSize - 2, 0) };
@@ -2378,7 +2429,7 @@ export function RLGame() {
   const [showLeaderboard, setShowLeaderboard] = useState(true);
   const [showStatistics, setShowStatistics] = useState(true);
   const [showActions, setShowActions] = useState(false);
-  const [consumeRewards, setConsumeRewards] = useState(true);
+  const [consumeRewards, setConsumeRewards] = useState(false);
   const [isAutoRestartEnabled, setIsAutoRestartEnabled] = useState(false);
   const [showRewardHistory, setShowRewardHistory] = useState(true);
   const [showLegend, setShowLegend] = useState(false);
@@ -5491,6 +5542,14 @@ const handleActiveBonusClick = useCallback(() => {
                     className="input-slider w-full"
                     style={{ "--slider-value": comparisonState.left.explorationRate } as CSSProperties}
                   />
+                  <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+                    <span className="font-medium">
+                      {translate("← Ausbeutung", "← Exploitation")}
+                    </span>
+                    <span className="font-medium">
+                      {translate("Entdeckung →", "Exploration →")}
+                    </span>
+                  </div>
                   {showComparisonLeftExplorationInfo && (
                     <p className="text-sm text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
                       {translate(
@@ -5740,6 +5799,14 @@ const handleActiveBonusClick = useCallback(() => {
                     className="input-slider w-full"
                     style={{ "--slider-value": comparisonState.right.explorationRate } as CSSProperties}
                   />
+                  <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+                    <span className="font-medium">
+                      {translate("← Ausbeutung", "← Exploitation")}
+                    </span>
+                    <span className="font-medium">
+                      {translate("Entdeckung →", "Exploration →")}
+                    </span>
+                  </div>
                   {showComparisonRightExplorationInfo && (
                     <p className="text-sm text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
                       {translate(
@@ -6427,6 +6494,29 @@ const handleActiveBonusClick = useCallback(() => {
               </div>
             )}
           </Card>
+
+          {/* Mobile Play Button - Only visible on mobile devices */}
+          <div className="lg:hidden mt-4 mx-auto w-full max-w-md px-4">
+            {mode === "playground" ? (
+              <Button
+                className="w-full font-semibold shadow-lg"
+                size="lg"
+                onClick={playgroundState.isRunning ? handlePlaygroundPause : handlePlaygroundStart}
+              >
+                {playgroundState.isRunning ? <Pause className="mr-2 h-5 w-5" /> : <Play className="mr-2 h-5 w-5" />}
+                {playgroundState.isRunning ? translate("Pause", "Pause") : translate("Start", "Start")}
+              </Button>
+            ) : (
+              <Button
+                className="w-full font-semibold shadow-lg"
+                size="lg"
+                onClick={randomState.isRunning ? handleRandomPause : handleRandomStart}
+              >
+                {randomState.isRunning ? <Pause className="mr-2 h-5 w-5" /> : <Play className="mr-2 h-5 w-5" />}
+                {randomState.isRunning ? translate("Pause", "Pause") : translate("Start", "Start")}
+              </Button>
+            )}
+          </div>
           </div>
 
           <div className="relative order-3 lg:order-3">
@@ -6622,6 +6712,14 @@ const handleActiveBonusClick = useCallback(() => {
                 style={{ "--slider-value": explorationRate } as CSSProperties}
                 disabled={mode === "comparison"}
               />
+              <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+                <span className="font-medium">
+                  {translate("← Ausbeutung", "← Exploitation")}
+                </span>
+                <span className="font-medium">
+                  {translate("Entdeckung →", "Exploration →")}
+                </span>
+              </div>
               {showExplorationRateInfo && (
                 <p className="text-sm text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
                   {translate(

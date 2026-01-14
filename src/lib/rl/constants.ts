@@ -199,23 +199,55 @@ export const PRESET_LEVELS: PresetLevel[] = [
     key: "trap",
     name: { de: "🪤 Die Falle", en: "🪤 The Trap" },
     description: {
-      de: "Belohnungen locken in eine Sackgasse - der Rover muss lernen zu widerstehen!",
-      en: "Rewards lure into a dead end - the rover must learn to resist!",
+      de: "Mehrere verlockende Sackgassen mit Belohnungen - der Rover muss Geduld lernen!",
+      en: "Multiple tempting dead ends with rewards - the rover must learn patience!",
     },
-    size: 6,
+    size: 9,
     tiles: [
-      { x: 3, y: 1, type: "obstacle" },
-      { x: 3, y: 2, type: "obstacle" },
+      // Upper trap - Rewards leading to punishment
+      { x: 2, y: 1, type: "obstacle" },
+      { x: 2, y: 2, type: "obstacle" },
+      { x: 2, y: 3, type: "obstacle" },
       { x: 3, y: 3, type: "obstacle" },
-      { x: 4, y: 3, type: "obstacle" },
-      { x: 4, y: 1, type: "reward" },
-      { x: 4, y: 2, type: "reward" },
-      { x: 5, y: 2, type: "punishment" },
-      { x: 1, y: 1, type: "obstacle" },
-      { x: 1, y: 3, type: "obstacle" },
+      { x: 3, y: 1, type: "reward" },
+      { x: 3, y: 2, type: "reward" },
+      { x: 4, y: 2, type: "punishment" },
+
+      // Middle trap - Looks like a shortcut
+      { x: 5, y: 3, type: "obstacle" },
+      { x: 5, y: 4, type: "obstacle" },
+      { x: 5, y: 5, type: "obstacle" },
+      { x: 6, y: 5, type: "obstacle" },
+      { x: 6, y: 3, type: "reward" },
+      { x: 6, y: 4, type: "reward" },
+      { x: 7, y: 4, type: "punishment" },
+
+      // Lower trap - Portal trap
+      { x: 1, y: 6, type: "obstacle" },
+      { x: 2, y: 6, type: "obstacle" },
+      { x: 2, y: 7, type: "obstacle" },
+      { x: 1, y: 7, type: "reward" },
+      { x: 1, y: 8, type: "portal" },
+      { x: 7, y: 1, type: "portal" }, // Portal leads to corner
+
+      // Main path obstacles
+      { x: 4, y: 4, type: "obstacle" },
+      { x: 4, y: 5, type: "obstacle" },
+      { x: 3, y: 6, type: "obstacle" },
+      { x: 5, y: 7, type: "obstacle" },
+
+      // Strategic rewards on safe path
+      { x: 1, y: 4, type: "reward" },
+      { x: 3, y: 5, type: "reward" },
+      { x: 4, y: 7, type: "reward" },
+      { x: 6, y: 7, type: "reward" },
+
+      // Punishments as warnings
+      { x: 2, y: 5, type: "punishment" },
+      { x: 5, y: 6, type: "punishment" },
     ],
-    agent: { x: 0, y: 4 },
-    goal: { x: 5, y: 4 },
+    agent: { x: 0, y: 0 },
+    goal: { x: 8, y: 8 },
   },
   {
     key: "spiral",
