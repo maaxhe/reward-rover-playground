@@ -2456,6 +2456,8 @@ export function RLGame() {
   const [showRLSettings, setShowRLSettings] = useState(false);
   const [showRandomStatsCard, setShowRandomStatsCard] = useState(false);
   const [showPlaygroundStatsCard, setShowPlaygroundStatsCard] = useState(false);
+  const [showConsolePanel, setShowConsolePanel] = useState(true);
+  const [showSettingsPanel, setShowSettingsPanel] = useState(true);
   const [isReplaying, setIsReplaying] = useState(false);
   const [replayEpisode, setReplayEpisode] = useState<EpisodeStats | null>(null);
   const [replayStep, setReplayStep] = useState(0);
@@ -6070,12 +6072,20 @@ const handleActiveBonusClick = useCallback(() => {
                 mode === "comparison" && "pointer-events-none opacity-40 grayscale",
               )}
             >
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                <Gamepad2 className="h-6 w-6 text-primary" />
-                <span className="gradient-text">
-                  {translate("Konsole", "Console")}
-                </span>
-              </h2>
+              <button
+                onClick={() => setShowConsolePanel(!showConsolePanel)}
+                className="flex items-center justify-between w-full text-left lg:pointer-events-none"
+              >
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <Gamepad2 className="h-6 w-6 text-primary" />
+                  <span className="gradient-text">
+                    {translate("Konsole", "Console")}
+                  </span>
+                </h2>
+                <ChevronDown className={cn("h-5 w-5 transition-transform lg:hidden", showConsolePanel && "rotate-180")} />
+              </button>
+              {showConsolePanel && (
+              <>
             {mode === "playground" && (
               <Badge variant="secondary" className="self-start bg-foreground/10 text-foreground border-foreground/15 font-semibold">
                 👣 {playgroundState.currentSteps}
@@ -6348,16 +6358,18 @@ const handleActiveBonusClick = useCallback(() => {
                 </CollapsibleContent>
               </Card>
             </Collapsible>
+              </>
+              )}
 
           </Card>
           <ScrollIndicator containerRef={consoleScrollRef} />
           </div>
 
-          <div className="order-1 lg:order-2">
+          <div className="order-1 lg:order-2 w-full overflow-x-hidden">
           <Card
             style={{ height: `${cardHeight}px` }}
             className={cn(
-              "flex flex-col rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm w-fit mx-auto overflow-y-auto transition-colors duration-200 hover:border-primary/30",
+              "flex flex-col rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm w-full lg:w-fit mx-auto overflow-y-auto transition-colors duration-200 hover:border-primary/30",
               mode === "comparison" && "pointer-events-none opacity-40 grayscale",
             )}
           >
@@ -6372,10 +6384,11 @@ const handleActiveBonusClick = useCallback(() => {
               tabIndex={0}
               role="application"
               aria-label={translate("Reward Rover Spielfeld", "Reward Rover playfield")}
-              className="rounded-2xl border border-border/50 bg-background/80 p-4 shadow-soft focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
+              className="rounded-2xl border border-border/50 bg-background/80 p-4 shadow-soft focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow max-w-full mx-auto"
               style={{
                 width: gridPixelDimension + 40,
                 height: gridPixelDimension + 40,
+                maxWidth: "100%",
               }}
               onMouseDown={() => gridRef.current?.focus()}
             >
@@ -6521,10 +6534,18 @@ const handleActiveBonusClick = useCallback(() => {
 
           <div className="relative order-3 lg:order-3">
             <Card ref={settingsScrollRef} style={{ height: `${cardHeight}px` }} className="flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm overflow-y-auto transition-colors duration-200 hover:border-primary/30">
-              <h2 className="text-xl font-bold gradient-text">
-                {translate("⚙️ Einstellungen", "⚙️ Settings")}
-              </h2>
+              <button
+                onClick={() => setShowSettingsPanel(!showSettingsPanel)}
+                className="flex items-center justify-between w-full text-left lg:pointer-events-none"
+              >
+                <h2 className="text-xl font-bold gradient-text">
+                  {translate("⚙️ Einstellungen", "⚙️ Settings")}
+                </h2>
+                <ChevronDown className={cn("h-5 w-5 transition-transform lg:hidden", showSettingsPanel && "rotate-180")} />
+              </button>
 
+            {showSettingsPanel && (
+            <>
             <Card className="rounded-2xl border border-border/50 bg-secondary/30 p-4 shadow-soft space-y-4">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <h3 className="text-lg font-bold text-foreground">
@@ -6949,6 +6970,8 @@ const handleActiveBonusClick = useCallback(() => {
                   )}
                 </p>
               </Card>
+            )}
+            </>
             )}
 
           </Card>
