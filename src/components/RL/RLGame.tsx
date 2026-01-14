@@ -6067,11 +6067,14 @@ const handleActiveBonusClick = useCallback(() => {
           <div className="relative order-2 lg:order-1">
             <Card
               ref={consoleScrollRef}
-              style={{ height: `${cardHeight}px` }}
               className={cn(
-                "flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm overflow-y-auto transition-colors duration-200 hover:border-primary/30",
+                "flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm overflow-y-auto transition-all duration-200 hover:border-primary/30",
+                "h-auto lg:h-[var(--console-height)]",
                 mode === "comparison" && "pointer-events-none opacity-40 grayscale",
               )}
+              style={{
+                ["--console-height" as any]: `${cardHeight}px`,
+              }}
             >
               <button
                 onClick={() => setShowConsolePanel(!showConsolePanel)}
@@ -6385,11 +6388,10 @@ const handleActiveBonusClick = useCallback(() => {
               tabIndex={0}
               role="application"
               aria-label={translate("Reward Rover Spielfeld", "Reward Rover playfield")}
-              className="rounded-2xl border border-border/50 bg-background/80 p-4 shadow-soft focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow max-w-full mx-auto"
+              className="rounded-2xl border border-border/50 bg-background/80 p-4 shadow-soft focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow w-full max-w-full mx-auto"
               style={{
-                width: gridPixelDimension + 40,
-                height: gridPixelDimension + 40,
-                maxWidth: "100%",
+                maxWidth: gridPixelDimension + 40,
+                aspectRatio: "1 / 1",
               }}
               onMouseDown={() => gridRef.current?.focus()}
             >
@@ -6473,7 +6475,7 @@ const handleActiveBonusClick = useCallback(() => {
             </div>
 
             {mode === "playground" && (
-              <div className="mt-4 space-y-4">
+              <div className="mt-4 space-y-4 hidden lg:block">
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold text-foreground">
                     {translate("Umgebung speichern", "Save environment")}
@@ -6534,7 +6536,16 @@ const handleActiveBonusClick = useCallback(() => {
           </div>
 
           <div className="relative order-3 lg:order-3">
-            <Card ref={settingsScrollRef} style={{ height: `${cardHeight}px` }} className="flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm overflow-y-auto transition-colors duration-200 hover:border-primary/30">
+            <Card
+              ref={settingsScrollRef}
+              className={cn(
+                "flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm overflow-y-auto transition-all duration-200 hover:border-primary/30",
+                "h-auto lg:h-[var(--settings-height)]"
+              )}
+              style={{
+                ["--settings-height" as any]: `${cardHeight}px`,
+              }}
+            >
               <button
                 onClick={() => setShowSettingsPanel(!showSettingsPanel)}
                 className="flex items-center justify-between w-full text-left lg:pointer-events-none"
@@ -6861,7 +6872,7 @@ const handleActiveBonusClick = useCallback(() => {
               </div>
             </Card>
 
-            <Card className="rounded-2xl border border-border/50 bg-secondary/30 p-4 shadow-soft space-y-3">
+            <Card className="rounded-2xl border border-border/50 bg-secondary/30 p-4 shadow-soft space-y-3 hidden lg:block">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold text-foreground">
                   {translate("Meine Umgebungen", "My environments")}
