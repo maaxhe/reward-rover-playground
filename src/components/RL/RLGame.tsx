@@ -2457,8 +2457,18 @@ export function RLGame() {
   const [showRLSettings, setShowRLSettings] = useState(false);
   const [showRandomStatsCard, setShowRandomStatsCard] = useState(false);
   const [showPlaygroundStatsCard, setShowPlaygroundStatsCard] = useState(false);
-  const [showConsolePanel, setShowConsolePanel] = useState(true);
-  const [showSettingsPanel, setShowSettingsPanel] = useState(true);
+  const [showConsolePanel, setShowConsolePanel] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth >= 1024;
+    }
+    return true;
+  });
+  const [showSettingsPanel, setShowSettingsPanel] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth >= 1024;
+    }
+    return true;
+  });
   const [isReplaying, setIsReplaying] = useState(false);
   const [replayEpisode, setReplayEpisode] = useState<EpisodeStats | null>(null);
   const [replayStep, setReplayStep] = useState(0);
@@ -7432,30 +7442,59 @@ const ControlBar = ({
   mode,
   onModeChange,
   translate,
-}: ControlBarProps) => (
-  <div className="rounded-3xl border border-border bg-card/90 p-4 shadow-medium backdrop-blur-xl text-foreground">
-    <div className="flex flex-wrap items-center justify-center gap-3">
-      <Button
-        variant={mode === "playground" ? "default" : "outline"}
-        onClick={() => onModeChange("playground")}
-        className="rounded-lg font-semibold"
-      >
-        🎨 {translate("Playground", "Playground")}
-      </Button>
-      <Button
-        variant={mode === "random" ? "default" : "outline"}
-        onClick={() => onModeChange("random")}
-        className="rounded-lg font-semibold"
-      >
-        🎲 {translate("Zufallsmodus", "Random Mode")}
-      </Button>
-      <Button
-        variant={mode === "comparison" ? "default" : "outline"}
-        onClick={() => onModeChange("comparison")}
-        className="rounded-lg font-semibold"
-      >
-        ⚖️ {translate("Vergleichsmodus", "Comparison Mode")}
-      </Button>
+}: ControlBarProps) => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  return (
+    <div className="rounded-3xl border border-border bg-card/90 p-4 shadow-medium backdrop-blur-xl text-foreground">
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <Button
+          variant={mode === "playground" ? "default" : "outline"}
+          onClick={() => onModeChange("playground")}
+          className="rounded-lg font-semibold"
+        >
+          🎨 {translate("Playground", "Playground")}
+        </Button>
+        <div className="relative">
+          <Button
+            variant={mode === "random" ? "default" : "outline"}
+            onClick={() => !isMobile && onModeChange("random")}
+            className={cn("rounded-lg font-semibold", isMobile && "cursor-not-allowed opacity-50")}
+            disabled={isMobile}
+          >
+            🎲 {translate("Zufallsmodus", "Random Mode")}
+          </Button>
+          {isMobile && (
+            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-muted-foreground">
+              {translate("Nur auf Desktop", "Desktop only")}
+            </div>
+          )}
+        </div>
+        <div className="relative">
+          <Button
+            variant={mode === "comparison" ? "default" : "outline"}
+            onClick={() => !isMobile && onModeChange("comparison")}
+            className={cn("rounded-lg font-semibold", isMobile && "cursor-not-allowed opacity-50")}
+            disabled={isMobile}
+          >
+            ⚖️ {translate("Vergleichsmodus", "Comparison Mode")}
+          </Button>
+          {isMobile && (
+            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-muted-foreground">
+              {translate("Nur auf Desktop", "Desktop only")}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
