@@ -1751,28 +1751,29 @@ const buildGridFromConfigStatic = (config: GridConfig) => {
   return { grid, agent, goal };
 };
 
-const createInitialPlaygroundState = (size: number): PlaygroundState => {
-  // Load "Zwei Wege" preset as default
-  const defaultPreset = PRESET_LEVELS.find(p => p.key === "twopaths");
-
-  if (defaultPreset) {
-    const { grid, agent, goal } = buildGridFromConfigStatic(defaultPreset);
-    return {
-      agent: { ...agent },
-      goal,
-      grid,
-      isRunning: false,
-      episode: 0,
-      totalReward: 0,
-      currentSteps: 0,
-      episodeHistory: [],
-      spawn: agent,
-      portalCooldowns: {},
-      pendingPortalTeleport: null,
-    };
+const createInitialPlaygroundState = (size: number, usePreset: boolean = false): PlaygroundState => {
+  // Load "Zwei Wege" preset as default only on initial load
+  if (usePreset) {
+    const defaultPreset = PRESET_LEVELS.find(p => p.key === "twopaths");
+    if (defaultPreset) {
+      const { grid, agent, goal } = buildGridFromConfigStatic(defaultPreset);
+      return {
+        agent: { ...agent },
+        goal,
+        grid,
+        isRunning: false,
+        episode: 0,
+        totalReward: 0,
+        currentSteps: 0,
+        episodeHistory: [],
+        spawn: agent,
+        portalCooldowns: {},
+        pendingPortalTeleport: null,
+      };
+    }
   }
 
-  // Fallback to empty grid if preset not found
+  // Create empty grid with specified size
   const safeSize = Math.max(size, 4);
   const spawn: Position = { x: Math.min(1, safeSize - 1), y: Math.min(1, safeSize - 1) };
   const goal: Position = { x: Math.max(safeSize - 2, 0), y: Math.max(safeSize - 2, 0) };
@@ -2930,7 +2931,7 @@ export function RLGame() {
   const levelDescription = isEnglish ? levelConfig.descriptionEn : levelConfig.description;
 
   const [playgroundState, setPlaygroundState] = useState<PlaygroundState>(() =>
-    createInitialPlaygroundState(baseFieldSize)
+    createInitialPlaygroundState(baseFieldSize, true)
   );
   const [randomState, setRandomState] = useState<RandomModeState>(() =>
     createRandomModeState(levelConfig, baseFieldSize)
@@ -3706,7 +3707,7 @@ const handleActiveBonusClick = useCallback(() => {
     setIsReplaying(false);
     setReplayEpisode(null);
     lastCelebratedEpisodeRef.current.playground = 0;
-    setPlaygroundState(createInitialPlaygroundState(nextSize));
+    setPlaygroundState(createInitialPlaygroundState(nextSize, false));
   }, [tileSize]);
 
   const handleReplayBest = useCallback(() => {
@@ -4027,7 +4028,7 @@ const handleActiveBonusClick = useCallback(() => {
       const nextSize = TILE_SIZE_MAP[size];
       setTileSize(size);
       setCelebration(null);
-      setPlaygroundState(createInitialPlaygroundState(nextSize));
+      setPlaygroundState(createInitialPlaygroundState(nextSize, false));
       setComparisonState(createComparisonState(nextSize));
       if (speedrunEnabled) {
         setRandomState((prev) =>
