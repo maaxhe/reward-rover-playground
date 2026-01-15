@@ -3553,7 +3553,10 @@ export function RLGame() {
     if (undoStack.length === 0) return;
 
     const previousGrid = undoStack[undoStack.length - 1];
-    setUndoStack(stack => stack.slice(0, -1));
+    // Keep the first entry (initial/loaded state) in the stack so environment stays stable
+    if (undoStack.length > 1) {
+      setUndoStack(stack => stack.slice(0, -1));
+    }
     setPlaygroundState(prev => ({
       ...prev,
       grid: cloneGrid(previousGrid),
@@ -3795,7 +3798,6 @@ const handleActiveBonusClick = useCallback(() => {
 
   const applyGridConfig = useCallback((config: GridConfig) => {
     setCelebration(null);
-    setUndoStack([]);
     setIsReplaying(false);
     setReplayEpisode(null);
     lastCelebratedEpisodeRef.current.playground = 0;
@@ -3806,6 +3808,9 @@ const handleActiveBonusClick = useCallback(() => {
     setTileSize(targetSize);
 
     const { grid, agent, goal } = buildGridFromConfig(config);
+
+    // Save initial grid state so undo returns to loaded environment instead of clearing it
+    setUndoStack([cloneGrid(grid)]);
 
     setPlaygroundState({
       agent,
