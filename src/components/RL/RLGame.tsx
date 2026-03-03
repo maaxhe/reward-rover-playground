@@ -1012,6 +1012,72 @@ const GOAL_REWARD = REWARD_VALUE * 2;
 const DEFAULT_TILE_OPTION: TileSizeOption = "s";
 const PORTAL_COOLDOWN_STEPS = 4;
 
+// ── Correct Q-Table: Q(s, a) ──────────────────────────────────────────────
+// Actions: 0=up, 1=down, 2=left, 3=right
+const ACTION_DIRS = [
+  { dx: 0, dy: -1 }, // 0: up
+  { dx: 0, dy: 1 },  // 1: down
+  { dx: -1, dy: 0 }, // 2: left
+  { dx: 1, dy: 0 },  // 3: right
+] as const;
+
+/** QTable maps state key "x,y" → [Q_up, Q_down, Q_left, Q_right] */
+type QTable = Record<string, [number, number, number, number]>;
+
+const qStateKey = (pos: { x: number; y: number }) => `${pos.x},${pos.y}`;
+
+const getQValues = (qTable: QTable, pos: { x: number; y: number }): [number, number, number, number] =>
+  qTable[qStateKey(pos)] ?? [0, 0, 0, 0];
+
+const getQValue = (qTable: QTable, pos: { x: number; y: number }, action: number): number =>
+  getQValues(qTable, pos)[action];
+
+const setQValue = (
+  qTable: QTable,
+  pos: { x: number; y: number },
+  action: number,
+  value: number,
+): QTable => {
+  const key = qStateKey(pos);
+  const current = qTable[key] ?? [0, 0, 0, 0];
+  const updated = [...current] as [number, number, number, number];
+  updated[action] = value;
+  return { ...qTable, [key]: updated };
+};
+
+/** max_a Q(s, a) — used as display value on the tile */
+const getDisplayQValue = (qTable: QTable, pos: { x: number; y: number }): number =>
+  Math.max(...getQValues(qTable, pos));
+
+/** max_a' Q(s', a') over reachable next actions — TD bootstrap target */
+const getMaxQFromTable = (
+  qTable: QTable,
+  grid: { type: string }[][],
+  pos: { x: number; y: number },
+): number => {
+  const size = grid.length;
+  let max = 0;
+  ACTION_DIRS.forEach(({ dx, dy }, idx) => {
+    const nx = pos.x + dx;
+    const ny = pos.y + dy;
+    if (nx >= 0 && nx < size && ny >= 0 && ny < size && grid[ny][nx].type !== "obstacle") {
+      const q = getQValue(qTable, pos, idx);
+      if (q > max) max = q;
+    }
+  });
+  return max;
+};
+
+/** Map a movement from → to into an action index (0–3) */
+const posToActionIndex = (from: { x: number; y: number }, to: { x: number; y: number }): number => {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  if (dy === -1) return 0; // up
+  if (dy === 1) return 1;  // down
+  if (dx === -1) return 2; // left
+  return 3;                // right
+};
+
 type Position = { x: number; y: number };
 
 interface TileState {
@@ -1033,6 +1099,7 @@ interface PlaygroundState {
   spawn: Position;
   portalCooldowns: Record<string, number>;
   pendingPortalTeleport?: { from: Position; to: Position; waitCounter: number } | null;
+  qTable: QTable;
 }
 
 interface EpisodeStats {
@@ -1070,6 +1137,7 @@ interface RandomModeState {
   };
   latestDrop: BonusType | null;
   portalCooldowns: Record<string, number>;
+  qTable: QTable;
 }
 
 interface ComparisonRoverState {
@@ -1087,6 +1155,7 @@ interface ComparisonRoverState {
   explorationRate: number;
   name: string;
   portalCooldowns: Record<string, number>;
+  qTable: QTable;
 }
 
 interface ComparisonState {
@@ -1247,6 +1316,7 @@ const getPossibleActions = (grid: TileState[][], pos: Position): Position[] => {
 const chooseAction = (
   grid: TileState[][],
   pos: Position,
+  qTable: QTable,
   explorationRate: number,
   biasDirection?: Position | null,
 ): Position => {
@@ -1263,17 +1333,18 @@ const chooseAction = (
   if (Math.random() < explorationRate) {
     return possible[Math.floor(Math.random() * possible.length)];
   }
+  // Exploitation: argmax_a Q(s, a) — look up from qTable, not destination tile
   let best = possible[0];
   let bestQ =
-    grid[best.y][best.x].qValue +
+    getQValue(qTable, pos, posToActionIndex(pos, best)) +
     (biasMatch && best.x === biasMatch.x && best.y === biasMatch.y ? 0.05 : 0);
   for (let i = 1; i < possible.length; i++) {
     const action = possible[i];
-    const q = grid[action.y][action.x].qValue;
+    const q = getQValue(qTable, pos, posToActionIndex(pos, action));
     const biasBonus =
       biasMatch && action.x === biasMatch.x && action.y === biasMatch.y ? 0.05 : 0;
     if (q + biasBonus > bestQ) {
-      bestQ = q;
+      bestQ = q + biasBonus;
       best = action;
     }
   }
@@ -1283,23 +1354,23 @@ const chooseAction = (
 const getBestActionDirection = (
   grid: TileState[][],
   pos: Position,
+  qTable: QTable,
 ): string | undefined => {
   const possible = getPossibleActions(grid, pos);
   if (possible.length === 0) return undefined;
 
   let best = possible[0];
-  let bestQ = grid[best.y][best.x].qValue;
+  let bestQ = getQValue(qTable, pos, posToActionIndex(pos, best));
 
   for (let i = 1; i < possible.length; i++) {
     const action = possible[i];
-    const q = grid[action.y][action.x].qValue;
+    const q = getQValue(qTable, pos, posToActionIndex(pos, action));
     if (q > bestQ) {
       bestQ = q;
       best = action;
     }
   }
 
-  // Convert position to direction
   const dx = best.x - pos.x;
   const dy = best.y - pos.y;
 
@@ -1415,7 +1486,7 @@ const runPlaygroundStep = (
   }
   // No pending teleport, choose normal action
   else {
-    nextPos = chooseAction(state.grid, current, explorationRate, bias);
+    nextPos = chooseAction(state.grid, current, state.qTable, explorationRate, bias);
 
     // Check for new portal teleportation
     if (
@@ -1446,22 +1517,29 @@ const runPlaygroundStep = (
     }
   }
 
+  // Q-Learning update: Q(s,a) ← Q(s,a) + α[R + γ·max_a' Q(s',a') − Q(s,a)]
+  const isPortalWait = nextPos.x === current.x && nextPos.y === current.y;
+  let newQTable = state.qTable;
   const currentCell = newGrid[current.y][current.x];
-  const possibleNext = getPossibleActions(newGrid, nextPos);
-  const maxNextQ = possibleNext
-    .map((p) => newGrid[p.y][p.x].qValue)
-    .reduce((acc, val) => (val > acc ? val : acc), Number.NEGATIVE_INFINITY);
 
-  const newQ =
-    currentCell.qValue +
-    alpha * (reward + gamma * maxNextQ - currentCell.qValue);
-
-  newGrid[current.y][current.x] = {
-    ...currentCell,
-    qValue: newQ,
-    value: newQ,
-    visits: currentCell.visits + 1,
-  };
+  if (!isPortalWait) {
+    const actionIdx = posToActionIndex(current, nextPos);
+    const currentQ = getQValue(state.qTable, current, actionIdx);
+    const maxNextQ = getMaxQFromTable(state.qTable, newGrid, nextPos);
+    const newQ = currentQ + alpha * (reward + gamma * maxNextQ - currentQ);
+    newQTable = setQValue(state.qTable, current, actionIdx, newQ);
+    newGrid[current.y][current.x] = {
+      ...currentCell,
+      qValue: getDisplayQValue(newQTable, current),
+      value: getDisplayQValue(newQTable, current),
+      visits: currentCell.visits + 1,
+    };
+  } else {
+    newGrid[current.y][current.x] = {
+      ...currentCell,
+      visits: currentCell.visits + 1,
+    };
+  }
 
   const reachedGoal = nextPos.x === state.goal.x && nextPos.y === state.goal.y;
   const newSteps = state.currentSteps + 1;
@@ -1480,6 +1558,7 @@ const runPlaygroundStep = (
       ...state,
       agent: { ...state.spawn },
       grid: newGrid,
+      qTable: newQTable,
       totalReward: 0,
       isRunning: autoRestart,
       episode: state.episode + 1,
@@ -1494,6 +1573,7 @@ const runPlaygroundStep = (
     ...state,
     agent: nextPos,
     grid: newGrid,
+    qTable: newQTable,
     totalReward: state.totalReward + reward,
     currentSteps: newSteps,
     portalCooldowns,
@@ -1511,7 +1591,7 @@ const runRandomModeStep = (
   autoRestart = false,
 ): RandomModeState => {
   const current = state.agent;
-  let nextPos = chooseAction(state.grid, current, explorationRate, bias);
+  let nextPos = chooseAction(state.grid, current, state.qTable, explorationRate, bias);
   const cooledCooldowns = decrementPortalCooldowns(state.portalCooldowns);
   let portalCooldowns = cooledCooldowns;
 
@@ -1542,20 +1622,18 @@ const runRandomModeStep = (
     }
   }
 
+  // Q-Learning update: Q(s,a) ← Q(s,a) + α[R + γ·max_a' Q(s',a') − Q(s,a)]
+  const actionIdx = posToActionIndex(current, nextPos);
+  const currentQ = getQValue(state.qTable, current, actionIdx);
+  const maxNextQ = getMaxQFromTable(state.qTable, newGrid, nextPos);
+  const newQ = currentQ + alpha * (reward + gamma * maxNextQ - currentQ);
+  const newQTable = setQValue(state.qTable, current, actionIdx, newQ);
+
   const currentCell = newGrid[current.y][current.x];
-  const possibleNext = getPossibleActions(newGrid, nextPos);
-  const maxNextQ = possibleNext
-    .map((p) => newGrid[p.y][p.x].qValue)
-    .reduce((acc, val) => (val > acc ? val : acc), Number.NEGATIVE_INFINITY);
-
-  const newQ =
-    currentCell.qValue +
-    alpha * (reward + gamma * maxNextQ - currentCell.qValue);
-
   newGrid[current.y][current.x] = {
     ...currentCell,
-    qValue: newQ,
-    value: newQ,
+    qValue: getDisplayQValue(newQTable, current),
+    value: getDisplayQValue(newQTable, current),
     visits: currentCell.visits + 1,
   };
 
@@ -1585,17 +1663,18 @@ const runRandomModeStep = (
         ...state,
         agent: { ...state.spawn },
         grid: newGrid,
+        qTable: newQTable,
         totalReward: 0,
         isRunning: false,
         episode: state.episode + 1,
         currentSteps: 0,
         episodeHistory: newHistory,
         activeBonus: null,
-      bonusReady: false,
-      bonusCountdown: BONUS_INTERVAL,
-      spawn: state.spawn,
-      latestDrop: null,
-      speedrun: {
+        bonusReady: false,
+        bonusCountdown: BONUS_INTERVAL,
+        spawn: state.spawn,
+        latestDrop: null,
+        speedrun: {
           ...state.speedrun,
           stage: nextStage,
           timeLeft: stageConfig.timeLimit,
@@ -1610,6 +1689,7 @@ const runRandomModeStep = (
       ...state,
       agent: { ...state.spawn },
       grid: newGrid,
+      qTable: newQTable,
       totalReward: 0,
       isRunning: autoRestart,
       episode: state.episode + 1,
@@ -1628,6 +1708,7 @@ const runRandomModeStep = (
     ...state,
     agent: nextPos,
     grid: newGrid,
+    qTable: newQTable,
     totalReward: state.totalReward + reward,
     currentSteps: newSteps,
     spawn: state.spawn,
@@ -1640,7 +1721,7 @@ const runComparisonRoverStep = (
   consumeRewards = true,
 ): ComparisonRoverState => {
   const current = state.agent;
-  let nextPos = chooseAction(state.grid, current, state.explorationRate, null);
+  let nextPos = chooseAction(state.grid, current, state.qTable, state.explorationRate, null);
   const cooledCooldowns = decrementPortalCooldowns(state.portalCooldowns);
   let portalCooldowns = cooledCooldowns;
 
@@ -1671,20 +1752,18 @@ const runComparisonRoverStep = (
     }
   }
 
+  // Q-Learning update: Q(s,a) ← Q(s,a) + α[R + γ·max_a' Q(s',a') − Q(s,a)]
+  const actionIdx = posToActionIndex(current, nextPos);
+  const currentQ = getQValue(state.qTable, current, actionIdx);
+  const maxNextQ = getMaxQFromTable(state.qTable, newGrid, nextPos);
+  const newQ = currentQ + state.alpha * (reward + state.gamma * maxNextQ - currentQ);
+  const newQTable = setQValue(state.qTable, current, actionIdx, newQ);
+
   const currentCell = newGrid[current.y][current.x];
-  const possibleNext = getPossibleActions(newGrid, nextPos);
-  const maxNextQ = possibleNext
-    .map((p) => newGrid[p.y][p.x].qValue)
-    .reduce((acc, val) => (val > acc ? val : acc), Number.NEGATIVE_INFINITY);
-
-  const newQ =
-    currentCell.qValue +
-    state.alpha * (reward + state.gamma * maxNextQ - currentCell.qValue);
-
   newGrid[current.y][current.x] = {
     ...currentCell,
-    qValue: newQ,
-    value: newQ,
+    qValue: getDisplayQValue(newQTable, current),
+    value: getDisplayQValue(newQTable, current),
     visits: currentCell.visits + 1,
   };
 
@@ -1705,6 +1784,7 @@ const runComparisonRoverStep = (
       ...state,
       agent: { ...state.spawn },
       grid: newGrid,
+      qTable: newQTable,
       totalReward: 0,
       episode: state.episode + 1,
       currentSteps: 0,
@@ -1717,6 +1797,7 @@ const runComparisonRoverStep = (
     ...state,
     agent: nextPos,
     grid: newGrid,
+    qTable: newQTable,
     totalReward: state.totalReward + reward,
     currentSteps: newSteps,
     portalCooldowns,
@@ -1769,6 +1850,7 @@ const createInitialPlaygroundState = (size: number, usePreset: boolean = false):
         spawn: agent,
         portalCooldowns: {},
         pendingPortalTeleport: null,
+        qTable: {},
       };
     }
   }
@@ -1791,6 +1873,7 @@ const createInitialPlaygroundState = (size: number, usePreset: boolean = false):
     spawn,
     portalCooldowns: {},
     pendingPortalTeleport: null,
+    qTable: {},
   };
 };
 
@@ -2074,6 +2157,7 @@ const createRandomModeState = (level: LevelConfig, baseSize: number): RandomMode
     },
     latestDrop: null,
     portalCooldowns: {},
+    qTable: {},
   };
 };
 
@@ -2118,6 +2202,7 @@ const createComparisonState = (size: number): ComparisonState => {
       explorationRate: 0.3,
       name: "Rover A",
       portalCooldowns: {},
+      qTable: {},
     },
     right: {
       agent: { ...spawn },
@@ -2134,6 +2219,7 @@ const createComparisonState = (size: number): ComparisonState => {
       explorationRate: 0.5,
       name: "Rover B",
       portalCooldowns: {},
+      qTable: {},
     },
   };
 };
@@ -3824,6 +3910,7 @@ const handleActiveBonusClick = useCallback(() => {
       episodeHistory: [],
       portalCooldowns: {},
       pendingPortalTeleport: null,
+      qTable: {},
     });
   }, [buildGridFromConfig]);
 
@@ -3861,6 +3948,7 @@ const handleActiveBonusClick = useCallback(() => {
         currentSteps: 0,
         episodeHistory: [],
         portalCooldowns: {},
+        qTable: {},
       },
       right: {
         ...prev.right,
@@ -3874,6 +3962,7 @@ const handleActiveBonusClick = useCallback(() => {
         currentSteps: 0,
         episodeHistory: [],
         portalCooldowns: {},
+        qTable: {},
       },
     }));
   }, [buildGridFromConfig]);
@@ -4289,6 +4378,7 @@ const handleActiveBonusClick = useCallback(() => {
   };
 
   const activeGrid = mode === "playground" ? playgroundState.grid : randomState.grid;
+  const activeQTable = mode === "playground" ? playgroundState.qTable : randomState.qTable;
   const gridSize = activeGrid.length;
   const tileSizePx = Math.max(24, Math.floor(GRID_PIXEL_TARGET[tileSize] / Math.max(gridSize, 1)));
   const gridPixelDimension = tileSizePx * gridSize;
@@ -5631,7 +5721,7 @@ const handleActiveBonusClick = useCallback(() => {
                           visits={cell.visits}
                           showHeatmap={showHeatmap}
                           maxVisits={leftComparisonMaxVisits}
-                          bestAction={showActions ? getBestActionDirection(comparisonState.left.grid, { x, y }) : undefined}
+                          bestAction={showActions ? getBestActionDirection(comparisonState.left.grid, { x, y }, comparisonState.left.qTable) : undefined}
                           showActions={showActions}
                           onClick={mode === "comparison" ? handleComparisonTilePlacement : undefined}
                           onMouseDown={mode === "comparison" ? handleMouseDown : undefined}
@@ -5888,7 +5978,7 @@ const handleActiveBonusClick = useCallback(() => {
                           visits={cell.visits}
                           showHeatmap={showHeatmap}
                           maxVisits={rightComparisonMaxVisits}
-                          bestAction={showActions ? getBestActionDirection(comparisonState.right.grid, { x, y }) : undefined}
+                          bestAction={showActions ? getBestActionDirection(comparisonState.right.grid, { x, y }, comparisonState.right.qTable) : undefined}
                           showActions={showActions}
                           onClick={mode === "comparison" ? handleComparisonTilePlacement : undefined}
                           onMouseDown={mode === "comparison" ? handleMouseDown : undefined}
@@ -6440,7 +6530,7 @@ const handleActiveBonusClick = useCallback(() => {
                         visits={cell.visits}
                         showHeatmap={showHeatmap}
                         maxVisits={maxVisits}
-                        bestAction={showActions ? getBestActionDirection(activeGrid, { x, y }) : undefined}
+                        bestAction={showActions ? getBestActionDirection(activeGrid, { x, y }, activeQTable) : undefined}
                         showActions={showActions}
                         onClick={mode === "playground" || (mode === "random" && challengeMode) ? handleTilePlacement : undefined}
                         onMouseDown={mode === "playground" || (mode === "random" && challengeMode) ? handleMouseDown : undefined}
