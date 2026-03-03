@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ToWorkerMsg, FromWorkerMsg, SnapshotPayload } from "../../workers/rlWorker";
 import type { CSSProperties } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -2494,6 +2495,10 @@ export function RLGame() {
   const challengeModeRef = useRef<ChallengeTile | null>(null);
   const consoleScrollRef = useRef<HTMLDivElement>(null);
   const settingsScrollRef = useRef<HTMLDivElement>(null);
+  // Web Worker for the playground training loop
+  const rlWorkerRef = useRef<Worker | null>(null);
+  // True while we are applying a snapshot from the worker (to avoid re-syncing it back)
+  const workerSnapshotRef = useRef(false);
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     if (typeof window !== "undefined") {
       const stored = safeLocalStorageGet("theme");
@@ -3360,55 +3365,118 @@ export function RLGame() {
     };
   }, [mode, playgroundState.isRunning, randomState.isRunning, comparisonState.left.isRunning, comparisonState.right.isRunning]);
 
+  // ── Web Worker: lifecycle (create once, destroy on unmount) ─────────────────
   useEffect(() => {
-    if (mode !== "playground" || !playgroundState.isRunning) return;
-    const interval = window.setInterval(() => {
-      setPlaygroundState((prev) => {
-        // Use 0% exploration when replaying
-        const effectiveExplorationRate = isReplaying ? 0 : explorationRate;
-        const next = runPlaygroundStep(
-          prev,
-          effectiveExplorationRate,
-          directionBias,
-          consumeRewards,
-          alpha,
-          gamma,
-          isAutoRestartEnabled && !isReplaying,
-        );
+    const worker = new Worker(
+      new URL("../../workers/rlWorker.ts", import.meta.url),
+      { type: "module" },
+    );
+    rlWorkerRef.current = worker;
 
-        // Check if agent moved to a reward or punishment tile
-        const tileType = next.grid[next.agent.y][next.agent.x].type;
-        const hasMoved = prev.agent.x !== next.agent.x || prev.agent.y !== next.agent.y;
-        if (hasMoved && (tileType === "reward" || tileType === "punishment")) {
-          setRewardAnimation({ x: next.agent.x, y: next.agent.y, type: tileType });
-        }
-        // Check if goal was reached
-        if (next.agent.x === prev.goal.x && next.agent.y === prev.goal.y && (prev.agent.x !== prev.goal.x || prev.agent.y !== prev.goal.y)) {
-          // Stop replay when goal is reached
-          if (isReplaying) {
+    worker.onmessage = (event: MessageEvent<FromWorkerMsg>) => {
+      const msg = event.data;
+      if (msg.type !== "SNAPSHOT") return;
+      const { state: workerState, rewardTileMoved } = msg.payload as SnapshotPayload;
+
+      workerSnapshotRef.current = true;
+      setPlaygroundState(workerState);
+
+      // Reward/punishment tile animation
+      if (rewardTileMoved) {
+        setRewardAnimation({ x: rewardTileMoved.x, y: rewardTileMoved.y, type: rewardTileMoved.tileType as "reward" | "punishment" });
+      }
+
+      // Stop replay when episode completes (currentSteps reset to 0)
+      if (workerState.currentSteps === 0 && !workerState.isRunning) {
+        // isRunning=false after goal → check if was replaying
+        setIsReplaying((prev) => {
+          if (prev) {
             setTimeout(() => {
               setIsReplaying(false);
               setReplayEpisode(null);
-              setPlaygroundState(s => ({ ...s, isRunning: false }));
             }, 500);
           }
-        }
-        return next;
-      });
-    }, isReplaying ? 400 : simulationDelayMs); // Slower when replaying for better visibility
-    return () => window.clearInterval(interval);
-  }, [
-    mode,
-    playgroundState.isRunning,
-    explorationRate,
-    directionBias,
-    consumeRewards,
-    alpha,
-    gamma,
-    isAutoRestartEnabled,
-    isReplaying,
-    simulationDelayMs,
-  ]);
+          return prev;
+        });
+      }
+    };
+
+    return () => {
+      worker.terminate();
+      rlWorkerRef.current = null;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Web Worker: sync params whenever they change ──────────────────────────
+  useEffect(() => {
+    const worker = rlWorkerRef.current;
+    if (!worker) return;
+    const msg: ToWorkerMsg = {
+      type: "UPDATE_PARAMS",
+      params: {
+        explorationRate: isReplaying ? 0 : explorationRate,
+        alpha,
+        gamma,
+        consumeRewards,
+        autoRestart: isAutoRestartEnabled && !isReplaying,
+        directionBias,
+      },
+    };
+    worker.postMessage(msg);
+  }, [explorationRate, alpha, gamma, consumeRewards, isAutoRestartEnabled, directionBias, isReplaying]);
+
+  // ── Web Worker: sync speed ────────────────────────────────────────────────
+  useEffect(() => {
+    const worker = rlWorkerRef.current;
+    if (!worker) return;
+    const msg: ToWorkerMsg = { type: "SET_DELAY", delayMs: isReplaying ? 400 : simulationDelayMs };
+    worker.postMessage(msg);
+  }, [simulationDelayMs, isReplaying]);
+
+  // ── Web Worker: sync grid changes caused by the user (tile placement etc.) ─
+  // Skip if the change originated from a worker snapshot to avoid loops.
+  useEffect(() => {
+    if (mode !== "playground" || !playgroundState.isRunning) return;
+    if (workerSnapshotRef.current) {
+      workerSnapshotRef.current = false;
+      return;
+    }
+    const worker = rlWorkerRef.current;
+    if (!worker) return;
+    const msg: ToWorkerMsg = { type: "SYNC_STATE", state: playgroundState };
+    worker.postMessage(msg);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playgroundState.grid]);
+
+  // ── Web Worker: start / pause training loop ───────────────────────────────
+  useEffect(() => {
+    if (mode !== "playground") return;
+    const worker = rlWorkerRef.current;
+    if (!worker) return;
+
+    if (playgroundState.isRunning) {
+      // Sync latest state + params to worker before starting
+      const initMsg: ToWorkerMsg = {
+        type: "INIT",
+        state: playgroundState,
+        params: {
+          explorationRate: isReplaying ? 0 : explorationRate,
+          alpha,
+          gamma,
+          consumeRewards,
+          autoRestart: isAutoRestartEnabled && !isReplaying,
+          directionBias,
+        },
+        delayMs: isReplaying ? 400 : simulationDelayMs,
+      };
+      worker.postMessage(initMsg);
+      worker.postMessage({ type: "START" } as ToWorkerMsg);
+    } else {
+      worker.postMessage({ type: "PAUSE" } as ToWorkerMsg);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, playgroundState.isRunning]);
 
   useEffect(() => {
     if (mode !== "random" || !randomState.isRunning) return;
@@ -3793,11 +3861,26 @@ const handleActiveBonusClick = useCallback(() => {
   const handlePlaygroundPause = () =>
     setPlaygroundState((prev) => ({ ...prev, isRunning: false }));
 
-  const handlePlaygroundStep = () =>
-    setPlaygroundState((prev) => {
-      const next = runPlaygroundStep({ ...prev, isRunning: true }, explorationRate, directionBias, consumeRewards, alpha, gamma);
-      return { ...next, isRunning: prev.isRunning };
-    });
+  const handlePlaygroundStep = () => {
+    const worker = rlWorkerRef.current;
+    if (worker) {
+      // Sync latest state + params to worker, then request one step
+      const initMsg: ToWorkerMsg = {
+        type: "INIT",
+        state: { ...playgroundState, isRunning: false },
+        params: { explorationRate, alpha, gamma, consumeRewards, autoRestart: false, directionBias },
+        delayMs: simulationDelayMs,
+      };
+      worker.postMessage(initMsg);
+      worker.postMessage({ type: "STEP_ONCE" } as ToWorkerMsg);
+    } else {
+      // Fallback: run on main thread
+      setPlaygroundState((prev) => {
+        const next = runPlaygroundStep({ ...prev, isRunning: true }, explorationRate, directionBias, consumeRewards, alpha, gamma);
+        return { ...next, isRunning: prev.isRunning };
+      });
+    }
+  };
 
   const handlePlaygroundReset = useCallback(() => {
     const nextSize = TILE_SIZE_MAP[tileSize];
