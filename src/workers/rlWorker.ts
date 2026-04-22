@@ -9,6 +9,26 @@
  * use setInterval on the main thread.
  */
 
+import {
+  chooseAction,
+  getTileReward,
+  getQValue,
+  setQValue,
+  getDisplayQValue,
+  getMaxQValue,
+  posToActionIndex,
+  type QTable,
+} from "../lib/rl/qLearning";
+import {
+  findPortals,
+  teleportThroughPortal,
+  getPortalKey,
+  decrementPortalCooldowns,
+  withPortalCooldowns,
+  isPortalOnCooldown,
+} from "../lib/rl/portalUtils";
+import { cloneGrid } from "../lib/rl/gridUtils";
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type TileType = "empty" | "obstacle" | "reward" | "punishment" | "goal" | "portal";
@@ -24,9 +44,6 @@ interface Position {
   x: number;
   y: number;
 }
-
-/** QTable maps state key "x,y" → [Q_up, Q_down, Q_left, Q_right] */
-type QTable = Record<string, [number, number, number, number]>;
 
 interface EpisodeStats {
   episode: number;
@@ -77,175 +94,10 @@ export interface SnapshotPayload {
 
 export type FromWorkerMsg = { type: "SNAPSHOT"; payload: SnapshotPayload };
 
-// ── QTable Helpers (duplicated from RLGame.tsx to keep worker self-contained) ─
+// ── Core Step Function ────────────────────────────────────────────────────────
 
-const ACTION_DIRS = [
-  { dx: 0, dy: -1 }, // 0: up
-  { dx: 0, dy: 1 },  // 1: down
-  { dx: -1, dy: 0 }, // 2: left
-  { dx: 1, dy: 0 },  // 3: right
-] as const;
+const MAX_EPISODE_HISTORY = 20;
 
-const qStateKey = (pos: Position) => `${pos.x},${pos.y}`;
-
-const getQValues = (qTable: QTable, pos: Position): [number, number, number, number] =>
-  qTable[qStateKey(pos)] ?? [0, 0, 0, 0];
-
-const getQValue = (qTable: QTable, pos: Position, action: number): number =>
-  getQValues(qTable, pos)[action];
-
-const setQValue = (qTable: QTable, pos: Position, action: number, value: number): QTable => {
-  const key = qStateKey(pos);
-  const current = qTable[key] ?? [0, 0, 0, 0];
-  const updated = [...current] as [number, number, number, number];
-  updated[action] = value;
-  return { ...qTable, [key]: updated };
-};
-
-const getDisplayQValue = (qTable: QTable, pos: Position): number =>
-  Math.max(...getQValues(qTable, pos));
-
-const getMaxQFromTable = (qTable: QTable, grid: TileState[][], pos: Position): number => {
-  const size = grid.length;
-  let max = 0;
-  ACTION_DIRS.forEach(({ dx, dy }, idx) => {
-    const nx = pos.x + dx;
-    const ny = pos.y + dy;
-    if (nx >= 0 && nx < size && ny >= 0 && ny < size && grid[ny][nx].type !== "obstacle") {
-      const q = getQValue(qTable, pos, idx);
-      if (q > max) max = q;
-    }
-  });
-  return max;
-};
-
-const posToActionIndex = (from: Position, to: Position): number => {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  if (dy === -1) return 0;
-  if (dy === 1) return 1;
-  if (dx === -1) return 2;
-  return 3;
-};
-
-// ── Pure RL Functions ─────────────────────────────────────────────────────────
-
-const STEP_PENALTY = -1;
-const REWARD_VALUE = 12;
-const PUNISHMENT_VALUE = -15;
-const OBSTACLE_PENALTY = -20;
-const GOAL_REWARD = REWARD_VALUE * 2;
-const PORTAL_COOLDOWN_STEPS = 4;
-
-const cloneGrid = (grid: TileState[][]): TileState[][] =>
-  grid.map((row) => row.map((cell) => ({ ...cell })));
-
-const getPossibleActions = (grid: TileState[][], pos: Position): Position[] => {
-  const actions: Position[] = [];
-  const size = grid.length;
-  ACTION_DIRS.forEach(({ dx, dy }) => {
-    const nx = pos.x + dx;
-    const ny = pos.y + dy;
-    if (nx >= 0 && nx < size && ny >= 0 && ny < size && grid[ny][nx].type !== "obstacle") {
-      actions.push({ x: nx, y: ny });
-    }
-  });
-  if (actions.length === 0) actions.push(pos);
-  return actions;
-};
-
-const chooseAction = (
-  grid: TileState[][],
-  pos: Position,
-  qTable: QTable,
-  explorationRate: number,
-  biasDirection: Position | null,
-): Position => {
-  const possible = getPossibleActions(grid, pos);
-  let biasMatch: Position | undefined;
-  if (biasDirection) {
-    biasMatch = possible.find(
-      (a) => a.x - pos.x === biasDirection.x && a.y - pos.y === biasDirection.y,
-    );
-    if (biasMatch && Math.random() < 0.35) return biasMatch;
-  }
-  if (Math.random() < explorationRate) {
-    return possible[Math.floor(Math.random() * possible.length)];
-  }
-  let best = possible[0];
-  let bestQ =
-    getQValue(qTable, pos, posToActionIndex(pos, best)) +
-    (biasMatch && best.x === biasMatch.x && best.y === biasMatch.y ? 0.05 : 0);
-  for (let i = 1; i < possible.length; i++) {
-    const action = possible[i];
-    const q = getQValue(qTable, pos, posToActionIndex(pos, action));
-    const biasBonus = biasMatch && action.x === biasMatch.x && action.y === biasMatch.y ? 0.05 : 0;
-    if (q + biasBonus > bestQ) {
-      bestQ = q + biasBonus;
-      best = action;
-    }
-  }
-  return best;
-};
-
-const getTileReward = (grid: TileState[][], goal: Position, pos: Position): number => {
-  if (pos.x === goal.x && pos.y === goal.y) return GOAL_REWARD;
-  const cell = grid[pos.y][pos.x];
-  switch (cell.type) {
-    case "obstacle": return OBSTACLE_PENALTY;
-    case "reward": return REWARD_VALUE;
-    case "punishment": return PUNISHMENT_VALUE;
-    case "portal": return 0;
-    default: return STEP_PENALTY;
-  }
-};
-
-// Portal utilities
-const findPortals = (grid: TileState[][]): Position[] => {
-  const portals: Position[] = [];
-  for (let y = 0; y < grid.length; y++) {
-    for (let x = 0; x < grid[y].length; x++) {
-      if (grid[y][x].type === "portal") portals.push({ x, y });
-    }
-  }
-  return portals;
-};
-
-const getPortalKey = (pos: Position) => `${pos.x},${pos.y}`;
-
-const teleportThroughPortal = (grid: TileState[][], pos: Position): Position => {
-  const portals = findPortals(grid);
-  if (portals.length < 2) return pos;
-  const others = portals.filter((p) => !(p.x === pos.x && p.y === pos.y));
-  if (others.length === 0) return pos;
-  return others[Math.floor(Math.random() * others.length)];
-};
-
-const decrementPortalCooldowns = (cd: Record<string, number>): Record<string, number> => {
-  const next: Record<string, number> = {};
-  for (const [key, value] of Object.entries(cd)) {
-    if (value > 1) next[key] = value - 1;
-  }
-  return next;
-};
-
-const withPortalCooldowns = (
-  cd: Record<string, number>,
-  positions: Position[],
-  duration = PORTAL_COOLDOWN_STEPS,
-): Record<string, number> => {
-  if (positions.length === 0) return cd;
-  const next = { ...cd };
-  positions.forEach((p) => { next[getPortalKey(p)] = duration; });
-  return next;
-};
-
-const isPortalOnCooldown = (cd: Record<string, number>, pos: Position): boolean => {
-  const v = cd[getPortalKey(pos)];
-  return typeof v === "number" && v > 0;
-};
-
-// The core step function (matches RLGame.tsx runPlaygroundStep)
 const runPlaygroundStep = (
   state: PlaygroundState,
   params: RLParams,
@@ -274,12 +126,14 @@ const runPlaygroundStep = (
     }
   }
 
-  const reward = getTileReward(state.grid, state.goal, nextPos);
+  const reward = getTileReward(state.grid, [state.goal], nextPos);
   const newGrid = cloneGrid(state.grid);
 
+  // Capture tile type before consumption for animation hint
+  const movedTileType = state.grid[nextPos.y][nextPos.x].type;
+
   if (params.consumeRewards) {
-    const tileType = state.grid[nextPos.y][nextPos.x].type;
-    if (tileType === "reward" || tileType === "punishment") {
+    if (movedTileType === "reward" || movedTileType === "punishment") {
       newGrid[nextPos.y][nextPos.x] = { ...newGrid[nextPos.y][nextPos.x], type: "empty", value: 0 };
     }
   }
@@ -291,7 +145,7 @@ const runPlaygroundStep = (
   if (!isPortalWait) {
     const actionIdx = posToActionIndex(current, nextPos);
     const currentQ = getQValue(state.qTable, current, actionIdx);
-    const maxNextQ = getMaxQFromTable(state.qTable, newGrid, nextPos);
+    const maxNextQ = getMaxQValue(newGrid, nextPos, state.qTable);
     const newQ = currentQ + params.alpha * (reward + params.gamma * maxNextQ - currentQ);
     newQTable = setQValue(state.qTable, current, actionIdx, newQ);
     newGrid[current.y][current.x] = {
@@ -307,12 +161,10 @@ const runPlaygroundStep = (
   const reachedGoal = nextPos.x === state.goal.x && nextPos.y === state.goal.y;
   const newSteps = state.currentSteps + 1;
 
-  // Reward animation hint
   const hasMoved = nextPos.x !== current.x || nextPos.y !== current.y;
-  const newTileType = newGrid[nextPos.y][nextPos.x].type;
   const rewardTileMoved: SnapshotPayload["rewardTileMoved"] =
-    hasMoved && (newTileType === "reward" || newTileType === "punishment")
-      ? { x: nextPos.x, y: nextPos.y, tileType: newTileType }
+    hasMoved && (movedTileType === "reward" || movedTileType === "punishment")
+      ? { x: nextPos.x, y: nextPos.y, tileType: movedTileType }
       : null;
 
   if (reachedGoal) {
@@ -333,7 +185,7 @@ const runPlaygroundStep = (
         isRunning: params.autoRestart,
         episode: state.episode + 1,
         currentSteps: 0,
-        episodeHistory: [...state.episodeHistory, episodeStat],
+        episodeHistory: [...state.episodeHistory.slice(-(MAX_EPISODE_HISTORY - 1)), episodeStat],
         portalCooldowns: {},
         pendingPortalTeleport: null,
       },
@@ -377,15 +229,6 @@ const step = () => {
   const { nextState, rewardTileMoved } = runPlaygroundStep(state, params);
   state = nextState;
 
-  // If auto-restart is off and goal was reached (episode advanced), pause
-  if (!params.autoRestart && state.episode > (nextState.episode - 1)) {
-    // episode incremented means goal was reached
-    if (state.currentSteps === 0 && intervalId !== null) {
-      // Keep running (autoRestart handled inside runPlaygroundStep)
-    }
-  }
-
-  // If the worker's own state says isRunning=false, stop the interval
   if (!state.isRunning && intervalId !== null) {
     clearInterval(intervalId);
     intervalId = null;
@@ -435,9 +278,7 @@ self.onmessage = (event: MessageEvent<ToWorkerMsg>) => {
       break;
 
     case "SYNC_STATE":
-      // Sync full state from main thread (e.g., after tile placement or reset)
       state = msg.state;
-      // If running, restart the interval to pick up new state
       if (state.isRunning && intervalId === null) {
         intervalId = setInterval(step, delayMs);
       }

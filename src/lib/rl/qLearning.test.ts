@@ -6,9 +6,13 @@ import {
   getTileReward,
   updateQValue,
   getMaxQValue,
+  type QTable,
 } from './qLearning';
 import { createEmptyGrid } from './gridUtils';
 import type { Position } from './types';
+
+const emptyQTable = (): QTable => ({});
+const qTableWith = (entries: Record<string, [number, number, number, number]>): QTable => entries;
 
 describe('qLearning', () => {
   describe('getPossibleActions', () => {
@@ -78,36 +82,29 @@ describe('qLearning', () => {
   describe('chooseAction', () => {
     it('should choose random action with 100% exploration rate', () => {
       const grid = createEmptyGrid(5);
-      grid[2][2].qValue = 100; // Make one action obviously better
-
       const pos = { x: 2, y: 2 };
       const explorationRate = 1.0;
 
-      // Run multiple times to ensure randomness
       const actions = new Set();
       for (let i = 0; i < 50; i++) {
-        const action = chooseAction(grid, pos, explorationRate);
+        const action = chooseAction(grid, pos, emptyQTable(), explorationRate);
         actions.add(`${action.x},${action.y}`);
       }
 
-      // Should explore different actions
       expect(actions.size).toBeGreaterThan(1);
     });
 
-    it('should choose best Q-value action with 0% exploration rate', () => {
+    it('should choose best Q(s,a) action with 0% exploration rate', () => {
       const grid = createEmptyGrid(5);
       const pos = { x: 2, y: 2 };
 
-      // Set Q-values: down is best
-      grid[1][2].qValue = 5;  // up
-      grid[3][2].qValue = 20; // down (best)
-      grid[2][1].qValue = 3;  // left
-      grid[2][3].qValue = 10; // right
+      // Q(pos, action): up=5, down=20 (best), left=3, right=10
+      // ACTION_DIRS: 0=up, 1=down, 2=left, 3=right
+      const qTable = qTableWith({ '2,2': [5, 20, 3, 10] });
 
-      const explorationRate = 0.0;
-      const action = chooseAction(grid, pos, explorationRate);
+      const action = chooseAction(grid, pos, qTable, 0.0);
 
-      expect(action).toEqual({ x: 2, y: 3 }); // down
+      expect(action).toEqual({ x: 2, y: 3 }); // down (action index 1)
     });
 
     it('should respect bias direction when provided', () => {
@@ -115,10 +112,9 @@ describe('qLearning', () => {
       const pos = { x: 2, y: 2 };
       const biasDirection = { x: 1, y: 0 }; // bias right
 
-      // Even with exploration, bias should sometimes be chosen
       let biasChosen = false;
       for (let i = 0; i < 20; i++) {
-        const action = chooseAction(grid, pos, 0.5, biasDirection);
+        const action = chooseAction(grid, pos, emptyQTable(), 0.5, biasDirection);
         if (action.x === 3 && action.y === 2) {
           biasChosen = true;
           break;
@@ -130,58 +126,49 @@ describe('qLearning', () => {
   });
 
   describe('getBestActionDirection', () => {
-    it('should return correct direction for best action', () => {
+    it('should return correct direction for best Q(s,a)', () => {
       const grid = createEmptyGrid(5);
       const pos = { x: 2, y: 2 };
+      // ACTION_DIRS: 0=up, 1=down, 2=left, 3=right
+      const qTable = qTableWith({ '2,2': [100, 5, 5, 5] }); // up is best
 
-      // Make "up" the best action
-      grid[1][2].qValue = 100;
-      grid[3][2].qValue = 5;
-      grid[2][1].qValue = 5;
-      grid[2][3].qValue = 5;
-
-      const direction = getBestActionDirection(grid, pos);
-
-      expect(direction).toBe('up');
+      expect(getBestActionDirection(grid, pos, qTable)).toBe('up');
     });
 
-    it('should return "down" for best Q-value below', () => {
+    it('should return "down" for best Q(s,a)', () => {
       const grid = createEmptyGrid(5);
       const pos = { x: 2, y: 2 };
-      grid[3][2].qValue = 100;
+      const qTable = qTableWith({ '2,2': [0, 100, 0, 0] });
 
-      expect(getBestActionDirection(grid, pos)).toBe('down');
+      expect(getBestActionDirection(grid, pos, qTable)).toBe('down');
     });
 
-    it('should return "left" for best Q-value to the left', () => {
+    it('should return "left" for best Q(s,a)', () => {
       const grid = createEmptyGrid(5);
       const pos = { x: 2, y: 2 };
-      grid[2][1].qValue = 100;
+      const qTable = qTableWith({ '2,2': [0, 0, 100, 0] });
 
-      expect(getBestActionDirection(grid, pos)).toBe('left');
+      expect(getBestActionDirection(grid, pos, qTable)).toBe('left');
     });
 
-    it('should return "right" for best Q-value to the right', () => {
+    it('should return "right" for best Q(s,a)', () => {
       const grid = createEmptyGrid(5);
       const pos = { x: 2, y: 2 };
-      grid[2][3].qValue = 100;
+      const qTable = qTableWith({ '2,2': [0, 0, 0, 100] });
 
-      expect(getBestActionDirection(grid, pos)).toBe('right');
+      expect(getBestActionDirection(grid, pos, qTable)).toBe('right');
     });
 
     it('should return undefined when no valid actions', () => {
       const grid = createEmptyGrid(3);
       const pos = { x: 1, y: 1 };
 
-      // Surround with obstacles
       grid[0][1].type = 'obstacle';
       grid[2][1].type = 'obstacle';
       grid[1][0].type = 'obstacle';
       grid[1][2].type = 'obstacle';
 
-      const direction = getBestActionDirection(grid, pos);
-
-      expect(direction).toBeUndefined();
+      expect(getBestActionDirection(grid, pos, emptyQTable())).toBeUndefined();
     });
   });
 
@@ -305,47 +292,33 @@ describe('qLearning', () => {
   });
 
   describe('getMaxQValue', () => {
-    it('should return maximum Q-value from possible actions', () => {
+    it('should return maximum Q(s,a) over all valid actions', () => {
       const grid = createEmptyGrid(5);
       const pos = { x: 2, y: 2 };
+      // ACTION_DIRS: 0=up, 1=down, 2=left, 3=right
+      const qTable = qTableWith({ '2,2': [5, 20, 3, 10] }); // down=20 is max
 
-      grid[1][2].qValue = 5;  // up
-      grid[3][2].qValue = 20; // down (max)
-      grid[2][1].qValue = 3;  // left
-      grid[2][3].qValue = 10; // right
-
-      const maxQ = getMaxQValue(grid, pos);
-
-      expect(maxQ).toBe(20);
+      expect(getMaxQValue(grid, pos, qTable)).toBe(20);
     });
 
     it('should return 0 when no actions available', () => {
       const grid = createEmptyGrid(3);
       const pos = { x: 1, y: 1 };
 
-      // Surround with obstacles
       grid[0][1].type = 'obstacle';
       grid[2][1].type = 'obstacle';
       grid[1][0].type = 'obstacle';
       grid[1][2].type = 'obstacle';
 
-      const maxQ = getMaxQValue(grid, pos);
-
-      expect(maxQ).toBe(0);
+      expect(getMaxQValue(grid, pos, emptyQTable())).toBe(0);
     });
 
     it('should handle negative Q-values', () => {
       const grid = createEmptyGrid(5);
       const pos = { x: 2, y: 2 };
+      const qTable = qTableWith({ '2,2': [-10, -5, -20, -15] }); // down=-5 is max
 
-      grid[1][2].qValue = -10;
-      grid[3][2].qValue = -5; // max (least negative)
-      grid[2][1].qValue = -20;
-      grid[2][3].qValue = -15;
-
-      const maxQ = getMaxQValue(grid, pos);
-
-      expect(maxQ).toBe(-5);
+      expect(getMaxQValue(grid, pos, qTable)).toBe(-5);
     });
   });
 });

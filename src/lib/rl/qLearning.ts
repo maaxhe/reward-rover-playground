@@ -1,20 +1,53 @@
 import type { Position, TileState } from "./types";
 import { STEP_PENALTY, REWARD_VALUE, PUNISHMENT_VALUE, OBSTACLE_PENALTY, GOAL_REWARD } from "./constants";
 
+/** QTable maps state key "x,y" → [Q_up, Q_down, Q_left, Q_right] */
+export type QTable = Record<string, [number, number, number, number]>;
+
+const ACTION_DIRS = [
+  { x: 0, y: -1 }, // 0: up
+  { x: 0, y: 1 },  // 1: down
+  { x: -1, y: 0 }, // 2: left
+  { x: 1, y: 0 },  // 3: right
+] as const;
+
+const qStateKey = (pos: Position) => `${pos.x},${pos.y}`;
+
+export const getQValues = (qTable: QTable, pos: Position): [number, number, number, number] =>
+  qTable[qStateKey(pos)] ?? [0, 0, 0, 0];
+
+export const getQValue = (qTable: QTable, pos: Position, action: number): number =>
+  getQValues(qTable, pos)[action];
+
+export const setQValue = (qTable: QTable, pos: Position, action: number, value: number): QTable => {
+  const key = qStateKey(pos);
+  const current = qTable[key] ?? [0, 0, 0, 0];
+  const updated = [...current] as [number, number, number, number];
+  updated[action] = value;
+  return { ...qTable, [key]: updated };
+};
+
+/** max_a Q(s, a) — used as display value on the tile */
+export const getDisplayQValue = (qTable: QTable, pos: Position): number =>
+  Math.max(...getQValues(qTable, pos));
+
+export const posToActionIndex = (from: Position, to: Position): number => {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  if (dy === -1) return 0;
+  if (dy === 1) return 1;
+  if (dx === -1) return 2;
+  return 3;
+};
+
 /**
  * Gets all possible actions (adjacent tiles that are not obstacles) from a position
  */
 export const getPossibleActions = (grid: TileState[][], pos: Position): Position[] => {
   const actions: Position[] = [];
   const size = grid.length;
-  const dirs = [
-    { x: 0, y: -1 }, // up
-    { x: 0, y: 1 },  // down
-    { x: -1, y: 0 }, // left
-    { x: 1, y: 0 },  // right
-  ];
 
-  dirs.forEach((dir) => {
+  ACTION_DIRS.forEach((dir) => {
     const nx = pos.x + dir.x;
     const ny = pos.y + dir.y;
     if (nx >= 0 && nx < size && ny >= 0 && ny < size) {
@@ -24,7 +57,6 @@ export const getPossibleActions = (grid: TileState[][], pos: Position): Position
     }
   });
 
-  // If no actions available (surrounded by obstacles), stay in place
   if (actions.length === 0) actions.push(pos);
   return actions;
 };
@@ -35,12 +67,12 @@ export const getPossibleActions = (grid: TileState[][], pos: Position): Position
 export const chooseAction = (
   grid: TileState[][],
   pos: Position,
+  qTable: QTable,
   explorationRate: number,
   biasDirection?: Position | null
 ): Position => {
   const possible = getPossibleActions(grid, pos);
 
-  // Check for bias direction
   let biasMatch: Position | undefined;
   if (biasDirection) {
     biasMatch = possible.find(
@@ -51,20 +83,19 @@ export const chooseAction = (
     }
   }
 
-  // Exploration: random action
   if (Math.random() < explorationRate) {
     return possible[Math.floor(Math.random() * possible.length)];
   }
 
-  // Exploitation: best Q-value action
+  // Exploitation: argmax_a Q(s, a)
   let best = possible[0];
   let bestQ =
-    grid[best.y][best.x].qValue +
+    getQValue(qTable, pos, posToActionIndex(pos, best)) +
     (biasMatch && best.x === biasMatch.x && best.y === biasMatch.y ? 0.05 : 0);
 
   for (let i = 1; i < possible.length; i++) {
     const action = possible[i];
-    const q = grid[action.y][action.x].qValue;
+    const q = getQValue(qTable, pos, posToActionIndex(pos, action));
     const biasBonus =
       biasMatch && action.x === biasMatch.x && action.y === biasMatch.y ? 0.05 : 0;
     if (q + biasBonus > bestQ) {
@@ -80,24 +111,24 @@ export const chooseAction = (
  */
 export const getBestActionDirection = (
   grid: TileState[][],
-  pos: Position
+  pos: Position,
+  qTable: QTable,
 ): string | undefined => {
   const possible = getPossibleActions(grid, pos);
   if (possible.length === 0) return undefined;
 
   let best = possible[0];
-  let bestQ = grid[best.y][best.x].qValue;
+  let bestQ = getQValue(qTable, pos, posToActionIndex(pos, best));
 
   for (let i = 1; i < possible.length; i++) {
     const action = possible[i];
-    const q = grid[action.y][action.x].qValue;
+    const q = getQValue(qTable, pos, posToActionIndex(pos, action));
     if (q > bestQ) {
       bestQ = q;
       best = action;
     }
   }
 
-  // Convert position to direction
   const dx = best.x - pos.x;
   const dy = best.y - pos.y;
 
@@ -113,7 +144,6 @@ export const getBestActionDirection = (
  * Gets the reward for stepping on a tile
  */
 export const getTileReward = (grid: TileState[][], goals: Position[], pos: Position): number => {
-  // Check if position is a goal
   if (goals.some((goal) => goal.x === pos.x && goal.y === pos.y)) return GOAL_REWARD;
 
   const cell = grid[pos.y][pos.x];
@@ -146,13 +176,14 @@ export const updateQValue = (
 };
 
 /**
- * Gets the maximum Q-value from possible next actions
+ * Gets the maximum Q-value over all valid actions from pos — TD bootstrap target.
+ * Returns 0 if no valid actions exist.
  */
-export const getMaxQValue = (grid: TileState[][], pos: Position): number => {
+export const getMaxQValue = (grid: TileState[][], pos: Position, qTable: QTable): number => {
   const possible = getPossibleActions(grid, pos);
   if (possible.length === 0) return 0;
 
   return possible
-    .map((p) => grid[p.y][p.x].qValue)
+    .map((p) => getQValue(qTable, pos, posToActionIndex(pos, p)))
     .reduce((acc, val) => (val > acc ? val : acc), Number.NEGATIVE_INFINITY);
 };

@@ -5,7 +5,9 @@
 Nicht in Form von endlosen Formeln oder komplizierten Papers, sondern als interaktives Spiel.  
 Ein kleiner Rover läuft über ein Grid, stolpert in Mauern, kassiert Strafen oder findet Belohnungen – und lernt dabei mit jeder Episode, bessere Entscheidungen zu treffen.
 
-Du kannst den **Reward Rover** direkt hier testen: [https://rl-agent.maximleopold.com/](https://rl-agent.maximleopold.com/)
+Du kannst den **Reward Rover** direkt hier testen:
+- [https://rl-agent.maximleopold.com/](https://rl-agent.maximleopold.com/)
+- [https://rl-agent.coxilab.de/](https://rl-agent.coxilab.de/)
 
 ---
 
@@ -75,6 +77,8 @@ Reward Rover ist für mich ein kleiner Schritt in diese Richtung: ein Tool, das 
 - Vite  
 - Tailwind CSS  
 - shadcn/ui  
+- Web Workers (Q-Learning läuft off-thread für flüssige UI)  
+- Vitest (Unit Tests für den RL-Algorithmus)  
 
 ---
 
@@ -124,7 +128,9 @@ Reward Rover is my attempt to make Reinforcement Learning tangible.
 Not through endless formulas or dense research papers, but as an interactive game.
 A small rover moves across a grid, bumps into walls, collects penalties, finds rewards – and learns to make better decisions with every episode.
 
-You can try the **Reward Rover** directly here: [https://rl-agent.maximleopold.com/](https://rl-agent.maximleopold.com/)
+You can try the **Reward Rover** directly here:
+- [https://rl-agent.maximleopold.com/](https://rl-agent.maximleopold.com/)
+- [https://rl-agent.coxilab.de/](https://rl-agent.coxilab.de/)
 
 ---
 
@@ -191,6 +197,8 @@ For me, Reward Rover is a small step in that direction: a tool to show how learn
 - Vite
 - Tailwind CSS
 - shadcn/ui
+- Web Workers (Q-Learning runs off-thread for a smooth UI)
+- Vitest (unit tests for the RL algorithm)
 
 ---
 

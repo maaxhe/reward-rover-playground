@@ -34,10 +34,42 @@ import {
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useLanguage } from "@/contexts/LanguageContext";
-
-// Import refactored RL modules (grid utils, Q-learning, portal utils are now in separate tested modules)
-// These modules are available in @/lib/rl/* for future refactoring
-// See @/lib/rl/index.ts for all available exports
+import type { Position, TileState as LibTileState } from "@/lib/rl/types";
+import {
+  type QTable,
+  chooseAction,
+  getBestActionDirection,
+  getTileReward,
+  getQValue,
+  setQValue,
+  getDisplayQValue,
+  getMaxQValue,
+  posToActionIndex,
+  getPossibleActions,
+} from "@/lib/rl/qLearning";
+import {
+  findPortals,
+  teleportThroughPortal,
+  getPortalKey,
+  decrementPortalCooldowns,
+  withPortalCooldowns,
+  isPortalOnCooldown,
+} from "@/lib/rl/portalUtils";
+import {
+  createEmptyGrid,
+  cloneGrid,
+  calculateItemCount,
+  manhattanDistance,
+} from "@/lib/rl/gridUtils";
+import {
+  getSpeedrunStageConfig,
+  getEpisodeTitle,
+  GOAL_REWARD,
+  REWARD_VALUE,
+  PUNISHMENT_VALUE,
+  OBSTACLE_PENALTY,
+  DEFAULT_TILE_OPTION as LIB_DEFAULT_TILE_OPTION,
+} from "@/lib/rl/constants";
 
 const TILE_SIZE_MAP = {
   s: 6,
@@ -1000,93 +1032,7 @@ const SPEEDRUN_STAGES: SpeedrunStageConfig[] = [
   },
 ];
 
-const getSpeedrunStageConfig = (stage: number) =>
-  SPEEDRUN_STAGES[Math.min(stage, SPEEDRUN_STAGES.length - 1)];
-
-const LEARNING_RATE = 0.1;
-const DISCOUNT_FACTOR = 0.85;
-const STEP_PENALTY = -1;
-const REWARD_VALUE = 12;
-const PUNISHMENT_VALUE = -15;
-const OBSTACLE_PENALTY = -20;
-const GOAL_REWARD = REWARD_VALUE * 2;
-const DEFAULT_TILE_OPTION: TileSizeOption = "s";
-const PORTAL_COOLDOWN_STEPS = 4;
-
-// ── Correct Q-Table: Q(s, a) ──────────────────────────────────────────────
-// Actions: 0=up, 1=down, 2=left, 3=right
-const ACTION_DIRS = [
-  { dx: 0, dy: -1 }, // 0: up
-  { dx: 0, dy: 1 },  // 1: down
-  { dx: -1, dy: 0 }, // 2: left
-  { dx: 1, dy: 0 },  // 3: right
-] as const;
-
-/** QTable maps state key "x,y" → [Q_up, Q_down, Q_left, Q_right] */
-type QTable = Record<string, [number, number, number, number]>;
-
-const qStateKey = (pos: { x: number; y: number }) => `${pos.x},${pos.y}`;
-
-const getQValues = (qTable: QTable, pos: { x: number; y: number }): [number, number, number, number] =>
-  qTable[qStateKey(pos)] ?? [0, 0, 0, 0];
-
-const getQValue = (qTable: QTable, pos: { x: number; y: number }, action: number): number =>
-  getQValues(qTable, pos)[action];
-
-const setQValue = (
-  qTable: QTable,
-  pos: { x: number; y: number },
-  action: number,
-  value: number,
-): QTable => {
-  const key = qStateKey(pos);
-  const current = qTable[key] ?? [0, 0, 0, 0];
-  const updated = [...current] as [number, number, number, number];
-  updated[action] = value;
-  return { ...qTable, [key]: updated };
-};
-
-/** max_a Q(s, a) — used as display value on the tile */
-const getDisplayQValue = (qTable: QTable, pos: { x: number; y: number }): number =>
-  Math.max(...getQValues(qTable, pos));
-
-/** max_a' Q(s', a') over reachable next actions — TD bootstrap target */
-const getMaxQFromTable = (
-  qTable: QTable,
-  grid: { type: string }[][],
-  pos: { x: number; y: number },
-): number => {
-  const size = grid.length;
-  let max = 0;
-  ACTION_DIRS.forEach(({ dx, dy }, idx) => {
-    const nx = pos.x + dx;
-    const ny = pos.y + dy;
-    if (nx >= 0 && nx < size && ny >= 0 && ny < size && grid[ny][nx].type !== "obstacle") {
-      const q = getQValue(qTable, pos, idx);
-      if (q > max) max = q;
-    }
-  });
-  return max;
-};
-
-/** Map a movement from → to into an action index (0–3) */
-const posToActionIndex = (from: { x: number; y: number }, to: { x: number; y: number }): number => {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  if (dy === -1) return 0; // up
-  if (dy === 1) return 1;  // down
-  if (dx === -1) return 2; // left
-  return 3;                // right
-};
-
-type Position = { x: number; y: number };
-
-interface TileState {
-  type: TileType;
-  qValue: number;
-  visits: number;
-  value: number;
-}
+type TileState = LibTileState;
 
 interface PlaygroundState {
   agent: Position;
@@ -1222,26 +1168,6 @@ const computeEpisodeSummary = (history: EpisodeStats[]): EpisodeSummary => {
   };
 };
 
-const createEmptyGrid = (size: number): TileState[][] =>
-  Array.from({ length: size }, () =>
-    Array.from({ length: size }, () => ({ type: "empty", qValue: 0, visits: 0, value: 0 }))
-  );
-
-const cloneGrid = (grid: TileState[][]): TileState[][] =>
-  grid.map((row) => row.map((cell) => ({ ...cell })));
-
-const calculateItemCount = (gridSize: number, density: number, minimum = 1) =>
-  Math.max(minimum, Math.round(gridSize * gridSize * density));
-
-const getEpisodeTitle = (episodeNumber: number, language: Language) => {
-  const base = EPISODE_TITLES[(episodeNumber - 1) % EPISODE_TITLES.length];
-  const prefix = language === "en" ? "Mission" : "Einsatz";
-  return `${prefix} ${episodeNumber}: ${base}`;
-};
-
-const manhattanDistance = (a: Position, b: Position) =>
-  Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
-
 const selectGoalPositions = (
   grid: TileState[][],
   count: number,
@@ -1288,171 +1214,6 @@ const selectGoalPositions = (
   }
 
   return selected;
-};
-
-const getPossibleActions = (grid: TileState[][], pos: Position): Position[] => {
-  const actions: Position[] = [];
-  const size = grid.length;
-  const dirs = [
-    { x: 0, y: -1 },
-    { x: 0, y: 1 },
-    { x: -1, y: 0 },
-    { x: 1, y: 0 },
-  ];
-
-  dirs.forEach((dir) => {
-    const nx = pos.x + dir.x;
-    const ny = pos.y + dir.y;
-    if (nx >= 0 && nx < size && ny >= 0 && ny < size) {
-      if (grid[ny][nx].type !== "obstacle") {
-        actions.push({ x: nx, y: ny });
-      }
-    }
-  });
-
-  if (actions.length === 0) actions.push(pos);
-  return actions;
-};
-
-const chooseAction = (
-  grid: TileState[][],
-  pos: Position,
-  qTable: QTable,
-  explorationRate: number,
-  biasDirection?: Position | null,
-): Position => {
-  const possible = getPossibleActions(grid, pos);
-  let biasMatch: Position | undefined;
-  if (biasDirection) {
-    biasMatch = possible.find(
-      (action) => action.x - pos.x === biasDirection.x && action.y - pos.y === biasDirection.y,
-    );
-    if (biasMatch && Math.random() < 0.35) {
-      return biasMatch;
-    }
-  }
-  if (Math.random() < explorationRate) {
-    return possible[Math.floor(Math.random() * possible.length)];
-  }
-  // Exploitation: argmax_a Q(s, a) — look up from qTable, not destination tile
-  let best = possible[0];
-  let bestQ =
-    getQValue(qTable, pos, posToActionIndex(pos, best)) +
-    (biasMatch && best.x === biasMatch.x && best.y === biasMatch.y ? 0.05 : 0);
-  for (let i = 1; i < possible.length; i++) {
-    const action = possible[i];
-    const q = getQValue(qTable, pos, posToActionIndex(pos, action));
-    const biasBonus =
-      biasMatch && action.x === biasMatch.x && action.y === biasMatch.y ? 0.05 : 0;
-    if (q + biasBonus > bestQ) {
-      bestQ = q + biasBonus;
-      best = action;
-    }
-  }
-  return best;
-};
-
-const getBestActionDirection = (
-  grid: TileState[][],
-  pos: Position,
-  qTable: QTable,
-): string | undefined => {
-  const possible = getPossibleActions(grid, pos);
-  if (possible.length === 0) return undefined;
-
-  let best = possible[0];
-  let bestQ = getQValue(qTable, pos, posToActionIndex(pos, best));
-
-  for (let i = 1; i < possible.length; i++) {
-    const action = possible[i];
-    const q = getQValue(qTable, pos, posToActionIndex(pos, action));
-    if (q > bestQ) {
-      bestQ = q;
-      best = action;
-    }
-  }
-
-  const dx = best.x - pos.x;
-  const dy = best.y - pos.y;
-
-  if (dy === -1) return "up";
-  if (dy === 1) return "down";
-  if (dx === -1) return "left";
-  if (dx === 1) return "right";
-
-  return undefined;
-};
-
-const getTileReward = (grid: TileState[][], goals: Position[], pos: Position): number => {
-  if (goals.some((goal) => goal.x === pos.x && goal.y === pos.y)) return GOAL_REWARD;
-  const cell = grid[pos.y][pos.x];
-  switch (cell.type) {
-    case "obstacle":
-      return OBSTACLE_PENALTY;
-    case "reward":
-      return REWARD_VALUE;
-    case "punishment":
-      return PUNISHMENT_VALUE;
-    case "portal":
-      return 0;
-    default:
-      return STEP_PENALTY;
-  }
-};
-
-const findPortals = (grid: TileState[][]): Position[] => {
-  const portals: Position[] = [];
-  for (let y = 0; y < grid.length; y++) {
-    for (let x = 0; x < grid[y].length; x++) {
-      if (grid[y][x].type === "portal") {
-        portals.push({ x, y });
-      }
-    }
-  }
-  return portals;
-};
-
-const teleportThroughPortal = (grid: TileState[][], currentPos: Position): Position => {
-  const portals = findPortals(grid);
-  if (portals.length < 2) return currentPos;
-
-  // Filter out current portal
-  const otherPortals = portals.filter(p => !(p.x === currentPos.x && p.y === currentPos.y));
-  if (otherPortals.length === 0) return currentPos;
-
-  // Randomly select a portal
-  const targetPortal = otherPortals[Math.floor(Math.random() * otherPortals.length)];
-  return targetPortal;
-};
-
-const getPortalKey = (pos: Position) => `${pos.x},${pos.y}`;
-
-const decrementPortalCooldowns = (cooldowns: Record<string, number>): Record<string, number> => {
-  const next: Record<string, number> = {};
-  for (const [key, value] of Object.entries(cooldowns)) {
-    if (value > 1) {
-      next[key] = value - 1;
-    }
-  }
-  return next;
-};
-
-const withPortalCooldowns = (
-  cooldowns: Record<string, number>,
-  positions: Position[],
-  duration = PORTAL_COOLDOWN_STEPS,
-): Record<string, number> => {
-  if (positions.length === 0) return cooldowns;
-  const next = { ...cooldowns };
-  positions.forEach((pos) => {
-    next[getPortalKey(pos)] = duration;
-  });
-  return next;
-};
-
-const isPortalOnCooldown = (cooldowns: Record<string, number>, pos: Position): boolean => {
-  const value = cooldowns[getPortalKey(pos)];
-  return typeof value === "number" && value > 0;
 };
 
 const runPlaygroundStep = (
@@ -1506,10 +1267,12 @@ const runPlaygroundStep = (
 
   const newGrid = cloneGrid(state.grid);
 
+  // Capture tile type before consumption for animation hint
+  const movedTileType = state.grid[nextPos.y][nextPos.x].type;
+
   // Belohnungen und Strafen verschwinden beim Einsammeln (optional)
   if (consumeRewards) {
-    const tileType = state.grid[nextPos.y][nextPos.x].type;
-    if (tileType === "reward" || tileType === "punishment") {
+    if (movedTileType === "reward" || movedTileType === "punishment") {
       newGrid[nextPos.y][nextPos.x] = {
         ...newGrid[nextPos.y][nextPos.x],
         type: "empty",
@@ -1526,7 +1289,7 @@ const runPlaygroundStep = (
   if (!isPortalWait) {
     const actionIdx = posToActionIndex(current, nextPos);
     const currentQ = getQValue(state.qTable, current, actionIdx);
-    const maxNextQ = getMaxQFromTable(state.qTable, newGrid, nextPos);
+    const maxNextQ = getMaxQValue(newGrid, nextPos, state.qTable);
     const newQ = currentQ + alpha * (reward + gamma * maxNextQ - currentQ);
     newQTable = setQValue(state.qTable, current, actionIdx, newQ);
     newGrid[current.y][current.x] = {
@@ -1553,7 +1316,7 @@ const runPlaygroundStep = (
       success: true,
       mode: "playground",
     };
-    const newHistory = [...state.episodeHistory, episodeStat];
+    const newHistory = [...state.episodeHistory.slice(-19), episodeStat];
 
     return {
       ...state,
@@ -1626,7 +1389,7 @@ const runRandomModeStep = (
   // Q-Learning update: Q(s,a) ← Q(s,a) + α[R + γ·max_a' Q(s',a') − Q(s,a)]
   const actionIdx = posToActionIndex(current, nextPos);
   const currentQ = getQValue(state.qTable, current, actionIdx);
-  const maxNextQ = getMaxQFromTable(state.qTable, newGrid, nextPos);
+  const maxNextQ = getMaxQValue(newGrid, nextPos, state.qTable);
   const newQ = currentQ + alpha * (reward + gamma * maxNextQ - currentQ);
   const newQTable = setQValue(state.qTable, current, actionIdx, newQ);
 
@@ -1756,7 +1519,7 @@ const runComparisonRoverStep = (
   // Q-Learning update: Q(s,a) ← Q(s,a) + α[R + γ·max_a' Q(s',a') − Q(s,a)]
   const actionIdx = posToActionIndex(current, nextPos);
   const currentQ = getQValue(state.qTable, current, actionIdx);
-  const maxNextQ = getMaxQFromTable(state.qTable, newGrid, nextPos);
+  const maxNextQ = getMaxQValue(newGrid, nextPos, state.qTable);
   const newQ = currentQ + state.alpha * (reward + state.gamma * maxNextQ - currentQ);
   const newQTable = setQValue(state.qTable, current, actionIdx, newQ);
 
@@ -1779,7 +1542,7 @@ const runComparisonRoverStep = (
       success: true,
       mode: "playground",
     };
-    const newHistory = [...state.episodeHistory, episodeStat];
+    const newHistory = [...state.episodeHistory.slice(-19), episodeStat];
 
     return {
       ...state,
@@ -2509,7 +2272,7 @@ export function RLGame() {
   });
   const { language, setLanguage, isEnglish, translate } = useLanguage();
   const [mode, setMode] = useState<Mode>("playground");
-  const [tileSize, setTileSize] = useState<TileSizeOption>(DEFAULT_TILE_OPTION);
+  const [tileSize, setTileSize] = useState<TileSizeOption>(LIB_DEFAULT_TILE_OPTION);
   const [levelKey, setLevelKey] = useState<LevelKey>("level1");
   const [placementMode, setPlacementModeState] = useState<PlaceableTile>("obstacle");
   const [challengeMode, setChallengeModeState] = useState<ChallengeTile | null>(null);
