@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { Play, Pause, RotateCcw, Brain, Target, Shield, Gift, Zap } from "lucide-react";
+import { Play, Pause, RotateCcw, Brain, Target, Shield, Gift, Zap, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Types
@@ -37,6 +38,7 @@ const GOAL_REWARD = 100;
 const STEP_PENALTY = -1;
 
 export function RLGame() {
+  const navigate = useNavigate();
   const [gameState, setGameState] = useState<GameState>(() => ({
     agent: { x: 1, y: 1 },
     goal: { x: GRID_SIZE - 2, y: GRID_SIZE - 2 },
@@ -279,7 +281,16 @@ export function RLGame() {
   return (
     <div className="min-h-screen p-6" style={{ background: 'var(--gradient-main)' }}>
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8">
+        <div className="text-center mb-8 relative">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/")}
+            className="absolute left-0 top-0 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Menü
+          </Button>
           <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Reinforcement Learning Playground
           </h1>

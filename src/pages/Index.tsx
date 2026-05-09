@@ -1,7 +1,5 @@
-import { RLGame } from "@/components/RL/RLGame";
+import { Landing } from "./Landing";
 
-const Index = () => {
-  return <RLGame />;
-};
+const Index = () => <Landing />;
 
 export default Index;
