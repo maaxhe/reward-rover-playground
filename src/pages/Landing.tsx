@@ -1,33 +1,48 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Zap, Globe, User, Lock } from "lucide-react";
+import { Trophy, Zap, Globe, User, LogOut, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { LEVELS } from "@/components/RL/levelConfig";
+import { AuthModal } from "@/components/auth/AuthModal";
+import { api, AuthResponse } from "@/lib/api";
 
 const CHEAT_CODE = "blauwal";
 
-function isFreeModeUnlocked() {
-  return (
-    parseInt(localStorage.getItem("rrp_level") || "1", 10) >= LEVELS.length ||
-    localStorage.getItem("rrp_freemode") === "1"
-  );
+function readLocal() {
+  return {
+    level: parseInt(localStorage.getItem("rrp_level") || "1", 10),
+    episodes: parseInt(localStorage.getItem("rrp_episodes") || "0", 10),
+    freemode: localStorage.getItem("rrp_freemode") === "1",
+    token: localStorage.getItem("rrp_token"),
+    username: localStorage.getItem("rrp_username"),
+  };
+}
+
+function isFree(level: number, freemode: boolean) {
+  return level >= LEVELS.length || freemode;
 }
 
 export function Landing() {
   const navigate = useNavigate();
-  const unlockedLevel = parseInt(localStorage.getItem("rrp_level") || "1", 10);
-  const episodesEver = parseInt(localStorage.getItem("rrp_episodes") || "0", 10);
+  const local = readLocal();
+
+  const [unlockedLevel, setUnlockedLevel] = useState(local.level);
+  const [episodesEver, setEpisodesEver] = useState(local.episodes);
+  const [freeModeUnlocked, setFreeModeUnlocked] = useState(
+    isFree(local.level, local.freemode)
+  );
+  const [authToken, setAuthToken] = useState<string | null>(local.token);
+  const [username, setUsername] = useState<string | null>(local.username);
+  const [showAuth, setShowAuth] = useState(false);
+
+  const cheatBuffer = useRef("");
   const levelDef = LEVELS[Math.min(unlockedLevel - 1, LEVELS.length - 1)];
 
-  const [freeModeUnlocked, setFreeModeUnlocked] = useState(isFreeModeUnlocked);
-  const cheatBuffer = useRef("");
-
+  // Cheat code listener
   useEffect(() => {
     if (freeModeUnlocked) return;
-
     const handleKey = (e: KeyboardEvent) => {
-      // Only track printable single characters
       if (e.key.length !== 1) return;
       cheatBuffer.current = (cheatBuffer.current + e.key.toLowerCase()).slice(
         -CHEAT_CODE.length
@@ -35,16 +50,85 @@ export function Landing() {
       if (cheatBuffer.current === CHEAT_CODE) {
         localStorage.setItem("rrp_freemode", "1");
         setFreeModeUnlocked(true);
+        // Sync to server if logged in
+        if (authToken) {
+          api
+            .updateProgress(authToken, {
+              level: unlockedLevel,
+              episodes: episodesEver,
+              freemode_unlocked: 1,
+            })
+            .catch(() => {});
+        }
         toast.success("🐋 Blauwal-Code aktiviert!", {
           description: "Free Mode ist jetzt freigeschaltet.",
           duration: 5000,
         });
       }
     };
-
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [freeModeUnlocked]);
+  }, [freeModeUnlocked, authToken, unlockedLevel, episodesEver]);
+
+  // On successful login/register: merge local ↔ server progress
+  const handleAuthSuccess = async (res: AuthResponse) => {
+    const token = res.token;
+    const uname = res.user.username;
+
+    localStorage.setItem("rrp_token", token);
+    localStorage.setItem("rrp_username", uname);
+    setAuthToken(token);
+    setUsername(uname);
+    setShowAuth(false);
+
+    try {
+      const server = await api.getProgress(token);
+      const localLevel = parseInt(localStorage.getItem("rrp_level") || "1", 10);
+      const localEpisodes = parseInt(localStorage.getItem("rrp_episodes") || "0", 10);
+      const localFreemode = localStorage.getItem("rrp_freemode") === "1";
+
+      const mergedLevel = Math.max(localLevel, server.level);
+      const mergedEpisodes = Math.max(localEpisodes, server.episodes);
+      const mergedFreemode =
+        localFreemode ||
+        server.freemode_unlocked === 1 ||
+        mergedLevel >= LEVELS.length;
+
+      localStorage.setItem("rrp_level", String(mergedLevel));
+      localStorage.setItem("rrp_episodes", String(mergedEpisodes));
+      if (mergedFreemode) localStorage.setItem("rrp_freemode", "1");
+
+      await api.updateProgress(token, {
+        level: mergedLevel,
+        episodes: mergedEpisodes,
+        freemode_unlocked: mergedFreemode ? 1 : 0,
+      });
+
+      setUnlockedLevel(mergedLevel);
+      setEpisodesEver(mergedEpisodes);
+      setFreeModeUnlocked(mergedFreemode);
+
+      toast.success(`Willkommen, ${uname}! 👋`, {
+        description:
+          mergedLevel > localLevel
+            ? `Fortschritt synchronisiert – Level ${mergedLevel} wiederhergestellt.`
+            : "Fortschritt gespeichert.",
+        duration: 4000,
+      });
+    } catch {
+      toast("Angemeldet – konnte Fortschritt nicht laden.", {
+        duration: 3000,
+      });
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("rrp_token");
+    localStorage.removeItem("rrp_username");
+    setAuthToken(null);
+    setUsername(null);
+    toast("Abgemeldet.");
+  };
 
   return (
     <div
@@ -52,15 +136,33 @@ export function Landing() {
       style={{ background: "var(--gradient-main)" }}
     >
       {/* Top bar */}
-      <header className="flex justify-end gap-1 p-4">
+      <header className="flex justify-end items-center gap-1 p-4">
         <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors">
           <Globe className="w-4 h-4" />
           DE
         </button>
-        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors">
-          <User className="w-4 h-4" />
-          Login
-        </button>
+
+        {authToken && username ? (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground px-2">
+              {username}
+            </span>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowAuth(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
+          >
+            <User className="w-4 h-4" />
+            Login
+          </button>
+        )}
       </header>
 
       {/* Main */}
@@ -74,6 +176,11 @@ export function Landing() {
           <p className="text-muted-foreground text-lg">
             Entdecke wie KI durch Belohnung lernt
           </p>
+          {!authToken && (
+            <p className="text-xs text-muted-foreground/50">
+              Melde dich an, um deinen Fortschritt geräteübergreifend zu speichern.
+            </p>
+          )}
         </div>
 
         {/* Mode buttons */}
@@ -104,7 +211,7 @@ export function Landing() {
             </div>
           </button>
 
-          {/* Free Mode — locked or unlocked */}
+          {/* Free Mode — locked until earned */}
           {freeModeUnlocked ? (
             <button
               onClick={() => navigate("/free")}
@@ -122,7 +229,7 @@ export function Landing() {
               </Badge>
             </button>
           ) : (
-            <div className="flex-1 flex flex-col items-center gap-4 p-8 rounded-2xl border-2 border-border/30 bg-white/[0.02] cursor-not-allowed opacity-50 select-none">
+            <div className="flex-1 flex flex-col items-center gap-4 p-8 rounded-2xl border-2 border-border/30 bg-white/[0.02] opacity-50 select-none cursor-not-allowed">
               <div className="relative">
                 <Zap className="w-9 h-9 text-muted-foreground/50" />
                 <Lock className="w-4 h-4 absolute -bottom-1 -right-1 text-muted-foreground/70" />
@@ -136,7 +243,10 @@ export function Landing() {
                 </div>
               </div>
               <div className="flex flex-col items-center gap-1">
-                <Badge variant="outline" className="px-3 text-muted-foreground/60 border-muted-foreground/20">
+                <Badge
+                  variant="outline"
+                  className="px-3 text-muted-foreground/60 border-muted-foreground/20"
+                >
                   Gesperrt
                 </Badge>
                 <span className="text-xs text-muted-foreground/40 text-center mt-1">
@@ -174,6 +284,12 @@ export function Landing() {
           </div>
         )}
       </main>
+
+      <AuthModal
+        open={showAuth}
+        onClose={() => setShowAuth(false)}
+        onSuccess={handleAuthSuccess}
+      />
     </div>
   );
 }

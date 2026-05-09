@@ -11,6 +11,19 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { LEVELS } from "./levelConfig";
+import { api } from "@/lib/api";
+
+function syncProgress(level: number, episodes: number) {
+  const token = localStorage.getItem("rrp_token");
+  if (!token) return;
+  api
+    .updateProgress(token, {
+      level,
+      episodes,
+      freemode_unlocked: localStorage.getItem("rrp_freemode") === "1" ? 1 : 0,
+    })
+    .catch(() => {});
+}
 
 type CellType = "empty" | "obstacle" | "reward" | "punishment" | "portal";
 
@@ -129,6 +142,7 @@ export function RLGameLevel() {
       const newDef = LEVELS[newLevel - 1];
       setUnlockedLevel(newLevel);
       localStorage.setItem("rrp_level", String(newLevel));
+      syncProgress(newLevel, episodesEver);
 
       if (newDef.defaultGridSize !== gridSize) {
         const newSize = newDef.defaultGridSize;
@@ -274,6 +288,7 @@ export function RLGameLevel() {
       setEpisodesEver((prev) => {
         const next = prev + 1;
         localStorage.setItem("rrp_episodes", String(next));
+        syncProgress(unlockedLevel, next);
         return next;
       });
     }

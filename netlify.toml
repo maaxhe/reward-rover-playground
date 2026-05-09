@@ -1,3 +1,10 @@
 [build]
 command = "npm run build"
 publish = "dist"
+
+# Proxy /api/* to the backend so the browser never makes a cross-origin request
+[[redirects]]
+  from = "/api/*"
+  to = "https://rl-agent.maximleopold.com/api/:splat"
+  status = 200
+  force = true
