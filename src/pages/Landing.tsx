@@ -1,13 +1,50 @@
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Zap, Globe, User } from "lucide-react";
+import { Trophy, Zap, Globe, User, Lock } from "lucide-react";
+import { toast } from "sonner";
 import { LEVELS } from "@/components/RL/levelConfig";
+
+const CHEAT_CODE = "blauwal";
+
+function isFreeModeUnlocked() {
+  return (
+    parseInt(localStorage.getItem("rrp_level") || "1", 10) >= LEVELS.length ||
+    localStorage.getItem("rrp_freemode") === "1"
+  );
+}
 
 export function Landing() {
   const navigate = useNavigate();
   const unlockedLevel = parseInt(localStorage.getItem("rrp_level") || "1", 10);
   const episodesEver = parseInt(localStorage.getItem("rrp_episodes") || "0", 10);
   const levelDef = LEVELS[Math.min(unlockedLevel - 1, LEVELS.length - 1)];
+
+  const [freeModeUnlocked, setFreeModeUnlocked] = useState(isFreeModeUnlocked);
+  const cheatBuffer = useRef("");
+
+  useEffect(() => {
+    if (freeModeUnlocked) return;
+
+    const handleKey = (e: KeyboardEvent) => {
+      // Only track printable single characters
+      if (e.key.length !== 1) return;
+      cheatBuffer.current = (cheatBuffer.current + e.key.toLowerCase()).slice(
+        -CHEAT_CODE.length
+      );
+      if (cheatBuffer.current === CHEAT_CODE) {
+        localStorage.setItem("rrp_freemode", "1");
+        setFreeModeUnlocked(true);
+        toast.success("🐋 Blauwal-Code aktiviert!", {
+          description: "Free Mode ist jetzt freigeschaltet.",
+          duration: 5000,
+        });
+      }
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [freeModeUnlocked]);
 
   return (
     <div
@@ -67,22 +104,47 @@ export function Landing() {
             </div>
           </button>
 
-          {/* Free Mode */}
-          <button
-            onClick={() => navigate("/free")}
-            className="flex-1 flex flex-col items-center gap-4 p-8 rounded-2xl border-2 border-border hover:border-accent/50 hover:bg-accent/5 transition-all group cursor-pointer"
-          >
-            <Zap className="w-9 h-9 group-hover:scale-110 transition-transform" />
-            <div className="text-center">
-              <div className="text-xl font-bold">Free Mode</div>
-              <div className="text-sm text-muted-foreground mt-1">
-                Alle Features frei
+          {/* Free Mode — locked or unlocked */}
+          {freeModeUnlocked ? (
+            <button
+              onClick={() => navigate("/free")}
+              className="flex-1 flex flex-col items-center gap-4 p-8 rounded-2xl border-2 border-border hover:border-accent/50 hover:bg-accent/5 transition-all group cursor-pointer"
+            >
+              <Zap className="w-9 h-9 group-hover:scale-110 transition-transform" />
+              <div className="text-center">
+                <div className="text-xl font-bold">Free Mode</div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  Alle Features frei
+                </div>
+              </div>
+              <Badge variant="secondary" className="px-3">
+                Keine Einschränkungen
+              </Badge>
+            </button>
+          ) : (
+            <div className="flex-1 flex flex-col items-center gap-4 p-8 rounded-2xl border-2 border-border/30 bg-white/[0.02] cursor-not-allowed opacity-50 select-none">
+              <div className="relative">
+                <Zap className="w-9 h-9 text-muted-foreground/50" />
+                <Lock className="w-4 h-4 absolute -bottom-1 -right-1 text-muted-foreground/70" />
+              </div>
+              <div className="text-center">
+                <div className="text-xl font-bold text-muted-foreground">
+                  Free Mode
+                </div>
+                <div className="text-sm text-muted-foreground/60 mt-1">
+                  Alle Features frei
+                </div>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <Badge variant="outline" className="px-3 text-muted-foreground/60 border-muted-foreground/20">
+                  Gesperrt
+                </Badge>
+                <span className="text-xs text-muted-foreground/40 text-center mt-1">
+                  Alle 8 Level abschließen
+                </span>
               </div>
             </div>
-            <Badge variant="secondary" className="px-3">
-              Keine Einschränkungen
-            </Badge>
-          </button>
+          )}
         </div>
 
         {/* Level progress strip */}
