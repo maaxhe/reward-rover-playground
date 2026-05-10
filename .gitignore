@@ -11,6 +11,16 @@ node_modules
 dist
 dist-ssr
 *.local
+server/node_modules
+server/data
+server/.env
+server/public/*.html
+server/public/assets
+server/public/*.ico
+server/public/*.png
+server/public/*.svg
+server/public/robots.txt
+.env
 
 # Editor directories and files
 .vscode/*
@@ -22,3 +32,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local Netlify folder
+.netlify
