@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,12 +6,34 @@ import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
-  Play, Pause, RotateCcw, Brain, Target,
-  Shield, Gift, Zap, ArrowLeft, Lock,
+  Brain, Target, Gift, Shield, Zap,
+  ArrowLeft, Lock, Play, Pause, RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { LEVELS } from "./levelConfig";
 import { api } from "@/lib/api";
+import { Tile, type TileType } from "./Tile";
+import type { Position, TileState } from "@/lib/rl/types";
+import {
+  type QTable,
+  chooseAction,
+  setQValue,
+  getQValue,
+  posToActionIndex,
+  getMaxQValue,
+} from "@/lib/rl/qLearning";
+import { createEmptyGrid } from "@/lib/rl/gridUtils";
+import { teleportThroughPortal } from "@/lib/rl/portalUtils";
+import {
+  GOAL_REWARD,
+  REWARD_VALUE,
+  PUNISHMENT_VALUE,
+  OBSTACLE_PENALTY,
+  STEP_PENALTY,
+  TILE_ICONS,
+} from "@/lib/rl/constants";
+
+const GRID_PIXEL = 420;
 
 function syncProgress(level: number, episodes: number) {
   const token = localStorage.getItem("rrp_token");
@@ -25,83 +47,28 @@ function syncProgress(level: number, episodes: number) {
     .catch(() => {});
 }
 
-type CellType = "empty" | "obstacle" | "reward" | "punishment" | "portal";
-
-interface Cell {
-  type: CellType;
-  qValue: number;
-  visits: number;
-}
-
-interface Position {
-  x: number;
-  y: number;
-}
-
 interface GameState {
   agent: Position;
   goal: Position;
-  grid: Cell[][];
+  grid: TileState[][];
+  qTable: QTable;
   isRunning: boolean;
   sessionEpisodes: number;
   totalReward: number;
-}
-
-const REWARD_VALUE = 10;
-const PUNISHMENT_VALUE = -15;
-const GOAL_REWARD = 100;
-const STEP_PENALTY = -1;
-
-function makeGrid(size: number): Cell[][] {
-  return Array(size)
-    .fill(null)
-    .map(() =>
-      Array(size)
-        .fill(null)
-        .map(() => ({ type: "empty" as CellType, qValue: 0, visits: 0 }))
-    );
+  currentSteps: number;
 }
 
 function makeInitialState(size: number): GameState {
   return {
     agent: { x: 1, y: 1 },
     goal: { x: size - 2, y: size - 2 },
-    grid: makeGrid(size),
+    grid: createEmptyGrid(size),
+    qTable: {},
     isRunning: false,
     sessionEpisodes: 0,
     totalReward: 0,
+    currentSteps: 0,
   };
-}
-
-function getActions(pos: Position, grid: Cell[][], size: number): Position[] {
-  const dirs = [
-    { x: 0, y: -1 },
-    { x: 0, y: 1 },
-    { x: -1, y: 0 },
-    { x: 1, y: 0 },
-  ];
-  const valid = dirs
-    .map((d) => ({ x: pos.x + d.x, y: pos.y + d.y }))
-    .filter(
-      (p) =>
-        p.x >= 0 &&
-        p.x < size &&
-        p.y >= 0 &&
-        p.y < size &&
-        grid[p.y][p.x].type !== "obstacle"
-    );
-  return valid.length > 0 ? valid : [pos];
-}
-
-function portalPartner(pos: Position, grid: Cell[][]): Position | null {
-  for (let y = 0; y < grid.length; y++) {
-    for (let x = 0; x < grid[y].length; x++) {
-      if (grid[y][x].type === "portal" && !(x === pos.x && y === pos.y)) {
-        return { x, y };
-      }
-    }
-  }
-  return null;
 }
 
 export function RLGameLevel() {
@@ -122,19 +89,15 @@ export function RLGameLevel() {
   const [learningRate, setLearningRate] = useState(0.1);
   const [discountFactor, setDiscountFactor] = useState(0.9);
   const [gridSize, setGridSize] = useState(levelDef.defaultGridSize);
-
+  const [placementMode, setPlacementMode] = useState<TileType>("reward");
   const [gameState, setGameState] = useState<GameState>(() =>
     makeInitialState(levelDef.defaultGridSize)
   );
-  const [placementMode, setPlacementMode] = useState<CellType>("reward");
-  const [moveCount, setMoveCount] = useState(0);
-  const [isAgentMoving, setIsAgentMoving] = useState(false);
 
   // Level-up detection
   useEffect(() => {
     if (episodesEver === prevEpisodesRef.current) return;
     prevEpisodesRef.current = episodesEver;
-
     if (unlockedLevel >= LEVELS.length) return;
     const currentDef = LEVELS[unlockedLevel - 1];
     if (episodesEver >= currentDef.unlockAt) {
@@ -143,14 +106,11 @@ export function RLGameLevel() {
       setUnlockedLevel(newLevel);
       localStorage.setItem("rrp_level", String(newLevel));
       syncProgress(newLevel, episodesEver);
-
       if (newDef.defaultGridSize !== gridSize) {
         const newSize = newDef.defaultGridSize;
         setGridSize(newSize);
         setGameState(makeInitialState(newSize));
-        setMoveCount(0);
       }
-
       toast.success(`🎉 Level ${newLevel} freigeschaltet!`, {
         description: `${newDef.emoji} ${newDef.name} – Neu: ${newDef.newFeature}`,
         duration: 6000,
@@ -159,14 +119,12 @@ export function RLGameLevel() {
   }, [episodesEver, unlockedLevel, gridSize]);
 
   const handleReset = useCallback(() => {
-    setGameState(makeInitialState(gridSize));
-    setMoveCount(0);
+    setGameState((prev) => ({ ...makeInitialState(gridSize), qTable: prev.qTable }));
   }, [gridSize]);
 
   const handleGridSizeChange = useCallback((newSize: number) => {
     setGridSize(newSize);
     setGameState(makeInitialState(newSize));
-    setMoveCount(0);
   }, []);
 
   const handleCellClick = useCallback(
@@ -177,26 +135,23 @@ export function RLGameLevel() {
           (x === prev.goal.x && y === prev.goal.y)
         )
           return prev;
-
         const newGrid = prev.grid.map((row, ry) =>
           row.map((cell, cx) => {
             if (ry !== y || cx !== x) return cell;
             if (placementMode === "portal") {
-              if (cell.type === "portal")
-                return { ...cell, type: "empty" as CellType };
-              const count = prev.grid
-                .flat()
-                .filter((c) => c.type === "portal").length;
+              if (cell.type === "portal") return { ...cell, type: "empty" as TileType, value: 0 };
+              const count = prev.grid.flat().filter((c) => c.type === "portal").length;
               if (count >= 2) return cell;
-              return { ...cell, type: "portal" as CellType };
+              return { ...cell, type: "portal" as TileType, value: 0 };
             }
-            return {
-              ...cell,
-              type:
-                cell.type === placementMode
-                  ? ("empty" as CellType)
-                  : placementMode,
-            };
+            const newType = cell.type === placementMode ? ("empty" as TileType) : placementMode;
+            const value =
+              newType === "reward"
+                ? REWARD_VALUE
+                : newType === "punishment"
+                ? PUNISHMENT_VALUE
+                : 0;
+            return { ...cell, type: newType, value };
           })
         );
         return { ...prev, grid: newGrid };
@@ -207,34 +162,22 @@ export function RLGameLevel() {
 
   const stepAgent = useCallback(() => {
     if (!gameState.isRunning) return;
+    const { agent, goal, grid, qTable } = gameState;
 
-    const { agent, goal, grid } = gameState;
-    const actions = getActions(agent, grid, gridSize);
+    const nextPos = chooseAction(grid, agent, qTable, explorationRate);
 
-    let nextPos: Position;
-    if (Math.random() < explorationRate) {
-      nextPos = actions[Math.floor(Math.random() * actions.length)];
-    } else {
-      nextPos = actions.reduce((best, a) =>
-        grid[a.y][a.x].qValue > grid[best.y][best.x].qValue ? a : best
-      , actions[0]);
-    }
-
-    const stuck = nextPos.x === agent.x && nextPos.y === agent.y;
-    if (stuck) {
+    if (nextPos.x === agent.x && nextPos.y === agent.y) {
       setGameState((prev) => ({
         ...prev,
         totalReward: prev.totalReward + STEP_PENALTY,
+        currentSteps: prev.currentSteps + 1,
       }));
-      setMoveCount((m) => m + 1);
       return;
     }
 
-    // Portal teleportation
     let finalPos = nextPos;
     if (grid[nextPos.y][nextPos.x].type === "portal") {
-      const partner = portalPartner(nextPos, grid);
-      if (partner) finalPos = partner;
+      finalPos = teleportThroughPortal(grid, nextPos);
     }
 
     const reachedGoal = finalPos.x === goal.x && finalPos.y === goal.y;
@@ -250,39 +193,38 @@ export function RLGameLevel() {
         case "punishment":
           reward = PUNISHMENT_VALUE;
           break;
+        case "obstacle":
+          reward = OBSTACLE_PENALTY;
+          break;
         default:
           reward = STEP_PENALTY;
       }
     }
 
-    // Q-learning update
-    const currentQ = grid[agent.y][agent.x].qValue;
-    const nextActions = getActions(finalPos, grid, gridSize);
-    const nextMaxQ = Math.max(...nextActions.map((a) => grid[a.y][a.x].qValue));
-    const newQ =
-      currentQ + learningRate * (reward + discountFactor * nextMaxQ - currentQ);
+    const actionIdx = posToActionIndex(agent, nextPos);
+    const currentQ = getQValue(qTable, agent, actionIdx);
+    const maxNextQ = getMaxQValue(grid, finalPos, qTable);
+    const newQ = currentQ + learningRate * (reward + discountFactor * maxNextQ - currentQ);
+    const newQTable = setQValue(qTable, agent, actionIdx, newQ);
 
-    setIsAgentMoving(true);
-    setTimeout(() => setIsAgentMoving(false), 200);
-    setMoveCount((m) => m + 1);
+    const newGrid = grid.map((row, ry) =>
+      row.map((cell, cx) =>
+        ry === agent.y && cx === agent.x
+          ? { ...cell, visits: cell.visits + 1, qValue: newQ }
+          : cell
+      )
+    );
 
-    setGameState((prev) => {
-      const newGrid = prev.grid.map((row, ry) =>
-        row.map((cell, cx) =>
-          ry === agent.y && cx === agent.x
-            ? { ...cell, qValue: newQ, visits: cell.visits + 1 }
-            : cell
-        )
-      );
-      return {
-        ...prev,
-        grid: newGrid,
-        agent: reachedGoal ? { x: 1, y: 1 } : finalPos,
-        totalReward: prev.totalReward + reward,
-        isRunning: !reachedGoal,
-        sessionEpisodes: prev.sessionEpisodes + (reachedGoal ? 1 : 0),
-      };
-    });
+    setGameState((prev) => ({
+      ...prev,
+      grid: newGrid,
+      qTable: newQTable,
+      agent: reachedGoal ? { x: 1, y: 1 } : finalPos,
+      totalReward: prev.totalReward + reward,
+      isRunning: !reachedGoal,
+      currentSteps: prev.currentSteps + 1,
+      sessionEpisodes: prev.sessionEpisodes + (reachedGoal ? 1 : 0),
+    }));
 
     if (reachedGoal) {
       setEpisodesEver((prev) => {
@@ -292,7 +234,7 @@ export function RLGameLevel() {
         return next;
       });
     }
-  }, [gameState, gridSize, explorationRate, learningRate, discountFactor]);
+  }, [gameState, explorationRate, learningRate, discountFactor, unlockedLevel]);
 
   useEffect(() => {
     if (!gameState.isRunning) return;
@@ -300,81 +242,45 @@ export function RLGameLevel() {
     return () => clearInterval(interval);
   }, [gameState.isRunning, stepAgent]);
 
-  // Progress bar calculation
-  const prevThreshold =
-    unlockedLevel > 1 ? LEVELS[unlockedLevel - 2].unlockAt : 0;
+  const tileSizePx = useMemo(
+    () => Math.max(28, Math.floor(GRID_PIXEL / Math.max(gridSize, 1))),
+    [gridSize]
+  );
+  // total pixel width including 1px gaps
+  const gridPx = tileSizePx * gridSize + (gridSize - 1);
+
+  const maxVisits = useMemo(
+    () => Math.max(...gameState.grid.flat().map((c) => c.visits), 1),
+    [gameState.grid]
+  );
+
+  const prevThreshold = unlockedLevel > 1 ? LEVELS[unlockedLevel - 2].unlockAt : 0;
   const nextThreshold = levelDef.unlockAt;
   const isFinalLevel = nextThreshold === Infinity;
   const progressPercent = isFinalLevel
     ? 100
     : Math.min(
         100,
-        ((episodesEver - prevThreshold) / (nextThreshold - prevThreshold)) *
-          100
+        ((episodesEver - prevThreshold) / (nextThreshold - prevThreshold)) * 100
       );
-  const episodesToNext = isFinalLevel
-    ? 0
-    : Math.max(0, nextThreshold - episodesEver);
+  const episodesToNext = isFinalLevel ? 0 : Math.max(0, nextThreshold - episodesEver);
 
-  // Which placement tools should be visible
   const anyPlacementUnlocked =
     features.placementReward ||
     features.placementObstacle ||
     features.placementPunishment ||
     features.placementPortal;
 
-  // Next locked feature info
   const nextLockInfo = (() => {
     if (isFinalLevel) return null;
-    const nextDef = LEVELS[unlockedLevel]; // index of next level (0-based = unlockedLevel)
+    const nextDef = LEVELS[unlockedLevel];
     if (!nextDef) return null;
     return {
       feature: nextDef.newFeature,
-      level: nextDef.level,
       emoji: nextDef.emoji,
       episodes: episodesToNext,
     };
   })();
-
-  const getCellStyle = (x: number, y: number): React.CSSProperties => {
-    const cell = gameState.grid[y][x];
-    if (cell.visits > 0 && cell.type === "empty") {
-      const qNorm = Math.max(0, Math.min(1, (cell.qValue + 50) / 100));
-      return { backgroundColor: `hsl(235 50% 30% / ${0.1 + qNorm * 0.35})` };
-    }
-    return {};
-  };
-
-  const getCellClasses = (x: number, y: number) => {
-    const cell = gameState.grid[y][x];
-    const isAgent =
-      gameState.agent.x === x && gameState.agent.y === y;
-    const isGoal = gameState.goal.x === x && gameState.goal.y === y;
-
-    let cls =
-      "border border-grid-line transition-all duration-200 cursor-pointer flex items-center justify-center text-sm font-bold";
-
-    if (isAgent) {
-      cls += " bg-agent text-primary-foreground animate-glow";
-      if (isAgentMoving) cls += " animate-agent-move";
-    } else if (isGoal) {
-      cls += " bg-goal text-primary-foreground";
-    } else if (cell.type === "obstacle") {
-      cls += " bg-obstacle/80";
-    } else if (cell.type === "reward") {
-      cls += " bg-reward/80";
-    } else if (cell.type === "punishment") {
-      cls += " bg-destructive/80";
-    } else if (cell.type === "portal") {
-      cls += " bg-orange-500/80";
-    } else {
-      cls += " hover:bg-white/5";
-    }
-
-    return cls;
-  };
-
-  const cellSize = gridSize <= 6 ? "w-10 h-10" : gridSize <= 8 ? "w-8 h-8" : "w-6 h-6";
 
   return (
     <div className="min-h-screen p-4" style={{ background: "var(--gradient-main)" }}>
@@ -391,23 +297,17 @@ export function RLGameLevel() {
             <ArrowLeft className="w-4 h-4 mr-1" />
             Menü
           </Button>
-
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xl">{levelDef.emoji}</span>
               <span className="font-bold text-lg">
                 Level {levelDef.level} – {levelDef.name}
               </span>
-              <span className="text-sm text-muted-foreground">
-                {levelDef.tagline}
-              </span>
+              <span className="text-sm text-muted-foreground">{levelDef.tagline}</span>
               {isFinalLevel && (
-                <Badge className="bg-yellow-500 text-black text-xs">
-                  Master ✨
-                </Badge>
+                <Badge className="bg-yellow-500 text-black text-xs">Master ✨</Badge>
               )}
             </div>
-
             {!isFinalLevel && (
               <div className="flex items-center gap-3">
                 <Progress value={progressPercent} className="flex-1 h-2" />
@@ -419,7 +319,8 @@ export function RLGameLevel() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(220px,1fr)_auto] gap-4 items-start">
+
           {/* Controls Panel */}
           <Card className="p-5 space-y-5" style={{ background: "var(--gradient-card)" }}>
             <div>
@@ -431,34 +332,27 @@ export function RLGameLevel() {
               <div className="flex gap-2 mb-4">
                 <Button
                   onClick={() =>
-                    setGameState((prev) => ({
-                      ...prev,
-                      isRunning: !prev.isRunning,
-                    }))
+                    setGameState((prev) => ({ ...prev, isRunning: !prev.isRunning }))
                   }
                   className="flex-1"
                   size="sm"
                 >
                   {gameState.isRunning ? (
-                    <Pause className="w-4 h-4 mr-1" />
+                    <><Pause className="w-4 h-4 mr-1" />Pause</>
                   ) : (
-                    <Play className="w-4 h-4 mr-1" />
+                    <><Play className="w-4 h-4 mr-1" />Start</>
                   )}
-                  {gameState.isRunning ? "Pause" : "Start"}
                 </Button>
                 <Button onClick={handleReset} variant="outline" size="sm">
                   <RotateCcw className="w-4 h-4" />
                 </Button>
               </div>
 
-              {/* Exploration slider — always visible in level mode */}
               {features.explorationSlider && (
                 <div className="mb-4">
                   <label className="text-xs font-medium mb-2 block">
                     Exploration:{" "}
-                    <span className="text-primary">
-                      {(explorationRate * 100).toFixed(0)}%
-                    </span>
+                    <span className="text-primary">{(explorationRate * 100).toFixed(0)}%</span>
                   </label>
                   <Slider
                     value={[explorationRate]}
@@ -474,14 +368,11 @@ export function RLGameLevel() {
                 </div>
               )}
 
-              {/* Learning rate — unlocked at level 4 */}
               {features.learningRateSlider ? (
                 <div className="mb-4">
                   <label className="text-xs font-medium mb-2 block">
                     Lernrate (α):{" "}
-                    <span className="text-primary">
-                      {learningRate.toFixed(2)}
-                    </span>
+                    <span className="text-primary">{learningRate.toFixed(2)}</span>
                   </label>
                   <Slider
                     value={[learningRate]}
@@ -494,23 +385,16 @@ export function RLGameLevel() {
               ) : (
                 <LockedFeature
                   label="Lernrate (α)"
-                  episodes={
-                    levelDef.unlockAt > 0
-                      ? Math.max(0, LEVELS[3]?.unlockAt - episodesEver)
-                      : 0
-                  }
+                  episodes={Math.max(0, (LEVELS[3]?.unlockAt ?? 0) - episodesEver)}
                   show={unlockedLevel < 4}
                 />
               )}
 
-              {/* Gamma — unlocked at level 6 */}
               {features.gammaSlider ? (
                 <div className="mb-4">
                   <label className="text-xs font-medium mb-2 block">
                     Gamma (γ):{" "}
-                    <span className="text-primary">
-                      {discountFactor.toFixed(2)}
-                    </span>
+                    <span className="text-primary">{discountFactor.toFixed(2)}</span>
                   </label>
                   <Slider
                     value={[discountFactor]}
@@ -523,12 +407,11 @@ export function RLGameLevel() {
               ) : (
                 <LockedFeature
                   label="Gamma (γ)"
-                  episodes={Math.max(0, LEVELS[5]?.unlockAt - episodesEver)}
+                  episodes={Math.max(0, (LEVELS[5]?.unlockAt ?? 0) - episodesEver)}
                   show={unlockedLevel < 6}
                 />
               )}
 
-              {/* Grid size — unlocked at level 7 */}
               {features.gridSizeControl ? (
                 <div className="mb-4">
                   <label className="text-xs font-medium mb-2 block">
@@ -546,13 +429,12 @@ export function RLGameLevel() {
               ) : (
                 <LockedFeature
                   label="Grid-Größe"
-                  episodes={Math.max(0, LEVELS[6]?.unlockAt - episodesEver)}
+                  episodes={Math.max(0, (LEVELS[6]?.unlockAt ?? 0) - episodesEver)}
                   show={unlockedLevel < 7}
                 />
               )}
             </div>
 
-            {/* Placement tools */}
             {anyPlacementUnlocked && (
               <div>
                 <h4 className="text-xs font-semibold mb-2 text-muted-foreground uppercase tracking-wide">
@@ -566,8 +448,7 @@ export function RLGameLevel() {
                       onClick={() => setPlacementMode("reward")}
                       className="text-xs"
                     >
-                      <Gift className="w-3 h-3 mr-1" />
-                      Belohnung
+                      <Gift className="w-3 h-3 mr-1" />Belohnung
                     </Button>
                   )}
                   {features.placementObstacle && (
@@ -577,8 +458,7 @@ export function RLGameLevel() {
                       onClick={() => setPlacementMode("obstacle")}
                       className="text-xs"
                     >
-                      <Shield className="w-3 h-3 mr-1" />
-                      Hindernis
+                      <Shield className="w-3 h-3 mr-1" />Hindernis
                     </Button>
                   )}
                   {features.placementPunishment && (
@@ -588,8 +468,7 @@ export function RLGameLevel() {
                       onClick={() => setPlacementMode("punishment")}
                       className="text-xs"
                     >
-                      <Zap className="w-3 h-3 mr-1" />
-                      Strafe
+                      <Zap className="w-3 h-3 mr-1" />Strafe
                     </Button>
                   )}
                   {features.placementPortal && (
@@ -606,7 +485,6 @@ export function RLGameLevel() {
               </div>
             )}
 
-            {/* Next unlock hint */}
             {nextLockInfo && (
               <div className="rounded-lg bg-white/5 border border-white/10 p-3">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -620,103 +498,100 @@ export function RLGameLevel() {
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
                   Noch{" "}
-                  <span className="text-primary font-medium">
-                    {nextLockInfo.episodes}
-                  </span>{" "}
+                  <span className="text-primary font-medium">{nextLockInfo.episodes}</span>{" "}
                   Episode{nextLockInfo.episodes !== 1 ? "n" : ""}
                 </div>
               </div>
             )}
 
-            {/* Stats */}
             <div className="space-y-1 pt-1 border-t border-white/10">
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Session Episoden</span>
-                <span className="text-foreground font-medium">
-                  {gameState.sessionEpisodes}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Gesamt Episoden</span>
-                <span className="text-foreground font-medium">{episodesEver}</span>
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Schritte</span>
-                <span className="text-foreground font-medium">{moveCount}</span>
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Reward</span>
-                <span className="text-foreground font-medium">
-                  {gameState.totalReward.toFixed(0)}
-                </span>
-              </div>
+              <StatRow label="Session Episoden" value={gameState.sessionEpisodes} />
+              <StatRow label="Gesamt Episoden" value={episodesEver} />
+              <StatRow label="Schritte" value={gameState.currentSteps} />
+              <StatRow label="Reward" value={gameState.totalReward.toFixed(0)} />
             </div>
           </Card>
 
-          {/* Grid */}
-          <Card
-            className="p-5 lg:col-span-2"
-            style={{ background: "var(--gradient-card)" }}
-          >
+          {/* Grid Card */}
+          <Card className="p-5" style={{ background: "var(--gradient-card)" }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold flex items-center gap-2">
                 <Target className="w-4 h-4" />
                 Umgebung
               </h3>
-              <div className="flex flex-wrap gap-2 text-xs">
-                <LegendDot color="bg-agent" label="Agent" />
-                <LegendDot color="bg-goal" label="Ziel" />
-                {features.placementObstacle && (
-                  <LegendDot color="bg-obstacle/80" label="Hindernis" />
-                )}
-                {features.placementReward && (
-                  <LegendDot color="bg-reward/80" label="Belohnung" />
-                )}
-                {features.placementPunishment && (
-                  <LegendDot color="bg-destructive/80" label="Strafe" />
-                )}
-                {features.placementPortal && (
-                  <LegendDot color="bg-orange-500/80" label="Portal" />
+              {anyPlacementUnlocked && (
+                <span className="text-xs text-muted-foreground">
+                  Klick zum Platzieren
+                </span>
+              )}
+            </div>
+
+            {/* Grid with smooth agent overlay */}
+            <div
+              className="relative mx-auto overflow-hidden"
+              style={{ width: gridPx, height: gridPx, borderRadius: "8px" }}
+            >
+              <div
+                className="grid bg-tile-bg"
+                style={{
+                  gridTemplateColumns: `repeat(${gridSize}, ${tileSizePx}px)`,
+                  gridTemplateRows: `repeat(${gridSize}, ${tileSizePx}px)`,
+                  gap: "1px",
+                }}
+              >
+                {gameState.grid.flatMap((row, y) =>
+                  row.map((cell, x) => {
+                    const isAgent =
+                      gameState.agent.x === x && gameState.agent.y === y;
+                    const isGoal =
+                      gameState.goal.x === x && gameState.goal.y === y;
+                    const tileType: TileType = isGoal ? "goal" : cell.type;
+                    const icon = isAgent
+                      ? ""
+                      : isGoal
+                      ? TILE_ICONS.goal
+                      : TILE_ICONS[cell.type];
+                    return (
+                      <Tile
+                        key={`${x}-${y}`}
+                        x={x}
+                        y={y}
+                        type={tileType}
+                        value={cell.qValue}
+                        showValues={false}
+                        isAgent={isAgent}
+                        isGoal={isGoal}
+                        tileSize={tileSizePx}
+                        ariaLabel={`${tileType} bei (${x + 1}, ${y + 1})`}
+                        icon={icon}
+                        visits={cell.visits}
+                        showHeatmap={false}
+                        maxVisits={maxVisits}
+                        onClick={anyPlacementUnlocked ? handleCellClick : undefined}
+                      />
+                    );
+                  })
                 )}
               </div>
-            </div>
 
-            <div className="inline-block border border-grid-line rounded-lg overflow-hidden">
-              {gameState.grid.map((row, y) => (
-                <div key={y} className="flex">
-                  {row.map((cell, x) => (
-                    <div
-                      key={`${x}-${y}`}
-                      className={`${getCellClasses(x, y)} ${cellSize}`}
-                      style={getCellStyle(x, y)}
-                      onClick={() => handleCellClick(x, y)}
-                      title={`Q: ${cell.qValue.toFixed(1)}, Besuche: ${cell.visits}`}
-                    >
-                      {gameState.agent.x === x && gameState.agent.y === y && "🤖"}
-                      {gameState.goal.x === x && gameState.goal.y === y && "🎯"}
-                      {cell.type === "obstacle" && "🚫"}
-                      {cell.type === "reward" && "💎"}
-                      {cell.type === "punishment" && "⚡"}
-                      {cell.type === "portal" && "🌀"}
-                    </div>
-                  ))}
-                </div>
-              ))}
+              {/* Smooth-transition agent overlay */}
+              <div
+                className="absolute pointer-events-none flex items-center justify-center"
+                style={{
+                  left: gameState.agent.x * (tileSizePx + 1),
+                  top: gameState.agent.y * (tileSizePx + 1),
+                  width: tileSizePx,
+                  height: tileSizePx,
+                  transition: "left 0.18s ease-out, top 0.18s ease-out",
+                  fontSize:
+                    tileSizePx > 40 ? "2rem" : tileSizePx > 32 ? "1.5rem" : "1.1rem",
+                  zIndex: 10,
+                }}
+                aria-hidden
+              >
+                🤖
+              </div>
             </div>
-
-            {anyPlacementUnlocked && (
-              <p className="text-xs text-muted-foreground mt-3">
-                Klicke auf Felder um{" "}
-                {placementMode === "obstacle"
-                  ? "Hindernisse"
-                  : placementMode === "reward"
-                  ? "Belohnungen"
-                  : placementMode === "punishment"
-                  ? "Strafen"
-                  : "Portale"}{" "}
-                zu platzieren. Dunkle Felder zeigen gelernte Q-Werte.
-              </p>
-            )}
           </Card>
         </div>
       </div>
@@ -738,22 +613,26 @@ function LockedFeature({
     <div className="flex items-center gap-2 text-xs text-muted-foreground/60 mb-3 py-1">
       <Lock className="w-3 h-3 flex-shrink-0" />
       <span>
-        {label}{" "}
+        {label}
         {episodes > 0 && (
-          <span className="text-muted-foreground/40">
-            (noch {episodes} Ep.)
-          </span>
+          <span className="text-muted-foreground/40"> (noch {episodes} Ep.)</span>
         )}
       </span>
     </div>
   );
 }
 
-function LegendDot({ color, label }: { color: string; label: string }) {
+function StatRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
   return (
-    <div className="flex items-center gap-1">
-      <div className={`w-2.5 h-2.5 rounded ${color}`} />
+    <div className="flex justify-between text-xs text-muted-foreground">
       <span>{label}</span>
+      <span className="text-foreground font-medium">{value}</span>
     </div>
   );
 }

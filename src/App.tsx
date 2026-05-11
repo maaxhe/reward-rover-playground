@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import { RLGame } from "./components/RL/RLGame";
 import { RLGameLevel } from "./components/RL/RLGameLevel";
 import { LEVELS } from "./components/RL/levelConfig";
+import { LanguageProvider } from "./contexts/LanguageContext";
 
 const queryClient = new QueryClient();
 
@@ -27,8 +28,8 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/level" element={<RLGameLevel />} />
-          <Route path="/free" element={<FreeModeGuard />} />
+          <Route path="/level" element={<LanguageProvider><RLGameLevel /></LanguageProvider>} />
+          <Route path="/free" element={<LanguageProvider><FreeModeGuard /></LanguageProvider>} />
           <Route path="/admin" element={<Admin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
