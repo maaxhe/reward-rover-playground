@@ -9,6 +9,8 @@ import {
   Brain, Target, Gift, Shield, Zap,
   ArrowLeft, Lock, Play, Pause, RotateCcw,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { LEVELS } from "./levelConfig";
 import { api } from "@/lib/api";
@@ -21,6 +23,7 @@ import {
   getQValue,
   posToActionIndex,
   getMaxQValue,
+  getBestActionDirection,
 } from "@/lib/rl/qLearning";
 import { createEmptyGrid } from "@/lib/rl/gridUtils";
 import { teleportThroughPortal } from "@/lib/rl/portalUtils";
@@ -90,6 +93,9 @@ export function RLGameLevel() {
   const [discountFactor, setDiscountFactor] = useState(0.9);
   const [gridSize, setGridSize] = useState(levelDef.defaultGridSize);
   const [placementMode, setPlacementMode] = useState<TileType>("reward");
+  const [showValues, setShowValues] = useState(false);
+  const [showHeatmap, setShowHeatmap] = useState(false);
+  const [showActions, setShowActions] = useState(false);
   const [gameState, setGameState] = useState<GameState>(() =>
     makeInitialState(levelDef.defaultGridSize)
   );
@@ -250,8 +256,11 @@ export function RLGameLevel() {
   const gridPx = tileSizePx * gridSize + (gridSize - 1);
 
   const maxVisits = useMemo(
-    () => Math.max(...gameState.grid.flat().map((c) => c.visits), 1),
-    [gameState.grid]
+    () =>
+      showHeatmap
+        ? Math.max(...gameState.grid.flat().map((c) => c.visits), 1)
+        : 1,
+    [gameState.grid, showHeatmap]
   );
 
   const prevThreshold = unlockedLevel > 1 ? LEVELS[unlockedLevel - 2].unlockAt : 0;
@@ -504,6 +513,42 @@ export function RLGameLevel() {
               </div>
             )}
 
+            <div className="space-y-2 pt-1 border-t border-white/10">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Visualisierung
+              </h4>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="lv-show-values" className="text-xs text-muted-foreground cursor-pointer">
+                  Q-Werte
+                </Label>
+                <Switch
+                  id="lv-show-values"
+                  checked={showValues}
+                  onCheckedChange={setShowValues}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="lv-show-heatmap" className="text-xs text-muted-foreground cursor-pointer">
+                  Heatmap
+                </Label>
+                <Switch
+                  id="lv-show-heatmap"
+                  checked={showHeatmap}
+                  onCheckedChange={setShowHeatmap}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="lv-show-actions" className="text-xs text-muted-foreground cursor-pointer">
+                  Beste Aktion
+                </Label>
+                <Switch
+                  id="lv-show-actions"
+                  checked={showActions}
+                  onCheckedChange={setShowActions}
+                />
+              </div>
+            </div>
+
             <div className="space-y-1 pt-1 border-t border-white/10">
               <StatRow label="Session Episoden" value={gameState.sessionEpisodes} />
               <StatRow label="Gesamt Episoden" value={episodesEver} />
@@ -551,6 +596,11 @@ export function RLGameLevel() {
                       : isGoal
                       ? TILE_ICONS.goal
                       : TILE_ICONS[cell.type];
+                    const showTileValue =
+                      showValues &&
+                      !isAgent &&
+                      tileType !== "obstacle" &&
+                      tileType !== "portal";
                     return (
                       <Tile
                         key={`${x}-${y}`}
@@ -558,15 +608,25 @@ export function RLGameLevel() {
                         y={y}
                         type={tileType}
                         value={cell.qValue}
-                        showValues={false}
+                        showValues={showTileValue}
                         isAgent={isAgent}
                         isGoal={isGoal}
                         tileSize={tileSizePx}
                         ariaLabel={`${tileType} bei (${x + 1}, ${y + 1})`}
                         icon={icon}
                         visits={cell.visits}
-                        showHeatmap={false}
+                        showHeatmap={showHeatmap}
                         maxVisits={maxVisits}
+                        bestAction={
+                          showActions
+                            ? getBestActionDirection(
+                                gameState.grid,
+                                { x, y },
+                                gameState.qTable
+                              )
+                            : undefined
+                        }
+                        showActions={showActions}
                         onClick={anyPlacementUnlocked ? handleCellClick : undefined}
                       />
                     );
