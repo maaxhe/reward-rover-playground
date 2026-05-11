@@ -1,6 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ToWorkerMsg, FromWorkerMsg, SnapshotPayload } from "../../workers/rlWorker";
 import type { CSSProperties } from "react";
+import type { LevelFeatures } from "./levelConfig";
+
+export interface LevelModeProps {
+  features: LevelFeatures;
+  levelNum: number;
+  levelName: string;
+  levelEmoji: string;
+  levelTagline: string;
+  isFinalLevel: boolean;
+  episodesEver: number;
+  nextThreshold: number;
+  progressPercent: number;
+  nextFeature: string | null;
+  nextFeatureEmoji: string | null;
+  episodesToNext: number;
+  onNavigateBack: () => void;
+  onEpisodeCompleted: () => void;
+}
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,10 +38,12 @@ import { Tile, TileType } from "./Tile";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";
 import {
+  ArrowLeft,
   ChevronDown,
   ChevronUp,
   Gamepad2,
   Info,
+  Lock,
   Moon,
   Pause,
   Play,
@@ -33,6 +53,7 @@ import {
   Undo2,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Progress } from "@/components/ui/progress";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { Position, TileState as LibTileState } from "@/lib/rl/types";
 import {
@@ -2253,7 +2274,7 @@ const CELEBRATION_FACTS: Array<Record<Language, string>> = [
     },
   ];
 
-export function RLGame() {
+export function RLGame({ levelMode }: { levelMode?: LevelModeProps } = {}) {
   const placementModeRef = useRef<PlaceableTile>("obstacle");
   const challengeModeRef = useRef<ChallengeTile | null>(null);
   const consoleScrollRef = useRef<HTMLDivElement>(null);
@@ -3618,6 +3639,14 @@ const handleActiveBonusClick = useCallback(() => {
     });
   }, [mode, playgroundState.episodeHistory, playgroundState.episode, translate, language, isAutoRestartEnabled]);
 
+  const prevLevelEpisodeRef = useRef(0);
+  useEffect(() => {
+    if (!levelMode) return;
+    if (playgroundState.episode <= prevLevelEpisodeRef.current) return;
+    prevLevelEpisodeRef.current = playgroundState.episode;
+    levelMode.onEpisodeCompleted();
+  }, [playgroundState.episode, levelMode]);
+
   const handlePlaygroundStart = () =>
     setPlaygroundState((prev) => ({ ...prev, isRunning: true }));
 
@@ -4665,8 +4694,39 @@ const handleActiveBonusClick = useCallback(() => {
 
       <div className="bg-[var(--gradient-main)] pb-12">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 pt-6">
+        {levelMode && (
+          <div className="rounded-3xl border border-border bg-card/95 p-4 shadow-xl backdrop-blur-sm flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={levelMode.onNavigateBack}
+              className="text-muted-foreground hover:text-foreground shrink-0"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1" />
+              Menü
+            </Button>
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <span className="text-xl">{levelMode.levelEmoji}</span>
+                <span className="font-bold text-lg">Level {levelMode.levelNum} – {levelMode.levelName}</span>
+                <span className="text-sm text-muted-foreground">{levelMode.levelTagline}</span>
+                {levelMode.isFinalLevel && (
+                  <Badge className="bg-yellow-500 text-black text-xs">Master ✨</Badge>
+                )}
+              </div>
+              {!levelMode.isFinalLevel && (
+                <div className="flex items-center gap-3">
+                  <Progress value={levelMode.progressPercent} className="flex-1 h-2" />
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {levelMode.episodesEver}/{levelMode.nextThreshold} Ep. → Level {levelMode.levelNum + 1}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         {/* Hero Section */}
-        <div className="rounded-3xl border border-border bg-card/95 p-8 shadow-xl backdrop-blur-sm">
+        {!levelMode && <div className="rounded-3xl border border-border bg-card/95 p-8 shadow-xl backdrop-blur-sm">
           <div className="flex items-center gap-3 mb-4">
             <Target className="h-8 w-8 text-primary" />
             <h1 className="text-4xl md:text-5xl font-bold gradient-text">Reward Rover</h1>
@@ -5241,13 +5301,15 @@ const handleActiveBonusClick = useCallback(() => {
               </div>
             </CollapsibleContent>
           </Collapsible>
-        </div>
+        </div>}
 
-        <ControlBar
-          mode={mode}
-          onModeChange={handleModeChange}
-          translate={translate}
-        />
+        {!levelMode && (
+          <ControlBar
+            mode={mode}
+            onModeChange={handleModeChange}
+            translate={translate}
+          />
+        )}
 
         {mode === "comparison" && (
             <div className="space-y-4">
@@ -6060,6 +6122,16 @@ const handleActiveBonusClick = useCallback(() => {
                 language={language}
                 showStatistics={showStatistics}
                 setShowStatistics={setShowStatistics}
+                levelFeatures={levelMode?.features}
+                levelNextUnlock={
+                  levelMode && !levelMode.isFinalLevel && levelMode.nextFeature
+                    ? {
+                        feature: levelMode.nextFeature,
+                        emoji: levelMode.nextFeatureEmoji ?? "",
+                        episodes: levelMode.episodesToNext,
+                      }
+                    : undefined
+                }
               />
             ) : (
               <RandomControls
@@ -6652,6 +6724,7 @@ const handleActiveBonusClick = useCallback(() => {
                 </CollapsibleTrigger>
                 <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
                   <div className="space-y-3">
+                    {(!levelMode || levelMode.features.explorationSlider) && (
                     <div className={cn("space-y-2", mode === "comparison" && "opacity-50 pointer-events-none")}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
@@ -6698,7 +6771,14 @@ const handleActiveBonusClick = useCallback(() => {
                 </p>
               )}
             </div>
+                    )}
 
+                    {levelMode && !levelMode.features.learningRateSlider ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground/60 py-1">
+                        <Lock className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span>Lernrate (Alpha)</span>
+                      </div>
+                    ) : (
             <div className={cn("space-y-2", mode === "comparison" && "opacity-50 pointer-events-none")}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
@@ -6737,7 +6817,14 @@ const handleActiveBonusClick = useCallback(() => {
                 </p>
               )}
             </div>
+                    )}
 
+                    {levelMode && !levelMode.features.gammaSlider ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground/60 py-1">
+                        <Lock className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span>Discount-Faktor (Gamma)</span>
+                      </div>
+                    ) : (
             <div className={cn("space-y-2", mode === "comparison" && "opacity-50 pointer-events-none")}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
@@ -6775,7 +6862,8 @@ const handleActiveBonusClick = useCallback(() => {
                   )}
                 </p>
               )}
-                </div>
+            </div>
+                    )}
                   </div>
                 </CollapsibleContent>
               </Collapsible>
@@ -6971,6 +7059,8 @@ type PlaygroundControlsProps = {
   isSpeedrun?: boolean;
   showStatistics: boolean;
   setShowStatistics: (show: boolean) => void;
+  levelFeatures?: import("./levelConfig").LevelFeatures;
+  levelNextUnlock?: { feature: string; emoji: string; episodes: number } | null;
 };
 
 const PlaygroundControls = ({
@@ -7001,6 +7091,8 @@ const PlaygroundControls = ({
   isSpeedrun = false,
   showStatistics,
   setShowStatistics,
+  levelFeatures,
+  levelNextUnlock,
 }: PlaygroundControlsProps) => {
   const [presetsOpen, setPresetsOpen] = useState(false);
 
@@ -7064,7 +7156,7 @@ const PlaygroundControls = ({
         </div>
       </div>
 
-      <Collapsible open={presetsOpen} onOpenChange={setPresetsOpen} className="space-y-2">
+      {!levelFeatures && <Collapsible open={presetsOpen} onOpenChange={setPresetsOpen} className="space-y-2">
         <CollapsibleTrigger asChild>
           <Button
             variant="ghost"
@@ -7100,43 +7192,79 @@ const PlaygroundControls = ({
             ))}
           </div>
         </CollapsibleContent>
-      </Collapsible>
+      </Collapsible>}
 
-      <div className="space-y-2">
-      <Label className="text-base font-semibold text-foreground">
-        {translate("🎨 Platzierungs-Modus", "🎨 Placement mode")}
-      </Label>
-      <div className="grid grid-cols-2 gap-2">
-        <Button
-          variant={placementMode === "obstacle" ? "default" : "outline"}
-          onClick={() => onPlacementModeChange("obstacle")}
-          className="text-sm font-semibold"
-        >
-          {translate("🧱 Mauer", "🧱 Wall")}
-        </Button>
-        <Button
-          variant={placementMode === "reward" ? "default" : "outline"}
-          onClick={() => onPlacementModeChange("reward")}
-          className="text-sm font-semibold"
-        >
-          {translate("🍬 Belohnung", "🍬 Reward")}
-        </Button>
-        <Button
-          variant={placementMode === "punishment" ? "default" : "outline"}
-          onClick={() => onPlacementModeChange("punishment")}
-          className="text-sm font-semibold"
-        >
-          {translate("⚡ Strafe", "⚡ Penalty")}
-        </Button>
-        <Button
-          variant={placementMode === "portal" ? "default" : "outline"}
-          onClick={() => onPlacementModeChange("portal")}
-          className="text-sm font-semibold"
-        >
-          🌀 Portal
-        </Button>
-      </div>
-    </div>
+      {(() => {
+        const showObstacle = !levelFeatures || levelFeatures.placementObstacle;
+        const showReward = !levelFeatures || levelFeatures.placementReward;
+        const showPunishment = !levelFeatures || levelFeatures.placementPunishment;
+        const showPortal = !levelFeatures || levelFeatures.placementPortal;
+        const anyVisible = showObstacle || showReward || showPunishment || showPortal;
+        if (!anyVisible) return null;
+        return (
+          <div className="space-y-2">
+            <Label className="text-base font-semibold text-foreground">
+              {translate("🎨 Platzierungs-Modus", "🎨 Placement mode")}
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              {showObstacle && (
+                <Button
+                  variant={placementMode === "obstacle" ? "default" : "outline"}
+                  onClick={() => onPlacementModeChange("obstacle")}
+                  className="text-sm font-semibold"
+                >
+                  {translate("🧱 Mauer", "🧱 Wall")}
+                </Button>
+              )}
+              {showReward && (
+                <Button
+                  variant={placementMode === "reward" ? "default" : "outline"}
+                  onClick={() => onPlacementModeChange("reward")}
+                  className="text-sm font-semibold"
+                >
+                  {translate("🍬 Belohnung", "🍬 Reward")}
+                </Button>
+              )}
+              {showPunishment && (
+                <Button
+                  variant={placementMode === "punishment" ? "default" : "outline"}
+                  onClick={() => onPlacementModeChange("punishment")}
+                  className="text-sm font-semibold"
+                >
+                  {translate("⚡ Strafe", "⚡ Penalty")}
+                </Button>
+              )}
+              {showPortal && (
+                <Button
+                  variant={placementMode === "portal" ? "default" : "outline"}
+                  onClick={() => onPlacementModeChange("portal")}
+                  className="text-sm font-semibold"
+                >
+                  🌀 Portal
+                </Button>
+              )}
+            </div>
+            {levelNextUnlock && (
+              <div className="rounded-lg bg-white/5 border border-white/10 p-3 mt-2">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Lock className="w-3 h-3" />
+                  <span>
+                    Nächstes Level:{" "}
+                    <span className="text-foreground font-medium">
+                      {levelNextUnlock.emoji} {levelNextUnlock.feature}
+                    </span>
+                  </span>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Noch{" "}
+                  <span className="text-primary font-medium">{levelNextUnlock.episodes}</span>{" "}
+                  Episode{levelNextUnlock.episodes !== 1 ? "n" : ""}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
       <Badge variant="secondary" className="py-2 justify-center text-sm">
