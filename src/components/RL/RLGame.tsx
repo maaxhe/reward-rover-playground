@@ -2309,13 +2309,10 @@ export function RLGame({ levelMode }: { levelMode?: LevelModeProps } = {}) {
   const [isAutoRestartEnabled, setIsAutoRestartEnabled] = useState(false);
   const [showRewardHistory, setShowRewardHistory] = useState(true);
   const [showLegend, setShowLegend] = useState(false);
-  const [showLearningParams, setShowLearningParams] = useState(false);
   const [showQValuesInfo, setShowQValuesInfo] = useState(false);
   const [showHeatmapInfo, setShowHeatmapInfo] = useState(false);
   const [showConsumeRewardsInfo, setShowConsumeRewardsInfo] = useState(false);
-  const [showExplorationRateInfo, setShowExplorationRateInfo] = useState(false);
-  const [showAlphaInfo, setShowAlphaInfo] = useState(false);
-  const [showGammaInfo, setShowGammaInfo] = useState(false);
+
   const [showComparisonLeftAlphaInfo, setShowComparisonLeftAlphaInfo] = useState(false);
   const [showComparisonLeftGammaInfo, setShowComparisonLeftGammaInfo] = useState(false);
   const [showComparisonLeftExplorationInfo, setShowComparisonLeftExplorationInfo] = useState(false);
@@ -6122,6 +6119,10 @@ const handleActiveBonusClick = useCallback(() => {
                 language={language}
                 showStatistics={showStatistics}
                 setShowStatistics={setShowStatistics}
+                alpha={alpha}
+                gamma={gamma}
+                onAlphaChange={setAlpha}
+                onGammaChange={setGamma}
                 levelFeatures={levelMode?.features}
                 levelNextUnlock={
                   levelMode && !levelMode.isFinalLevel && levelMode.nextFeature
@@ -6707,166 +6708,6 @@ const handleActiveBonusClick = useCallback(() => {
                   </div>
                 </div>
               </div>
-              <div className="my-3 h-px w-full bg-border/60" />
-              <Collapsible open={showLearningParams && mode !== "comparison"} onOpenChange={mode !== "comparison" ? setShowLearningParams : undefined} className="space-y-2">
-                <CollapsibleTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={mode === "comparison"}
-                    className="w-full justify-between rounded-xl border border-border/40 bg-background/60 font-semibold text-base disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span>{translate("🎓 Lernparameter", "🎓 Learning Parameters")}</span>
-                    <ChevronDown
-                      className={cn("h-4 w-4 transition-transform duration-200", showLearningParams && mode !== "comparison" ? "rotate-180" : "")}
-                    />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-                  <div className="space-y-3">
-                    {(!levelMode || levelMode.features.explorationSlider) && (
-                    <div className={cn("space-y-2", mode === "comparison" && "opacity-50 pointer-events-none")}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <Label className="text-base font-semibold text-foreground">
-                            {translate("Entdeckungsrate (Exploration Rate)", "Exploration rate")}
-                          </Label>
-                          <button
-                            onClick={() => setShowExplorationRateInfo(!showExplorationRateInfo)}
-                            className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-                            aria-label="Toggle info"
-                          >
-                            <Info className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                <span className="text-base font-bold text-primary">
-                  {Math.round(explorationRate * 100)}%
-                </span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                value={explorationRate}
-                onChange={(e) => setExplorationRate(e.target.valueAsNumber)}
-                className="input-slider w-full"
-                style={{ "--slider-value": explorationRate } as CSSProperties}
-                disabled={mode === "comparison"}
-              />
-              <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
-                <span className="font-medium">
-                  {translate("← Ausbeutung", "← Exploitation")}
-                </span>
-                <span className="font-medium">
-                  {translate("Entdeckung →", "Exploration →")}
-                </span>
-              </div>
-              {showExplorationRateInfo && (
-                <p className="text-sm text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
-                  {translate(
-                    "Bestimmt, wie oft der Rover neue Wege ausprobiert statt bekannte Routen zu nutzen. Hohe Werte = mehr Entdecken, niedrige Werte = mehr Ausbeuten bereits gelernter Strategien.",
-                    "Determines how often the rover tries new paths instead of using known routes. Higher values explore more, lower values exploit known strategies."
-                  )}
-                </p>
-              )}
-            </div>
-                    )}
-
-                    {levelMode && !levelMode.features.learningRateSlider ? (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground/60 py-1">
-                        <Lock className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span>Lernrate (Alpha)</span>
-                      </div>
-                    ) : (
-            <div className={cn("space-y-2", mode === "comparison" && "opacity-50 pointer-events-none")}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Label className="text-base font-semibold text-foreground">
-                    {translate("Lernrate (Alpha)", "Learning rate (Alpha)")}
-                  </Label>
-                  <button
-                    onClick={() => setShowAlphaInfo(!showAlphaInfo)}
-                    className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-                    aria-label="Toggle info"
-                  >
-                    <Info className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-                <span className="text-base font-bold text-primary">
-                  {alpha.toFixed(2)}
-                </span>
-              </div>
-              <input
-                type="range"
-                min={0.01}
-                max={0.5}
-                step={0.01}
-                value={alpha}
-                onChange={(e) => setAlpha(e.target.valueAsNumber)}
-                className="input-slider w-full"
-                style={{ "--slider-value": alpha / 0.5 } as CSSProperties}
-                disabled={mode === "comparison"}
-              />
-              {showAlphaInfo && (
-                <p className="text-sm text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
-                  {translate(
-                    "Bestimmt, wie stark neue Erfahrungen alte Werte überschreiben. Hohe Werte = schnelles Lernen, niedrige Werte = stabiles Lernen.",
-                    "Determines how much new experiences override old values. High values = fast learning, low values = stable learning."
-                  )}
-                </p>
-              )}
-            </div>
-                    )}
-
-                    {levelMode && !levelMode.features.gammaSlider ? (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground/60 py-1">
-                        <Lock className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span>Discount-Faktor (Gamma)</span>
-                      </div>
-                    ) : (
-            <div className={cn("space-y-2", mode === "comparison" && "opacity-50 pointer-events-none")}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Label className="text-base font-semibold text-foreground">
-                    {translate("Discount-Faktor (Gamma)", "Discount factor (Gamma)")}
-                  </Label>
-                  <button
-                    onClick={() => setShowGammaInfo(!showGammaInfo)}
-                    className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-                    aria-label="Toggle info"
-                  >
-                    <Info className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-                <span className="text-base font-bold text-primary">
-                  {gamma.toFixed(2)}
-                </span>
-              </div>
-              <input
-                type="range"
-                min={0}
-                max={0.99}
-                step={0.01}
-                value={gamma}
-                onChange={(e) => setGamma(e.target.valueAsNumber)}
-                className="input-slider w-full"
-                style={{ "--slider-value": gamma } as CSSProperties}
-                disabled={mode === "comparison"}
-              />
-              {showGammaInfo && (
-                <p className="text-sm text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
-                  {translate(
-                    "Gewichtet zukünftige Belohnungen. Hohe Werte = langfristige Planung, niedrige Werte = kurzfristige Belohnungen bevorzugen.",
-                    "Weights future rewards. High values = long-term planning, low values = prefer immediate rewards."
-                  )}
-                </p>
-              )}
-            </div>
-                    )}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
             </Card>
 
             <Card className="rounded-2xl border border-border/50 bg-secondary/30 p-4 shadow-soft">
@@ -7059,6 +6900,10 @@ type PlaygroundControlsProps = {
   isSpeedrun?: boolean;
   showStatistics: boolean;
   setShowStatistics: (show: boolean) => void;
+  alpha: number;
+  gamma: number;
+  onAlphaChange: (value: number) => void;
+  onGammaChange: (value: number) => void;
   levelFeatures?: import("./levelConfig").LevelFeatures;
   levelNextUnlock?: { feature: string; emoji: string; episodes: number } | null;
 };
@@ -7091,10 +6936,17 @@ const PlaygroundControls = ({
   isSpeedrun = false,
   showStatistics,
   setShowStatistics,
+  alpha,
+  gamma,
+  onAlphaChange,
+  onGammaChange,
   levelFeatures,
   levelNextUnlock,
 }: PlaygroundControlsProps) => {
   const [presetsOpen, setPresetsOpen] = useState(false);
+  const [showExplorationRateInfo, setShowExplorationRateInfo] = useState(false);
+  const [showAlphaInfo, setShowAlphaInfo] = useState(false);
+  const [showGammaInfo, setShowGammaInfo] = useState(false);
 
   return (
     <div className="space-y-5">
@@ -7265,6 +7117,140 @@ const PlaygroundControls = ({
           </div>
         );
       })()}
+
+    <div className="space-y-3">
+      <Label className="text-base font-semibold text-foreground">
+        {translate("🎓 Lernparameter", "🎓 Learning Parameters")}
+      </Label>
+
+      {(!levelFeatures || levelFeatures.explorationSlider) && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Label className="text-sm font-semibold text-foreground">
+                {translate("Entdeckungsrate", "Exploration rate")}
+              </Label>
+              <button
+                onClick={() => setShowExplorationRateInfo(!showExplorationRateInfo)}
+                className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                aria-label="Toggle info"
+              >
+                <Info className="h-3 w-3" />
+              </button>
+            </div>
+            <span className="text-sm font-bold text-primary">{Math.round(explorationRate * 100)}%</span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={explorationRate}
+            onChange={(e) => onExplorationRateChange(e.target.valueAsNumber)}
+            className="input-slider w-full"
+            style={{ "--slider-value": explorationRate } as CSSProperties}
+          />
+          <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+            <span className="font-medium">{translate("← Ausbeutung", "← Exploitation")}</span>
+            <span className="font-medium">{translate("Entdeckung →", "Exploration →")}</span>
+          </div>
+          {showExplorationRateInfo && (
+            <p className="text-xs text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
+              {translate(
+                "Bestimmt, wie oft der Rover neue Wege ausprobiert statt bekannte Routen zu nutzen.",
+                "Determines how often the rover tries new paths instead of using known routes.",
+              )}
+            </p>
+          )}
+        </div>
+      )}
+
+      {levelFeatures && !levelFeatures.learningRateSlider ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground/60 py-1">
+          <Lock className="w-3.5 h-3.5 flex-shrink-0" />
+          <span>Lernrate (Alpha)</span>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Label className="text-sm font-semibold text-foreground">
+                {translate("Lernrate (Alpha)", "Learning rate (Alpha)")}
+              </Label>
+              <button
+                onClick={() => setShowAlphaInfo(!showAlphaInfo)}
+                className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                aria-label="Toggle info"
+              >
+                <Info className="h-3 w-3" />
+              </button>
+            </div>
+            <span className="text-sm font-bold text-primary">{alpha.toFixed(2)}</span>
+          </div>
+          <input
+            type="range"
+            min={0.01}
+            max={0.5}
+            step={0.01}
+            value={alpha}
+            onChange={(e) => onAlphaChange(e.target.valueAsNumber)}
+            className="input-slider w-full"
+            style={{ "--slider-value": alpha / 0.5 } as CSSProperties}
+          />
+          {showAlphaInfo && (
+            <p className="text-xs text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
+              {translate(
+                "Bestimmt, wie stark neue Erfahrungen alte Werte überschreiben.",
+                "Determines how much new experiences override old values.",
+              )}
+            </p>
+          )}
+        </div>
+      )}
+
+      {levelFeatures && !levelFeatures.gammaSlider ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground/60 py-1">
+          <Lock className="w-3.5 h-3.5 flex-shrink-0" />
+          <span>Discount-Faktor (Gamma)</span>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Label className="text-sm font-semibold text-foreground">
+                {translate("Discount-Faktor (Gamma)", "Discount factor (Gamma)")}
+              </Label>
+              <button
+                onClick={() => setShowGammaInfo(!showGammaInfo)}
+                className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                aria-label="Toggle info"
+              >
+                <Info className="h-3 w-3" />
+              </button>
+            </div>
+            <span className="text-sm font-bold text-primary">{gamma.toFixed(2)}</span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={0.99}
+            step={0.01}
+            value={gamma}
+            onChange={(e) => onGammaChange(e.target.valueAsNumber)}
+            className="input-slider w-full"
+            style={{ "--slider-value": gamma } as CSSProperties}
+          />
+          {showGammaInfo && (
+            <p className="text-xs text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
+              {translate(
+                "Gewichtet zukünftige Belohnungen. Hohe Werte = langfristige Planung.",
+                "Weights future rewards. High values = long-term planning.",
+              )}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
 
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
       <Badge variant="secondary" className="py-2 justify-center text-sm">
