@@ -1,26 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ToWorkerMsg, FromWorkerMsg, SnapshotPayload } from "../../workers/rlWorker";
 import type { CSSProperties } from "react";
-import type { LevelFeatures } from "./levelConfig";
-
-export interface LevelModeProps {
-  features: LevelFeatures;
-  levelNum: number;
-  levelName: string;
-  levelEmoji: string;
-  levelTagline: string;
-  isFinalLevel: boolean;
-  episodesEver: number;
-  nextThreshold: number;
-  progressPercent: number;
-  nextFeature: string | null;
-  nextFeatureEmoji: string | null;
-  episodesToNext: number;
-  onNavigateBack: () => void;
-  onEpisodeCompleted: () => void;
-}
+import { useLevel } from "@/contexts/LevelContext";
+import { getUnlockedFeatures } from "@/lib/levelProgression";
+import type { LevelNumber, UnlockedFeatures } from "@/lib/levelProgression";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { GameLayout } from "./GameLayout";
+import { GameHeader } from "./GameHeader";
+import { ControlPanel } from "./ControlPanel";
+import { ParametersPanel } from "./ParametersPanel";
 import {
   Dialog,
   DialogContent,
@@ -38,12 +27,10 @@ import { Tile, TileType } from "./Tile";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";
 import {
-  ArrowLeft,
   ChevronDown,
   ChevronUp,
   Gamepad2,
   Info,
-  Lock,
   Moon,
   Pause,
   Play,
@@ -53,7 +40,6 @@ import {
   Undo2,
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Progress } from "@/components/ui/progress";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { Position, TileState as LibTileState } from "@/lib/rl/types";
 import {
@@ -368,7 +354,7 @@ const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "maze",
-    name: { de: "🌀 Mini-Labyrinth", en: "🌀 Mini Maze" },
+    name: { de: "Mini Maze", en: "Mini Maze" },
     description: {
       de: "Verzweigtes Mini-Labyrinth mit riskanten Portalen – Umwege sind garantiert.",
       en: "A branching mini maze with risky portals – detours guaranteed.",
@@ -444,7 +430,7 @@ const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "portalJump",
-    name: { de: "🌀 Portal-Sprung", en: "🌀 Portal Jump" },
+    name: { de: "Portal Jump", en: "Portal Jump" },
     description: {
       de: "Eine Mauer trennt das Feld – nur ein Portal führt auf die andere Seite.",
       en: "A solid wall splits the field — only a portal lets you pass.",
@@ -462,7 +448,7 @@ const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "arena",
-    name: { de: "🏟️ Arena", en: "🏟️ Arena" },
+    name: { de: "Arena", en: "Arena" },
     description: {
       de: "Portale, Strafkorridore und flankierende Belohnungen – hier entscheidet mutiges Timing den Sieg.",
       en: "Portals, hazard lanes, and flank rewards crank up the duel – bold timing wins this arena.",
@@ -509,7 +495,7 @@ const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "riskyBridge",
-    name: { de: "🌉 Die unsichere Brücke", en: "🌉 The Risky Bridge" },
+    name: { de: "🌉 Die unsichere Brücke", en: "The Risky Bridge" },
     description: {
       de: "Ein schmaler Steg führt direkt zum Ziel, doch Strafen flankieren ihn – der sichere Umweg ist viel länger.",
       en: "A one-tile bridge heads straight for the goal, but penalties flank it – the safe detour is much longer.",
@@ -604,7 +590,7 @@ const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "fourRooms",
-    name: { de: "🏠 Vier Räume", en: "🏠 Four Rooms" },
+    name: { de: "🏠 Vier Räume", en: "Four Rooms" },
     description: {
       de: "Der Klassiker: Vier Räume mit engen Durchgängen zwischen den Quadranten.",
       en: "A classic benchmark: four rooms with narrow doorways between quadrants.",
@@ -622,7 +608,7 @@ const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "lavaBridge",
-    name: { de: "🌋 Die Lavabrücke", en: "🌋 Lava Bridge" },
+    name: { de: "🌋 Die Lavabrücke", en: "Lava Bridge" },
     description: {
       de: "Ein schmaler Steg führt durch Lava – der sichere Umweg kostet wertvolle Schritte.",
       en: "A narrow bridge crosses lava — the safe detour costs many steps.",
@@ -659,7 +645,7 @@ const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "islandHopping",
-    name: { de: "🏝️ Insel-Hopping", en: "🏝️ Island Hopping" },
+    name: { de: "🏝️ Insel-Hopping", en: "Island Hopping" },
     description: {
       de: "Drei Inseln sind nur über Portale verbunden – ohne Sprünge bleibt der Rover stecken.",
       en: "Three islands are linked only by portals — without jumps the rover is stuck.",
@@ -778,7 +764,7 @@ const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "spiral",
-    name: { de: "🌀 Spirale", en: "🌀 Spiral" },
+    name: { de: "Spirale", en: "Spiral" },
     description: {
       de: "Eine gefährliche Spirale mit Portalen im Zentrum – nur die klügsten Rover finden den Weg!",
       en: "A dangerous spiral with portals at the center – only the smartest rovers find the way!",
@@ -2274,7 +2260,10 @@ const CELEBRATION_FACTS: Array<Record<Language, string>> = [
     },
   ];
 
-export function RLGame({ levelMode }: { levelMode?: LevelModeProps } = {}) {
+export function RLGame() {
+  const { levelMode, currentLevel } = useLevel();
+  const unlockedFeatures = levelMode ? getUnlockedFeatures(currentLevel as LevelNumber) : null;
+
   const placementModeRef = useRef<PlaceableTile>("obstacle");
   const challengeModeRef = useRef<ChallengeTile | null>(null);
   const consoleScrollRef = useRef<HTMLDivElement>(null);
@@ -2627,7 +2616,7 @@ export function RLGame({ levelMode }: { levelMode?: LevelModeProps } = {}) {
   // Tutorial Slides
   const tutorialSlides = useMemo(() => [
     {
-      title: translate("Willkommen bei Reward Rover! 🚀", "Welcome to Reward Rover! 🚀"),
+      title: translate("Welcome to Reward Rover", "Welcome to Reward Rover"),
       content: translate(
         "Entdecke, wie Reinforcement Learning funktioniert! Der Rover lernt eigenständig, welche Wege zum Ziel führen.",
         "Discover how reinforcement learning works! The rover learns on its own which paths lead to the goal."
@@ -2653,7 +2642,7 @@ export function RLGame({ levelMode }: { levelMode?: LevelModeProps } = {}) {
       ],
     },
     {
-      title: translate("Gestalte das Spielfeld 🎨", "Design the Playfield 🎨"),
+      title: translate("Design the Playfield", "Design the Playfield"),
       content: translate(
         "Nutze die Platzierungs-Tools links, um Hindernisse, Belohnungen oder Strafen zu platzieren. Experimentiere und beobachte, wie der Rover lernt!",
         "Use the placement tools on the left to place obstacles, rewards, or penalties. Experiment and watch how the rover learns!"
@@ -3593,7 +3582,7 @@ const handleActiveBonusClick = useCallback(() => {
     const rank = rankIndex === -1 ? sortedHistory.length : rankIndex + 1;
     const fact = CELEBRATION_FACTS[Math.floor(Math.random() * CELEBRATION_FACTS.length)][language];
     toast({
-      title: translate("Geschafft! 🎉", "Mission complete! 🎉"),
+      title: translate("Mission Complete", "Mission Complete"),
       description: translate(
         `Du hast ${title} in ${latest.steps} Zügen geknackt. Schau ins Leaderboard!`,
         `You conquered ${title} in ${latest.steps} moves. Check the leaderboard!`,
@@ -3625,7 +3614,7 @@ const handleActiveBonusClick = useCallback(() => {
     const rank = rankIndex === -1 ? sortedHistory.length : rankIndex + 1;
     const fact = CELEBRATION_FACTS[Math.floor(Math.random() * CELEBRATION_FACTS.length)][language];
     toast({
-      title: translate("Geschafft! 🎉", "Mission complete! 🎉"),
+      title: translate("Mission Complete", "Mission Complete"),
       description: translate(
         `Du hast ${title} in ${latest.steps} Zügen gemeistert. Schau ins Leaderboard!`,
         `You completed ${title} in ${latest.steps} moves. Check the leaderboard!`,
@@ -3635,14 +3624,6 @@ const handleActiveBonusClick = useCallback(() => {
       setCelebration({ title, steps: latest.steps, reward: latest.reward, rank, fact });
     });
   }, [mode, playgroundState.episodeHistory, playgroundState.episode, translate, language, isAutoRestartEnabled]);
-
-  const prevLevelEpisodeRef = useRef(0);
-  useEffect(() => {
-    if (!levelMode) return;
-    if (playgroundState.episode <= prevLevelEpisodeRef.current) return;
-    prevLevelEpisodeRef.current = playgroundState.episode;
-    levelMode.onEpisodeCompleted();
-  }, [playgroundState.episode, levelMode]);
 
   const handlePlaygroundStart = () =>
     setPlaygroundState((prev) => ({ ...prev, isRunning: true }));
@@ -3712,7 +3693,7 @@ const handleActiveBonusClick = useCallback(() => {
       }));
 
       toast({
-        title: translate("🎬 Replay gestartet", "🎬 Replay started"),
+        title: translate("Replay Started", "🎬 Replay started"),
         description: translate(
           `Zeige beste Episode: ${bestEpisode.steps} Schritte, ${numberFormatter.format(bestEpisode.reward)} Reward`,
           `Showing best episode: ${bestEpisode.steps} steps, ${numberFormatter.format(bestEpisode.reward)} reward`
@@ -4326,9 +4307,9 @@ const handleActiveBonusClick = useCallback(() => {
   const leaderboardTitle =
     mode === "random"
       ? speedrunEnabled
-        ? translate("🏆 Speedrun-Bestenliste", "🏆 Speedrun leaderboard")
-        : translate("🏆 Zufallsmodus-Bestenliste", "🏆 Random leaderboard")
-      : translate("🏆 Playground-Bestenliste", "🏆 Playground leaderboard");
+        ? translate("Speedrun Leaderboard", "Speedrun Leaderboard")
+        : translate("Random Mode Leaderboard", "Random Mode Leaderboard")
+      : translate("Playground Leaderboard", "Playground Leaderboard");
   const leaderboardEmptyText = mode === "random"
     ? speedrunEnabled
       ? translate(
@@ -4443,7 +4424,7 @@ const handleActiveBonusClick = useCallback(() => {
           onClick={() => setShowRandomStatsCard((prev) => !prev)}
           className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:text-primary"
         >
-          <span>{translate("📊 Zufallsmodus-Statistiken", "📊 Random mode stats")}</span>
+          <span>{translate("Random Mode Statistics", "Random Mode Statistics")}</span>
           {showRandomStatsCard ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
         {showRandomStatsCard && (
@@ -4638,7 +4619,7 @@ const handleActiveBonusClick = useCallback(() => {
               {googleClientId ? (
                 <div className="space-y-3">
                   <div className="group relative w-full">
-                    <div className="flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-slate-700 bg-slate-50 text-sm font-semibold text-slate-900 shadow-sm transition-all duration-200 group-hover:border-white group-hover:bg-white group-hover:shadow-xl pointer-events-none">
+                    <div className="flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-slate-700 bg-slate-50 text-sm font-semibold text-slate-900 shadow-sm transition-all duration-200 group-hover:border-white group-hover:bg-white group-hover:shadow-sm pointer-events-none">
                       <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-sm">
                         <svg viewBox="0 0 48 48" className="h-4 w-4" aria-hidden>
                           <path
@@ -4691,39 +4672,8 @@ const handleActiveBonusClick = useCallback(() => {
 
       <div className="bg-[var(--gradient-main)] pb-12">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 pt-6">
-        {levelMode && (
-          <div className="rounded-3xl border border-border bg-card/95 p-4 shadow-xl backdrop-blur-sm flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={levelMode.onNavigateBack}
-              className="text-muted-foreground hover:text-foreground shrink-0"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Menü
-            </Button>
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-1">
-                <span className="text-xl">{levelMode.levelEmoji}</span>
-                <span className="font-bold text-lg">Level {levelMode.levelNum} – {levelMode.levelName}</span>
-                <span className="text-sm text-muted-foreground">{levelMode.levelTagline}</span>
-                {levelMode.isFinalLevel && (
-                  <Badge className="bg-yellow-500 text-black text-xs">Master ✨</Badge>
-                )}
-              </div>
-              {!levelMode.isFinalLevel && (
-                <div className="flex items-center gap-3">
-                  <Progress value={levelMode.progressPercent} className="flex-1 h-2" />
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
-                    {levelMode.episodesEver}/{levelMode.nextThreshold} Ep. → Level {levelMode.levelNum + 1}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
         {/* Hero Section */}
-        {!levelMode && <div className="rounded-3xl border border-border bg-card/95 p-8 shadow-xl backdrop-blur-sm">
+        <div className="rounded-3xl border border-border bg-card/95 p-8 ">
           <div className="flex items-center gap-3 mb-4">
             <Target className="h-8 w-8 text-primary" />
             <h1 className="text-4xl md:text-5xl font-bold gradient-text">Reward Rover</h1>
@@ -4969,7 +4919,7 @@ const handleActiveBonusClick = useCallback(() => {
                         </p>
                         <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
                           <p className="font-semibold text-foreground mb-2">
-                            {translate("💡 Alltags-Analogie: Restaurant-Wahl", "💡 Real-Life Analogy: Restaurant Choice")}
+                            {translate("Real-Life Analogy: Restaurant Choice", "💡 Real-Life Analogy: Restaurant Choice")}
                           </p>
                           <p>
                             {translate(
@@ -5006,7 +4956,7 @@ const handleActiveBonusClick = useCallback(() => {
                         </p>
                         <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
                           <p className="font-semibold text-foreground mb-2">
-                            {translate("💡 Alltags-Analogie: Meinungsbildung", "💡 Real-Life Analogy: Opinion Formation")}
+                            {translate("Real-Life Analogy: Opinion Formation", "💡 Real-Life Analogy: Opinion Formation")}
                           </p>
                           <p>
                             {translate(
@@ -5043,7 +4993,7 @@ const handleActiveBonusClick = useCallback(() => {
                         </p>
                         <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
                           <p className="font-semibold text-foreground mb-2">
-                            {translate("💡 Alltags-Analogie: Sparen vs. Ausgeben", "💡 Real-Life Analogy: Saving vs. Spending")}
+                            {translate("Real-Life Analogy: Saving vs. Spending", "💡 Real-Life Analogy: Saving vs. Spending")}
                           </p>
                           <p>
                             {translate(
@@ -5064,7 +5014,7 @@ const handleActiveBonusClick = useCallback(() => {
                       {/* Zusammenspiel der Parameter */}
                       <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-3">
                         <h4 className="text-lg font-semibold text-foreground">
-                          {translate("🎯 Das Zusammenspiel", "🎯 How They Work Together")}
+                          {translate("How They Work Together", "🎯 How They Work Together")}
                         </h4>
                         <p>
                           {translate(
@@ -5097,8 +5047,8 @@ const handleActiveBonusClick = useCallback(() => {
                         </ul>
                         <p className="text-foreground font-medium mt-4">
                           {translate(
-                            "💡 Experimentiere mit den Werten und beobachte, wie sich das Verhalten des Rovers ändert!",
-                            "💡 Experiment with the values and observe how the rover's behavior changes!"
+                            "Experiment with the values und beobachte, wie sich das Verhalten des Rovers ändert!",
+                            "Experiment with the values and observe how the rover's behavior changes!"
                           )}
                         </p>
                       </div>
@@ -5115,7 +5065,7 @@ const handleActiveBonusClick = useCallback(() => {
                       size="sm"
                       className="w-full justify-between rounded-xl border border-border/40 bg-background/60 font-semibold text-base hover:bg-background/80"
                     >
-                      <span>{translate("🔁 Der Lernprozess", "🔁 The Learning Process")}</span>
+                      <span>{translate("Learning Process", "🔁 The Learning Process")}</span>
                       <ChevronDown
                         className={cn("h-4 w-4 transition-transform duration-200", showRLLoop ? "rotate-180" : "")}
                       />
@@ -5156,8 +5106,8 @@ const handleActiveBonusClick = useCallback(() => {
                       </div>
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         {translate(
-                          "👉 Der Step-Button in der Konsole zeigt dir jede Entscheidung einzeln – ideal, um den Lernprozess live zu beobachten.",
-                          "👉 The step button lets you inspect every single decision – perfect for watching the learning process live.",
+                          "The step button in the console shows each decision individually – ideal, um den Lernprozess live zu beobachten.",
+                          "The step button lets you inspect every single decision – perfect for watching the learning process live.",
                         )}
                       </p>
                     </div>
@@ -5222,10 +5172,10 @@ const handleActiveBonusClick = useCallback(() => {
           <Collapsible open={showIntro} onOpenChange={setShowIntro}>
             <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
               <div className="grid md:grid-cols-2 gap-6 pt-3">
-                <Card className="rounded-2xl border border-border bg-secondary/40 p-5 shadow-soft transform transition-transform transition-colors duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/10 hover:shadow-xl">
+                <Card className="rounded-2xl border border-border bg-secondary/40 p-5 shadow-soft transform transition-transform transition-colors duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/10 hover:shadow-sm">
                   <h3 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
                     {translate(
-                      "🎯 Entdecken (Exploration) vs. Ausbeuten (Exploitation)",
+                      "Exploration vs. Exploitation",
                       "🎯 Exploration vs. Exploitation",
                     )}
                   </h3>
@@ -5251,9 +5201,9 @@ const handleActiveBonusClick = useCallback(() => {
                     )}
                   </p>
                 </Card>
-                <Card className="rounded-2xl border border-border bg-secondary/40 p-5 shadow-soft transform transition-transform transition-colors duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/10 hover:shadow-xl">
+                <Card className="rounded-2xl border border-border bg-secondary/40 p-5 shadow-soft transform transition-transform transition-colors duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/10 hover:shadow-sm">
                   <h3 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
-                    {translate("🚀 Drei Modi zum Ausprobieren", "🚀 Three modes to explore")}
+                    {translate("Three Modes to Explore", "🚀 Three modes to explore")}
                   </h3>
                   <div className="text-base text-muted-foreground leading-relaxed space-y-2">
                     <p>
@@ -5298,15 +5248,13 @@ const handleActiveBonusClick = useCallback(() => {
               </div>
             </CollapsibleContent>
           </Collapsible>
-        </div>}
+        </div>
 
-        {!levelMode && (
-          <ControlBar
-            mode={mode}
-            onModeChange={handleModeChange}
-            translate={translate}
-          />
-        )}
+        <ControlBar
+          mode={mode}
+          onModeChange={handleModeChange}
+          translate={translate}
+        />
 
         {mode === "comparison" && (
             <div className="space-y-4">
@@ -5350,12 +5298,11 @@ const handleActiveBonusClick = useCallback(() => {
                 onClick={handleComparisonReset}
                 className="flex items-center gap-2 font-semibold"
               >
-                <span aria-hidden>🔁</span>
-                {translate("Wiederholung", "Restart comparison")}
+                {translate("Restart", "Restart comparison")}
               </Button>
             </div>
             <div className="grid gap-3 md:grid-cols-[2fr_1fr]">
-              <Card className="rounded-2xl border border-border/50 bg-secondary/30 p-4 shadow-soft">
+              <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4">
                 <Collapsible open={comparisonPresetsOpen} onOpenChange={setComparisonPresetsOpen} className="space-y-2">
                   <CollapsibleTrigger asChild>
                     <Button
@@ -5394,7 +5341,7 @@ const handleActiveBonusClick = useCallback(() => {
                   </CollapsibleContent>
                 </Collapsible>
               </Card>
-              <Card className="rounded-2xl border border-border/50 bg-secondary/30 p-4 shadow-soft">
+              <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4">
                 <Label className="text-base font-semibold text-foreground">
                   {translate("🚀 Geschwindigkeit", "🚀 Speed")}
                 </Label>
@@ -5972,12 +5919,12 @@ const handleActiveBonusClick = useCallback(() => {
 
         {celebration && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4">
-            <Card className="relative w-full max-w-xl overflow-hidden border-primary/40 bg-card/95 p-8 text-center shadow-xl">
+            <Card className="relative w-full max-w-xl overflow-hidden border-primary/40 bg-card/95 p-8 text-center shadow-sm">
               <div className="absolute -top-10 -left-10 h-32 w-32 rounded-full bg-primary/30 blur-3xl" />
               <div className="absolute -bottom-12 -right-12 h-36 w-36 rounded-full bg-accent/30 blur-3xl" />
               <div className="relative space-y-4">
                 <h2 className="text-3xl md:text-4xl font-black text-primary drop-shadow">
-                  {translate("🎉 Glückwunsch!", "🎉 Congratulations!")}
+                  {translate("Congratulations!", "Congratulations!")}
                 </h2>
                 <p className="text-sm uppercase tracking-wide text-primary/80">
                   {translate("Mission", "Mission")} #{celebration.rank}
@@ -6018,7 +5965,7 @@ const handleActiveBonusClick = useCallback(() => {
               onClick={() => setShowPlaygroundStatsCard((prev) => !prev)}
               className="flex w-full items-center justify-between text-left text-sm font-semibold text-foreground"
             >
-              <span>{translate("📊 Playground-Statistiken", "📊 Playground stats")}</span>
+              <span>{translate("Playground Statistics", "Playground Statistics")}</span>
               {showPlaygroundStatsCard ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
             {showPlaygroundStatsCard && (
@@ -6119,20 +6066,8 @@ const handleActiveBonusClick = useCallback(() => {
                 language={language}
                 showStatistics={showStatistics}
                 setShowStatistics={setShowStatistics}
-                alpha={alpha}
-                gamma={gamma}
-                onAlphaChange={setAlpha}
-                onGammaChange={setGamma}
-                levelFeatures={levelMode?.features}
-                levelNextUnlock={
-                  levelMode && !levelMode.isFinalLevel && levelMode.nextFeature
-                    ? {
-                        feature: levelMode.nextFeature,
-                        emoji: levelMode.nextFeatureEmoji ?? "",
-                        episodes: levelMode.episodesToNext,
-                      }
-                    : undefined
-                }
+                levelMode={levelMode}
+                unlockedFeatures={unlockedFeatures}
               />
             ) : (
               <RandomControls
@@ -6150,11 +6085,11 @@ const handleActiveBonusClick = useCallback(() => {
             {/* Verlaufsdiagramm */}
             {(mode === "playground" ? playgroundState.episodeHistory : randomState.episodeHistory).length > 0 && (
               <Collapsible open={showRewardHistory} onOpenChange={setShowRewardHistory}>
-                <Card className="rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-soft">
+                <Card className="rounded-lg border border-border/40 bg-card/50 p-4">
                   <CollapsibleTrigger className="w-full">
                     <div className="flex items-center justify-between cursor-pointer">
                       <h3 className="text-base font-bold text-foreground">
-                        {translate("📊 Reward-Verlauf", "📊 Reward History")}
+                        {translate("Reward History", "Reward History")}
                       </h3>
                       {showRewardHistory ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </div>
@@ -6233,7 +6168,7 @@ const handleActiveBonusClick = useCallback(() => {
             )}
 
             {mode === "random" && (
-              <Card className="rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-soft space-y-3">
+              <Card className="rounded-lg border border-border/40 bg-card/50 p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-bold text-foreground">
                     {translate("⚡ Live-Challenge", "⚡ Live challenge")}
@@ -6276,7 +6211,7 @@ const handleActiveBonusClick = useCallback(() => {
               </Card>
             )}
 
-            <Card className="rounded-2xl border border-border/50 bg-secondary/30 p-4 shadow-soft space-y-3">
+            <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-3">
               <div
                 className="flex items-center justify-between cursor-pointer"
                 onClick={() => setShowLeaderboard(!showLeaderboard)}
@@ -6357,7 +6292,7 @@ const handleActiveBonusClick = useCallback(() => {
             </Card>
 
             <Collapsible open={showLegend} onOpenChange={setShowLegend}>
-              <Card className="rounded-2xl border border-border/50 bg-secondary/30 p-4 shadow-soft">
+              <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4">
                 <CollapsibleTrigger className="w-full">
                   <div className="flex items-center justify-between cursor-pointer mb-3">
                     <h3 className="text-base font-bold text-foreground">
@@ -6560,17 +6495,17 @@ const handleActiveBonusClick = useCallback(() => {
                 className="flex items-center justify-between w-full text-left lg:pointer-events-none"
               >
                 <h2 className="text-xl font-bold gradient-text">
-                  {translate("⚙️ Einstellungen", "⚙️ Settings")}
+                  {translate("Settings", "Settings")}
                 </h2>
                 <ChevronDown className={cn("h-5 w-5 transition-transform lg:hidden", showSettingsPanel && "rotate-180")} />
               </button>
 
             {showSettingsPanel && (
             <>
-            <Card className="rounded-2xl border border-border/50 bg-secondary/30 p-4 shadow-soft space-y-4">
+            <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-4">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <h3 className="text-lg font-bold text-foreground">
-                  {translate("🎯 Q-Werte & Entdecken", "🎯 Q-Values & Exploration")}
+                  {translate("Q-Values & Exploration", "Q-Values & Exploration")}
                 </h3>
                 <div className="flex flex-col items-end gap-3">
                   <div className="space-y-1">
@@ -6710,7 +6645,7 @@ const handleActiveBonusClick = useCallback(() => {
               </div>
             </Card>
 
-            <Card className="rounded-2xl border border-border/50 bg-secondary/30 p-4 shadow-soft">
+            <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4">
               <h3 className="text-lg font-bold text-foreground mb-1">
                 {translate("📏 Feld-Größe", "📏 Grid size")}
               </h3>
@@ -6726,6 +6661,7 @@ const handleActiveBonusClick = useCallback(() => {
                     key={sizeKey}
                     variant={tileSize === sizeKey ? "default" : "outline"}
                     onClick={() => handleTileSizeChange(sizeKey)}
+                    disabled={levelMode && !unlockedFeatures?.canChangeGridSize}
                     className="rounded-lg text-base font-semibold w-full justify-between px-4"
                   >
                     <span>{sizeLabels[sizeKey]}</span>
@@ -6735,9 +6671,14 @@ const handleActiveBonusClick = useCallback(() => {
                   </Button>
                 ))}
               </div>
+              {levelMode && !unlockedFeatures?.canChangeGridSize && (
+                <p className="text-xs text-muted-foreground italic mt-3">
+                  🔒 {translate("Schalte Level 7 frei, um die Gittergröße anzupassen.", "Reach level 7 to change grid size.")}
+                </p>
+              )}
             </Card>
 
-            <Card className="rounded-2xl border border-border/50 bg-secondary/30 p-4 shadow-soft space-y-3 hidden lg:block">
+            <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-3 hidden lg:block">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold text-foreground">
                   {translate("Meine Umgebungen", "My environments")}
@@ -6791,7 +6732,7 @@ const handleActiveBonusClick = useCallback(() => {
 
             {mode === "random" && (
               <>
-                <Card className="rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-soft space-y-3">
+                <Card className="rounded-lg border border-border/40 bg-card/50 p-4 space-y-3">
                   <h3 className="text-base font-bold text-foreground">
                     {translate("🎲 Zufallsmodus-Einstellungen", "🎲 Random mode settings")}
                   </h3>
@@ -6838,7 +6779,7 @@ const handleActiveBonusClick = useCallback(() => {
             )}
 
             {mode === "random" && (
-              <Card className="rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-soft">
+              <Card className="rounded-lg border border-border/40 bg-card/50 p-4">
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   💡 <strong className="text-foreground">Level:</strong>{" "}
                   {translate(
@@ -6900,12 +6841,8 @@ type PlaygroundControlsProps = {
   isSpeedrun?: boolean;
   showStatistics: boolean;
   setShowStatistics: (show: boolean) => void;
-  alpha: number;
-  gamma: number;
-  onAlphaChange: (value: number) => void;
-  onGammaChange: (value: number) => void;
-  levelFeatures?: import("./levelConfig").LevelFeatures;
-  levelNextUnlock?: { feature: string; emoji: string; episodes: number } | null;
+  levelMode: boolean;
+  unlockedFeatures: UnlockedFeatures | null;
 };
 
 const PlaygroundControls = ({
@@ -6936,17 +6873,10 @@ const PlaygroundControls = ({
   isSpeedrun = false,
   showStatistics,
   setShowStatistics,
-  alpha,
-  gamma,
-  onAlphaChange,
-  onGammaChange,
-  levelFeatures,
-  levelNextUnlock,
+  levelMode,
+  unlockedFeatures,
 }: PlaygroundControlsProps) => {
   const [presetsOpen, setPresetsOpen] = useState(false);
-  const [showExplorationRateInfo, setShowExplorationRateInfo] = useState(false);
-  const [showAlphaInfo, setShowAlphaInfo] = useState(false);
-  const [showGammaInfo, setShowGammaInfo] = useState(false);
 
   return (
     <div className="space-y-5">
@@ -6991,7 +6921,7 @@ const PlaygroundControls = ({
 
       <div className="space-y-2">
         <Label className="text-base font-semibold text-foreground">
-          {translate("🚀 Geschwindigkeit", "🚀 Speed")}
+          {translate("Geschwindigkeit", "Speed")}
         </Label>
         <div className="grid grid-cols-4 gap-2">
           {SIMULATION_SPEEDS.map((option) => (
@@ -7008,14 +6938,14 @@ const PlaygroundControls = ({
         </div>
       </div>
 
-      {!levelFeatures && <Collapsible open={presetsOpen} onOpenChange={setPresetsOpen} className="space-y-2">
+      <Collapsible open={presetsOpen} onOpenChange={setPresetsOpen} className="space-y-2">
         <CollapsibleTrigger asChild>
           <Button
             variant="ghost"
             size="sm"
             className="w-full justify-between rounded-xl border border-border/40 bg-background/60 font-semibold text-base"
           >
-            <span>{translate("🎯 Preset-Levels", "🎯 Preset Levels")}</span>
+            <span>{translate("Preset Levels", "Preset Levels")}</span>
             <ChevronDown
               className={cn("h-4 w-4 transition-transform duration-200", presetsOpen ? "rotate-180" : "")}
             />
@@ -7044,212 +6974,46 @@ const PlaygroundControls = ({
             ))}
           </div>
         </CollapsibleContent>
-      </Collapsible>}
+      </Collapsible>
 
-      {(() => {
-        const showObstacle = !levelFeatures || levelFeatures.placementObstacle;
-        const showReward = !levelFeatures || levelFeatures.placementReward;
-        const showPunishment = !levelFeatures || levelFeatures.placementPunishment;
-        const showPortal = !levelFeatures || levelFeatures.placementPortal;
-        const anyVisible = showObstacle || showReward || showPunishment || showPortal;
-        if (!anyVisible) return null;
-        return (
-          <div className="space-y-2">
-            <Label className="text-base font-semibold text-foreground">
-              {translate("🎨 Platzierungs-Modus", "🎨 Placement mode")}
-            </Label>
-            <div className="grid grid-cols-2 gap-2">
-              {showObstacle && (
-                <Button
-                  variant={placementMode === "obstacle" ? "default" : "outline"}
-                  onClick={() => onPlacementModeChange("obstacle")}
-                  className="text-sm font-semibold"
-                >
-                  {translate("🧱 Mauer", "🧱 Wall")}
-                </Button>
-              )}
-              {showReward && (
-                <Button
-                  variant={placementMode === "reward" ? "default" : "outline"}
-                  onClick={() => onPlacementModeChange("reward")}
-                  className="text-sm font-semibold"
-                >
-                  {translate("🍬 Belohnung", "🍬 Reward")}
-                </Button>
-              )}
-              {showPunishment && (
-                <Button
-                  variant={placementMode === "punishment" ? "default" : "outline"}
-                  onClick={() => onPlacementModeChange("punishment")}
-                  className="text-sm font-semibold"
-                >
-                  {translate("⚡ Strafe", "⚡ Penalty")}
-                </Button>
-              )}
-              {showPortal && (
-                <Button
-                  variant={placementMode === "portal" ? "default" : "outline"}
-                  onClick={() => onPlacementModeChange("portal")}
-                  className="text-sm font-semibold"
-                >
-                  🌀 Portal
-                </Button>
-              )}
-            </div>
-            {levelNextUnlock && (
-              <div className="rounded-lg bg-white/5 border border-white/10 p-3 mt-2">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Lock className="w-3 h-3" />
-                  <span>
-                    Nächstes Level:{" "}
-                    <span className="text-foreground font-medium">
-                      {levelNextUnlock.emoji} {levelNextUnlock.feature}
-                    </span>
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  Noch{" "}
-                  <span className="text-primary font-medium">{levelNextUnlock.episodes}</span>{" "}
-                  Episode{levelNextUnlock.episodes !== 1 ? "n" : ""}
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })()}
-
-    <div className="space-y-3">
+      <div className="space-y-2">
       <Label className="text-base font-semibold text-foreground">
-        {translate("🎓 Lernparameter", "🎓 Learning Parameters")}
+        {translate("Platzierungs-Modus", "Placement Mode")}
       </Label>
-
-      {(!levelFeatures || levelFeatures.explorationSlider) && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Label className="text-sm font-semibold text-foreground">
-                {translate("Entdeckungsrate", "Exploration rate")}
-              </Label>
-              <button
-                onClick={() => setShowExplorationRateInfo(!showExplorationRateInfo)}
-                className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-                aria-label="Toggle info"
-              >
-                <Info className="h-3 w-3" />
-              </button>
-            </div>
-            <span className="text-sm font-bold text-primary">{Math.round(explorationRate * 100)}%</span>
-          </div>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={explorationRate}
-            onChange={(e) => onExplorationRateChange(e.target.valueAsNumber)}
-            className="input-slider w-full"
-            style={{ "--slider-value": explorationRate } as CSSProperties}
-          />
-          <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
-            <span className="font-medium">{translate("← Ausbeutung", "← Exploitation")}</span>
-            <span className="font-medium">{translate("Entdeckung →", "Exploration →")}</span>
-          </div>
-          {showExplorationRateInfo && (
-            <p className="text-xs text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
-              {translate(
-                "Bestimmt, wie oft der Rover neue Wege ausprobiert statt bekannte Routen zu nutzen.",
-                "Determines how often the rover tries new paths instead of using known routes.",
-              )}
-            </p>
-          )}
-        </div>
-      )}
-
-      {levelFeatures && !levelFeatures.learningRateSlider ? (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground/60 py-1">
-          <Lock className="w-3.5 h-3.5 flex-shrink-0" />
-          <span>Lernrate (Alpha)</span>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Label className="text-sm font-semibold text-foreground">
-                {translate("Lernrate (Alpha)", "Learning rate (Alpha)")}
-              </Label>
-              <button
-                onClick={() => setShowAlphaInfo(!showAlphaInfo)}
-                className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-                aria-label="Toggle info"
-              >
-                <Info className="h-3 w-3" />
-              </button>
-            </div>
-            <span className="text-sm font-bold text-primary">{alpha.toFixed(2)}</span>
-          </div>
-          <input
-            type="range"
-            min={0.01}
-            max={0.5}
-            step={0.01}
-            value={alpha}
-            onChange={(e) => onAlphaChange(e.target.valueAsNumber)}
-            className="input-slider w-full"
-            style={{ "--slider-value": alpha / 0.5 } as CSSProperties}
-          />
-          {showAlphaInfo && (
-            <p className="text-xs text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
-              {translate(
-                "Bestimmt, wie stark neue Erfahrungen alte Werte überschreiben.",
-                "Determines how much new experiences override old values.",
-              )}
-            </p>
-          )}
-        </div>
-      )}
-
-      {levelFeatures && !levelFeatures.gammaSlider ? (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground/60 py-1">
-          <Lock className="w-3.5 h-3.5 flex-shrink-0" />
-          <span>Discount-Faktor (Gamma)</span>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Label className="text-sm font-semibold text-foreground">
-                {translate("Discount-Faktor (Gamma)", "Discount factor (Gamma)")}
-              </Label>
-              <button
-                onClick={() => setShowGammaInfo(!showGammaInfo)}
-                className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-                aria-label="Toggle info"
-              >
-                <Info className="h-3 w-3" />
-              </button>
-            </div>
-            <span className="text-sm font-bold text-primary">{gamma.toFixed(2)}</span>
-          </div>
-          <input
-            type="range"
-            min={0}
-            max={0.99}
-            step={0.01}
-            value={gamma}
-            onChange={(e) => onGammaChange(e.target.valueAsNumber)}
-            className="input-slider w-full"
-            style={{ "--slider-value": gamma } as CSSProperties}
-          />
-          {showGammaInfo && (
-            <p className="text-xs text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
-              {translate(
-                "Gewichtet zukünftige Belohnungen. Hohe Werte = langfristige Planung.",
-                "Weights future rewards. High values = long-term planning.",
-              )}
-            </p>
-          )}
-        </div>
-      )}
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          variant={placementMode === "obstacle" ? "default" : "outline"}
+          onClick={() => onPlacementModeChange("obstacle")}
+          disabled={levelMode && !unlockedFeatures?.canPlaceWalls}
+          className="text-sm font-semibold"
+        >
+          {translate("Mauer", "Wall")}
+        </Button>
+        <Button
+          variant={placementMode === "reward" ? "default" : "outline"}
+          onClick={() => onPlacementModeChange("reward")}
+          disabled={levelMode && !unlockedFeatures?.canPlaceRewards}
+          className="text-sm font-semibold"
+        >
+          {translate("Belohnung", "Reward")}
+        </Button>
+        <Button
+          variant={placementMode === "punishment" ? "default" : "outline"}
+          onClick={() => onPlacementModeChange("punishment")}
+          disabled={levelMode && !unlockedFeatures?.canPlacePunishments}
+          className="text-sm font-semibold"
+        >
+          {translate("Strafe", "Penalty")}
+        </Button>
+        <Button
+          variant={placementMode === "portal" ? "default" : "outline"}
+          onClick={() => onPlacementModeChange("portal")}
+          disabled={levelMode && !unlockedFeatures?.canPlacePortals}
+          className="text-sm font-semibold"
+        >
+          {translate("Portal", "Portal")}
+        </Button>
+      </div>
     </div>
 
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -7273,13 +7037,13 @@ const PlaygroundControls = ({
 
     {/* Live-Statistiken */}
     {state.episodeHistory.length > 0 && (
-      <Card className="rounded-2xl border border-border/50 bg-secondary/30 p-4 shadow-soft">
+      <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4">
         <div
           className="flex items-center justify-between cursor-pointer mb-2"
           onClick={() => setShowStatistics(!showStatistics)}
         >
           <h3 className="text-sm font-bold text-foreground">
-            📊 {translate("Live-Statistiken", "Live Statistics")}
+            {translate("Statistics", "Statistics")}
           </h3>
           {showStatistics ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </div>
@@ -7385,7 +7149,7 @@ const SliderWithTooltip = ({ value, onChange }: SliderProps) => (
           style={{ "--slider-value": value } as CSSProperties}
         />
       </TooltipTrigger>
-      <TooltipContent className="z-50 shadow-xl" sideOffset={8}>
+      <TooltipContent className="z-50 shadow-sm" sideOffset={8}>
         <p>Exploration: {Math.round(value * 100)}%</p>
       </TooltipContent>
     </Tooltip>
@@ -7495,14 +7259,14 @@ const ControlBar = ({
   }, []);
 
   return (
-    <div className="rounded-3xl border border-border bg-card/90 p-4 shadow-medium backdrop-blur-xl text-foreground">
+    <div className="rounded-lg border border-border/40 bg-card/60 p-4 backdrop-blur-sm text-foreground">
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Button
           variant={mode === "playground" ? "default" : "outline"}
           onClick={() => onModeChange("playground")}
           className="rounded-lg font-semibold"
         >
-          🎨 {translate("Playground", "Playground")}
+          {translate("Playground", "Playground")}
         </Button>
         <div className="relative">
           <Button
@@ -7511,7 +7275,7 @@ const ControlBar = ({
             className={cn("rounded-lg font-semibold", isMobile && "cursor-not-allowed opacity-50")}
             disabled={isMobile}
           >
-            🎲 {translate("Zufallsmodus", "Random Mode")}
+            {translate("Zufallsmodus", "Random Mode")}
           </Button>
           {isMobile && (
             <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-muted-foreground">
@@ -7526,7 +7290,7 @@ const ControlBar = ({
             className={cn("rounded-lg font-semibold", isMobile && "cursor-not-allowed opacity-50")}
             disabled={isMobile}
           >
-            ⚖️ {translate("Vergleichsmodus", "Comparison Mode")}
+            {translate("Vergleichsmodus", "Comparison Mode")}
           </Button>
           {isMobile && (
             <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-muted-foreground">

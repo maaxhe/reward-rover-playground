@@ -8,26 +8,26 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Light Mode - Clean and modern */
+    /* Light Mode - Professional and clean */
     --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    --foreground: 217 32% 17%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 217 32% 17%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 217 32% 17%;
 
-    --primary: 193 100% 45%;
+    --primary: 217 32% 35%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 20% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 220 13% 91%;
+    --secondary-foreground: 220 14% 20%;
 
-    --muted: 210 20% 96%;
-    --muted-foreground: 220 8.9% 46%;
+    --muted: 220 13% 91%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 193 100% 50%;
+    --accent: 217 32% 40%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -35,21 +35,21 @@ All colors MUST be HSL.
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 193 100% 45%;
+    --ring: 217 32% 45%;
 
     /* Reward Rover tile palette - Light Mode */
-    --tile-bg: #f1f5f9;
-    --tile-reward: #10b981;
-    --tile-punishment: #f97316;
-    --tile-obstacle: #64748b;
-    --tile-agent: #0891b2;
-    --tile-goal: #f59e0b;
-    --tile-portal: #9333ea;
-    --tile-outline: rgba(8, 145, 178, 0.2);
+    --tile-bg: #f8f9fa;
+    --tile-reward: #059669;
+    --tile-punishment: #d97706;
+    --tile-obstacle: #475569;
+    --tile-agent: #4f46e5;
+    --tile-goal: #2563eb;
+    --tile-portal: #7c3aed;
+    --tile-outline: rgba(79, 70, 229, 0.15);
     --tile-text-on-light: #f8fafc;
     --tile-text-on-dark: #0f172a;
     --grid-line: 220 13% 91%;
-    --visited: 193 100% 45%;
+    --visited: 217 32% 45%;
 
     /* Gradients - Light Mode */
     --gradient-main: radial-gradient(circle at top, rgba(34, 211, 238, 0.08), rgba(248, 250, 252, 0.95));
@@ -77,48 +77,48 @@ All colors MUST be HSL.
   }
 
   .dark {
-    /* Dark Mode - Deep and immersive */
+    /* Dark Mode - Professional and clean */
     --background: 222 47% 4%;
-    --foreground: 193 100% 96%;
+    --foreground: 217 32% 94%;
 
     --card: 222 47% 6%;
-    --card-foreground: 193 100% 96%;
+    --card-foreground: 217 32% 94%;
 
     --popover: 222 47% 6%;
-    --popover-foreground: 193 100% 96%;
+    --popover-foreground: 217 32% 94%;
 
-    --primary: 193 100% 60%;
+    --primary: 217 32% 55%;
     --primary-foreground: 222 47% 4%;
 
     --secondary: 222 47% 11%;
-    --secondary-foreground: 193 100% 96%;
+    --secondary-foreground: 217 32% 92%;
 
     --muted: 222 47% 11%;
-    --muted-foreground: 220 8.9% 65.1%;
+    --muted-foreground: 220 9% 64%;
 
-    --accent: 193 100% 70%;
+    --accent: 217 32% 60%;
     --accent-foreground: 222 47% 4%;
 
     --destructive: 0 62.8% 50%;
-    --destructive-foreground: 193 100% 96%;
+    --destructive-foreground: 217 32% 94%;
 
     --border: 222 47% 15%;
     --input: 222 47% 15%;
-    --ring: 193 100% 60%;
+    --ring: 217 32% 65%;
 
     /* Reward Rover tile palette - Dark Mode */
-    --tile-bg: #0a0f1a;
+    --tile-bg: #0f172a;
     --tile-reward: #10b981;
     --tile-punishment: #f97316;
-    --tile-obstacle: #475569;
-    --tile-agent: #22d3ee;
-    --tile-goal: #fbbf24;
-    --tile-portal: #a855f7;
-    --tile-outline: rgba(34, 211, 238, 0.15);
+    --tile-obstacle: #64748b;
+    --tile-agent: #818cf8;
+    --tile-goal: #60a5fa;
+    --tile-portal: #a78bfa;
+    --tile-outline: rgba(129, 140, 248, 0.2);
     --tile-text-on-light: #f8fafc;
     --tile-text-on-dark: #0f172a;
     --grid-line: 222 47% 15%;
-    --visited: 193 100% 60%;
+    --visited: 217 32% 65%;
 
     /* Gradients - Dark Mode */
     --gradient-main: radial-gradient(circle at top, rgba(34, 211, 238, 0.12), rgba(15, 23, 42, 0.98));
@@ -176,20 +176,10 @@ All colors MUST be HSL.
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
 
-  /* Gradient text animation - matched to main website */
+  /* Professional text styling */
   .gradient-text {
-    background-image: linear-gradient(90deg, #60a5fa 0%, #22d3ee 40%, #a5f3fc 50%, #22d3ee 60%, #60a5fa 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-repeat: repeat;
-    background-size: 1000px 100%;
-    animation: gradient-slide 4800ms linear infinite;
-  }
-
-  @keyframes gradient-slide {
-    0% { background-position: 0 50%; }
-    100% { background-position: 1000px 50%; }
+    color: hsl(var(--primary));
+    font-weight: 600;
   }
 
   /* Reward and punishment animations */
@@ -335,6 +325,34 @@ All colors MUST be HSL.
   .input-slider:active::-moz-range-thumb {
     transform: scale(1.05);
     box-shadow: 0 8px 22px hsl(191 82% 53% / 0.55);
+  }
+
+  /* Minimal professional card styling */
+  .card-professional {
+    @apply rounded-lg border border-border/40 bg-card/50 p-5 transition-all duration-200 hover:border-border/60;
+  }
+
+  .card-elevated {
+    @apply rounded-lg border border-border/40 bg-card/70 p-6 shadow-sm transition-shadow hover:shadow-md;
+  }
+
+  /* Professional button styling */
+  .btn-professional {
+    @apply rounded-lg font-medium transition-all duration-200 text-sm;
+  }
+
+  /* Clean dividers */
+  .section-divider {
+    @apply h-px bg-border/40;
+  }
+
+  /* Minimal spacing utilities */
+  .container-tight {
+    @apply max-w-6xl mx-auto;
+  }
+
+  .container-wide {
+    @apply max-w-full;
   }
 }
 
