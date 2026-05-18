@@ -2318,18 +2318,8 @@ export function RLGame() {
   const [showRLSettings, setShowRLSettings] = useState(false);
   const [showRandomStatsCard, setShowRandomStatsCard] = useState(false);
   const [showPlaygroundStatsCard, setShowPlaygroundStatsCard] = useState(false);
-  const [showConsolePanel, setShowConsolePanel] = useState(() => {
-    if (typeof window !== "undefined") {
-      return window.innerWidth >= 1024;
-    }
-    return true;
-  });
-  const [showSettingsPanel, setShowSettingsPanel] = useState(() => {
-    if (typeof window !== "undefined") {
-      return window.innerWidth >= 1024;
-    }
-    return true;
-  });
+  const [showConsolePanel, setShowConsolePanel] = useState(true);
+  const [showSettingsPanel, setShowSettingsPanel] = useState(true);
   const [isReplaying, setIsReplaying] = useState(false);
   const [replayEpisode, setReplayEpisode] = useState<EpisodeStats | null>(null);
   const [replayStep, setReplayStep] = useState(0);
