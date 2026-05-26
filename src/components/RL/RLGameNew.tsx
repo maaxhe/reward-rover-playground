@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { RLGame } from "./RLGame";
 import { ParametersPanel } from "./ParametersPanel";
 import { LevelProgressBar } from "./LevelProgressBar";
@@ -17,6 +17,42 @@ export function RLGameNew() {
   const [mode, setMode] = useState<"levels" | "free">("levels");
   const [currentLevel, setCurrentLevel] = useState<LevelNumber>(1);
   const [freeModeUnlocked, setFreeModeUnlocked] = useState(false);
+  // Highest level the player has unlocked by solving the previous one.
+  // Reaches 11 once level 10 is solved, which unlocks Free Mode.
+  const [maxUnlockedLevel, setMaxUnlockedLevel] = useState(1);
+
+  const MAX_UNLOCK_KEY = "rr-max-unlocked-level";
+  const FREE_MODE_KEY = "rr-free-mode-unlocked";
+
+  // Restore saved progress on mount (after hydration to avoid SSR mismatch).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const storedUnlock = window.localStorage.getItem(MAX_UNLOCK_KEY);
+    if (storedUnlock) {
+      const n = parseInt(storedUnlock, 10);
+      if (!Number.isNaN(n) && n >= 1) setMaxUnlockedLevel(Math.min(11, n));
+    }
+    if (window.localStorage.getItem(FREE_MODE_KEY) === "true") {
+      setFreeModeUnlocked(true);
+    }
+  }, []);
+
+  // Keep the latest level in a ref so the (stable) solve handler always sees it.
+  const currentLevelRef = useRef(currentLevel);
+  useEffect(() => {
+    currentLevelRef.current = currentLevel;
+  }, [currentLevel]);
+
+  // Called from RLGame when the rover reaches the goal in Level Mode.
+  const handleLevelSolved = useCallback(() => {
+    setMaxUnlockedLevel((prev) => {
+      const next = Math.min(11, Math.max(prev, currentLevelRef.current + 1));
+      if (next !== prev && typeof window !== "undefined") {
+        window.localStorage.setItem(MAX_UNLOCK_KEY, String(next));
+      }
+      return next;
+    });
+  }, []);
 
   // Cheat code: type "blauwal" to unlock Free Mode
   useEffect(() => {
@@ -28,6 +64,9 @@ export function RLGameNew() {
       }
       if (keySequence.includes("blauwal")) {
         setFreeModeUnlocked(true);
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(FREE_MODE_KEY, "true");
+        }
         keySequence = "";
       }
     };
@@ -36,12 +75,16 @@ export function RLGameNew() {
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, []);
 
-  const canAccessFreeMode = freeModeUnlocked || currentLevel === 10;
+  const canAccessFreeMode = freeModeUnlocked || maxUnlockedLevel > 10;
   const isLevelMode = mode === "levels";
   const unlockedFeatures = getUnlockedFeatures(currentLevel);
+  // The next level is only reachable once the current one has been solved.
+  const nextLevelLocked = currentLevel >= maxUnlockedLevel;
 
   const goToLevel = (level: number) => {
     const clamped = Math.max(1, Math.min(10, level)) as LevelNumber;
+    // Never allow jumping past the highest unlocked level.
+    if (clamped > maxUnlockedLevel) return;
     setCurrentLevel(clamped);
   };
 
@@ -102,12 +145,27 @@ export function RLGameNew() {
                   variant="outline"
                   size="sm"
                   onClick={() => goToLevel(currentLevel + 1)}
-                  disabled={currentLevel >= 10}
+                  disabled={currentLevel >= 10 || nextLevelLocked}
                   className="flex-1 font-semibold"
                 >
                   {translate("Level", "Level")} →
+                  {nextLevelLocked && currentLevel < 10 && <span className="ml-1 text-xs">🔒</span>}
                 </Button>
               </div>
+              {nextLevelLocked && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  🔒{" "}
+                  {currentLevel >= 10
+                    ? translate(
+                        "Erreiche das Ziel, um den Free Mode freizuschalten.",
+                        "Reach the goal to unlock Free Mode.",
+                      )
+                    : translate(
+                        "Bring den Rover ins Ziel, um das nächste Level freizuschalten.",
+                        "Get the rover to the goal to unlock the next level.",
+                      )}
+                </p>
+              )}
               <div className="mt-6" />
               <LevelUnlocksCard currentLevel={currentLevel} translate={translate} />
               <div className="mt-6" />
@@ -129,8 +187,8 @@ export function RLGameNew() {
 
         {/* Right Content - Game */}
         <div className="flex-1 overflow-auto">
-          <LevelProvider levelMode={isLevelMode} currentLevel={currentLevel}>
-            <RLGame />
+          <LevelProvider levelMode={isLevelMode} currentLevel={currentLevel} onLevelSolved={handleLevelSolved}>
+            <RLGame explorationRate={explorationRate} alpha={alpha} gamma={gamma} />
           </LevelProvider>
         </div>
       </div>

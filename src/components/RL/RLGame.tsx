@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { GameLayout } from "./GameLayout";
 import { GameHeader } from "./GameHeader";
 import { ControlPanel } from "./ControlPanel";
-import { ParametersPanel } from "./ParametersPanel";
 import {
   Dialog,
   DialogContent,
@@ -2260,8 +2259,15 @@ const CELEBRATION_FACTS: Array<Record<Language, string>> = [
     },
   ];
 
-export function RLGame() {
-  const { levelMode, currentLevel } = useLevel();
+interface RLGameProps {
+  /** Learning parameters are owned by the surrounding layout (left sidebar) and passed in. */
+  explorationRate?: number;
+  alpha?: number;
+  gamma?: number;
+}
+
+export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85 }: RLGameProps = {}) {
+  const { levelMode, currentLevel, onLevelSolved } = useLevel();
   const unlockedFeatures = levelMode ? getUnlockedFeatures(currentLevel as LevelNumber) : null;
 
   const placementModeRef = useRef<PlaceableTile>("obstacle");
@@ -2286,7 +2292,6 @@ export function RLGame() {
   const [levelKey, setLevelKey] = useState<LevelKey>("level1");
   const [placementMode, setPlacementModeState] = useState<PlaceableTile>("obstacle");
   const [challengeMode, setChallengeModeState] = useState<ChallengeTile | null>(null);
-  const [explorationRate, setExplorationRate] = useState(0.2);
   const [simulationSpeed, setSimulationSpeed] = useState<SimulationSpeed>("1x");
   const [comparisonSpeed, setComparisonSpeed] = useState<SimulationSpeed>("1x");
   const [showValues, setShowValues] = useState(false);
@@ -2323,8 +2328,6 @@ export function RLGame() {
   const [isReplaying, setIsReplaying] = useState(false);
   const [replayEpisode, setReplayEpisode] = useState<EpisodeStats | null>(null);
   const [replayStep, setReplayStep] = useState(0);
-  const [alpha, setAlpha] = useState(0.1); // Lernrate
-  const [gamma, setGamma] = useState(0.85); // Discount-Faktor
   const [isDragging, setIsDragging] = useState(false);
   const [episodeHistory, setEpisodeHistory] = useState<Array<{ episode: number; reward: number; steps: number }>>([]);
   const [undoStack, setUndoStack] = useState<TileState[][][]>([]);
@@ -3589,6 +3592,10 @@ const handleActiveBonusClick = useCallback(() => {
     const latest = playgroundState.episodeHistory[playgroundState.episodeHistory.length - 1];
     if (!latest || !latest.success) return;
     if (latest.episode <= lastCelebratedEpisodeRef.current.playground) return;
+    // Level Mode: reaching the goal means this level is solved → unlock the next one.
+    if (levelMode) {
+      onLevelSolved?.();
+    }
     if (isAutoRestartEnabled) {
       lastCelebratedEpisodeRef.current.playground = latest.episode;
       setCelebration(null);
@@ -3613,7 +3620,7 @@ const handleActiveBonusClick = useCallback(() => {
     requestAnimationFrame(() => {
       setCelebration({ title, steps: latest.steps, reward: latest.reward, rank, fact });
     });
-  }, [mode, playgroundState.episodeHistory, playgroundState.episode, translate, language, isAutoRestartEnabled]);
+  }, [mode, playgroundState.episodeHistory, playgroundState.episode, translate, language, isAutoRestartEnabled, levelMode, onLevelSolved]);
 
   const handlePlaygroundStart = () =>
     setPlaygroundState((prev) => ({ ...prev, isRunning: true }));
@@ -3651,6 +3658,20 @@ const handleActiveBonusClick = useCallback(() => {
     lastCelebratedEpisodeRef.current.playground = 0;
     setPlaygroundState(createInitialPlaygroundState(nextSize, false));
   }, [tileSize]);
+
+  // Level Mode: advancing to a higher level starts the rover fresh, so each newly
+  // unlocked level is a genuine challenge the player has to solve from scratch.
+  const prevLevelRef = useRef<number>(currentLevel);
+  useEffect(() => {
+    if (!levelMode) {
+      prevLevelRef.current = currentLevel;
+      return;
+    }
+    if (currentLevel > prevLevelRef.current) {
+      handlePlaygroundReset();
+    }
+    prevLevelRef.current = currentLevel;
+  }, [currentLevel, levelMode, handlePlaygroundReset]);
 
   const handleReplayBest = useCallback(() => {
     if (mode === "playground" && playgroundState.episodeHistory.length > 0) {
@@ -6031,7 +6052,6 @@ const handleActiveBonusClick = useCallback(() => {
             {mode === "playground" ? (
               <PlaygroundControls
                 state={playgroundState}
-                explorationRate={explorationRate}
                 onStart={handlePlaygroundStart}
                 onPause={handlePlaygroundPause}
                 onStep={handlePlaygroundStep}
@@ -6044,7 +6064,6 @@ const handleActiveBonusClick = useCallback(() => {
                 onLoadPreset={handleLoadPreset}
                 placementMode={placementMode}
                 onPlacementModeChange={changePlacementMode}
-                onExplorationRateChange={setExplorationRate}
                 simulationSpeed={simulationSpeed}
                 onSimulationSpeedChange={setSimulationSpeed}
                 canPublishGlobal={isAdmin}
@@ -6805,7 +6824,6 @@ const handleActiveBonusClick = useCallback(() => {
 
 type PlaygroundControlsProps = {
   state: PlaygroundState;
-  explorationRate: number;
   onStart: () => void;
   onPause: () => void;
   onStep: () => void;
@@ -6818,7 +6836,6 @@ type PlaygroundControlsProps = {
   onLoadPreset: (preset: PresetLevel) => void;
   placementMode: PlaceableTile;
   onPlacementModeChange: (type: PlaceableTile) => void;
-  onExplorationRateChange: (value: number) => void;
   simulationSpeed: SimulationSpeed;
   onSimulationSpeedChange: (speed: SimulationSpeed) => void;
   canPublishGlobal: boolean;
@@ -6837,7 +6854,6 @@ type PlaygroundControlsProps = {
 
 const PlaygroundControls = ({
   state,
-  explorationRate,
   onStart,
   onPause,
   onStep,
@@ -6850,7 +6866,6 @@ const PlaygroundControls = ({
   onLoadPreset,
   placementMode,
   onPlacementModeChange,
-  onExplorationRateChange,
   simulationSpeed,
   onSimulationSpeedChange,
   canPublishGlobal,
@@ -7117,33 +7132,6 @@ const RandomControls = ({
       </Badge>
     </div>
   </div>
-);
-
-type SliderProps = {
-  value: number;
-  onChange: (value: number) => void;
-};
-
-const SliderWithTooltip = ({ value, onChange }: SliderProps) => (
-  <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.01}
-          value={value}
-          onChange={(event) => onChange(event.target.valueAsNumber)}
-          className="input-slider mt-2"
-          style={{ "--slider-value": value } as CSSProperties}
-        />
-      </TooltipTrigger>
-      <TooltipContent className="z-50 shadow-sm" sideOffset={8}>
-        <p>Exploration: {Math.round(value * 100)}%</p>
-      </TooltipContent>
-    </Tooltip>
-  </TooltipProvider>
 );
 
 type ScrollIndicatorProps = {
