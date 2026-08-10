@@ -191,3 +191,17 @@ export function getLevelConfig(level: number): LevelConfig {
   const validLevel = Math.max(1, Math.min(10, level)) as LevelNumber;
   return LEVEL_CONFIGS[validLevel];
 }
+
+/**
+ * Returns the earliest level at which a given feature becomes unlocked,
+ * so the UI can tell the player "unlocks at level N" instead of just
+ * greying the feature out.
+ */
+export function getUnlockLevel(feature: keyof UnlockedFeatures): LevelNumber {
+  for (let level = 1 as LevelNumber; level <= 10; level++) {
+    if (LEVEL_CONFIGS[level].unlockedFeatures[feature]) {
+      return level;
+    }
+  }
+  return 10;
+}
