@@ -88,6 +88,18 @@ export function RLGameNew() {
     setCurrentLevel(clamped);
   };
 
+  // Wipes saved level/free-mode progress (e.g. from earlier testing) so
+  // locking can be re-verified from a clean slate without opening DevTools.
+  const resetProgress = () => {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(MAX_UNLOCK_KEY);
+      window.localStorage.removeItem(FREE_MODE_KEY);
+    }
+    setMaxUnlockedLevel(1);
+    setFreeModeUnlocked(false);
+    setCurrentLevel(1);
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Mode Selector */}
@@ -168,6 +180,15 @@ export function RLGameNew() {
               )}
               <div className="mt-6" />
               <LevelUnlocksCard currentLevel={currentLevel} translate={translate} />
+              {(maxUnlockedLevel > 1 || freeModeUnlocked) && (
+                <button
+                  type="button"
+                  onClick={resetProgress}
+                  className="mt-3 text-xs text-muted-foreground/70 hover:text-muted-foreground underline underline-offset-2"
+                >
+                  {translate("Fortschritt zurücksetzen", "Reset progress")}
+                </button>
+              )}
               <div className="mt-6" />
             </>
           )}
