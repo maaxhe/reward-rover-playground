@@ -909,6 +909,150 @@ const PRESET_LEVELS: PresetLevel[] = [
   },
 ];
 
+// One small hand-built world per Level Mode stage (1–10), so advancing a
+// level lands the rover in a fresh scenario instead of a blank grid. Each
+// world foreshadows what the level teaches — e.g. rewards/punishments/walls
+// appear on the board even before the matching placement tool unlocks, so
+// there's always something to learn from.
+const LEVEL_WORLDS: Record<LevelNumber, GridConfig> = {
+  1: {
+    size: 5,
+    tiles: [],
+    agent: { x: 0, y: 4 },
+    goal: { x: 4, y: 0 },
+  },
+  2: {
+    size: 5,
+    tiles: [
+      { x: 2, y: 1, type: "obstacle" },
+      { x: 2, y: 3, type: "obstacle" },
+    ],
+    agent: { x: 0, y: 4 },
+    goal: { x: 4, y: 0 },
+  },
+  3: {
+    size: 6,
+    tiles: [
+      { x: 3, y: 4, type: "reward" },
+      { x: 1, y: 1, type: "obstacle" },
+      { x: 4, y: 2, type: "obstacle" },
+    ],
+    agent: { x: 0, y: 5 },
+    goal: { x: 5, y: 0 },
+  },
+  4: {
+    size: 6,
+    tiles: [
+      { x: 2, y: 4, type: "reward" },
+      { x: 4, y: 1, type: "reward" },
+      { x: 1, y: 2, type: "obstacle" },
+    ],
+    agent: { x: 0, y: 5 },
+    goal: { x: 5, y: 0 },
+  },
+  5: {
+    size: 6,
+    tiles: [
+      { x: 2, y: 4, type: "reward" },
+      { x: 4, y: 1, type: "reward" },
+      { x: 3, y: 2, type: "punishment" },
+      { x: 1, y: 4, type: "punishment" },
+    ],
+    agent: { x: 0, y: 5 },
+    goal: { x: 5, y: 0 },
+  },
+  6: {
+    size: 7,
+    tiles: [
+      { x: 2, y: 1, type: "obstacle" },
+      { x: 2, y: 2, type: "obstacle" },
+      { x: 2, y: 3, type: "obstacle" },
+      { x: 4, y: 3, type: "obstacle" },
+      { x: 4, y: 4, type: "obstacle" },
+      { x: 4, y: 5, type: "obstacle" },
+      { x: 3, y: 5, type: "reward" },
+      { x: 5, y: 1, type: "punishment" },
+    ],
+    agent: { x: 0, y: 6 },
+    goal: { x: 6, y: 0 },
+  },
+  7: {
+    size: 8,
+    tiles: [
+      { x: 2, y: 1, type: "obstacle" },
+      { x: 2, y: 2, type: "obstacle" },
+      { x: 2, y: 3, type: "obstacle" },
+      { x: 5, y: 4, type: "obstacle" },
+      { x: 5, y: 5, type: "obstacle" },
+      { x: 5, y: 6, type: "obstacle" },
+      { x: 4, y: 2, type: "reward" },
+      { x: 1, y: 6, type: "reward" },
+      { x: 6, y: 2, type: "punishment" },
+    ],
+    agent: { x: 0, y: 7 },
+    goal: { x: 7, y: 0 },
+  },
+  8: {
+    size: 8,
+    tiles: [
+      { x: 3, y: 0, type: "obstacle" },
+      { x: 3, y: 1, type: "obstacle" },
+      { x: 3, y: 2, type: "obstacle" },
+      { x: 3, y: 3, type: "obstacle" },
+      { x: 3, y: 5, type: "obstacle" },
+      { x: 3, y: 6, type: "obstacle" },
+      { x: 3, y: 7, type: "obstacle" },
+      { x: 1, y: 4, type: "portal" },
+      { x: 5, y: 4, type: "portal" },
+      { x: 6, y: 1, type: "reward" },
+      { x: 6, y: 6, type: "punishment" },
+    ],
+    agent: { x: 0, y: 4 },
+    goal: { x: 7, y: 0 },
+  },
+  9: {
+    size: 9,
+    tiles: [
+      { x: 2, y: 2, type: "obstacle" },
+      { x: 2, y: 3, type: "obstacle" },
+      { x: 2, y: 4, type: "obstacle" },
+      { x: 6, y: 4, type: "obstacle" },
+      { x: 6, y: 5, type: "obstacle" },
+      { x: 6, y: 6, type: "obstacle" },
+      { x: 1, y: 6, type: "portal" },
+      { x: 7, y: 2, type: "portal" },
+      { x: 4, y: 1, type: "reward" },
+      { x: 4, y: 7, type: "reward" },
+      { x: 5, y: 2, type: "punishment" },
+      { x: 3, y: 6, type: "punishment" },
+    ],
+    agent: { x: 0, y: 8 },
+    goal: { x: 8, y: 0 },
+  },
+  10: {
+    size: 10,
+    tiles: [
+      { x: 3, y: 1, type: "obstacle" },
+      { x: 3, y: 2, type: "obstacle" },
+      { x: 3, y: 3, type: "obstacle" },
+      { x: 3, y: 4, type: "obstacle" },
+      { x: 6, y: 5, type: "obstacle" },
+      { x: 6, y: 6, type: "obstacle" },
+      { x: 6, y: 7, type: "obstacle" },
+      { x: 6, y: 8, type: "obstacle" },
+      { x: 1, y: 7, type: "portal" },
+      { x: 8, y: 2, type: "portal" },
+      { x: 5, y: 1, type: "reward" },
+      { x: 1, y: 3, type: "reward" },
+      { x: 8, y: 8, type: "reward" },
+      { x: 4, y: 6, type: "punishment" },
+      { x: 7, y: 4, type: "punishment" },
+    ],
+    agent: { x: 0, y: 9 },
+    goal: { x: 9, y: 0 },
+  },
+};
+
 const pickWeightedBonus = (): BonusType => {
   const total = BONUS_TYPES.reduce((sum, type) => sum + BONUS_WEIGHTS[type], 0);
   let roll = Math.random() * total;
@@ -1600,6 +1744,26 @@ const buildGridFromConfigStatic = (config: GridConfig) => {
   };
 
   return { grid, agent, goal };
+};
+
+// Builds the small hand-built world for a given Level Mode stage (see LEVEL_WORLDS).
+const createLevelPlaygroundState = (level: LevelNumber): PlaygroundState => {
+  const world = LEVEL_WORLDS[level];
+  const { grid, agent, goal } = buildGridFromConfigStatic(world);
+  return {
+    agent: { ...agent },
+    goal,
+    grid,
+    isRunning: false,
+    episode: 0,
+    totalReward: 0,
+    currentSteps: 0,
+    episodeHistory: [],
+    spawn: agent,
+    portalCooldowns: {},
+    pendingPortalTeleport: null,
+    qTable: {},
+  };
 };
 
 const createInitialPlaygroundState = (size: number, usePreset: boolean = false): PlaygroundState => {
@@ -2795,7 +2959,9 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85 }: RLG
   const levelDescription = isEnglish ? levelConfig.descriptionEn : levelConfig.description;
 
   const [playgroundState, setPlaygroundState] = useState<PlaygroundState>(() =>
-    createInitialPlaygroundState(baseFieldSize, true)
+    levelMode
+      ? createLevelPlaygroundState(currentLevel as LevelNumber)
+      : createInitialPlaygroundState(baseFieldSize, true)
   );
   const [randomState, setRandomState] = useState<RandomModeState>(() =>
     createRandomModeState(levelConfig, baseFieldSize)
@@ -3656,21 +3822,29 @@ const handleActiveBonusClick = useCallback(() => {
     setIsReplaying(false);
     setReplayEpisode(null);
     lastCelebratedEpisodeRef.current.playground = 0;
-    setPlaygroundState(createInitialPlaygroundState(nextSize, false));
-  }, [tileSize]);
+    setPlaygroundState(
+      levelMode
+        ? createLevelPlaygroundState(currentLevel as LevelNumber)
+        : createInitialPlaygroundState(nextSize, false),
+    );
+  }, [tileSize, levelMode, currentLevel]);
 
-  // Level Mode: advancing to a higher level starts the rover fresh, so each newly
-  // unlocked level is a genuine challenge the player has to solve from scratch.
+  // Level Mode: advancing to a higher level (or (re-)entering Level Mode at all,
+  // e.g. coming back from Free Mode) loads that level's own small world, so
+  // each level is a genuine, populated challenge instead of a blank grid.
   const prevLevelRef = useRef<number>(currentLevel);
+  const wasLevelModeRef = useRef<boolean>(levelMode);
   useEffect(() => {
     if (!levelMode) {
       prevLevelRef.current = currentLevel;
+      wasLevelModeRef.current = false;
       return;
     }
-    if (currentLevel > prevLevelRef.current) {
+    if (currentLevel > prevLevelRef.current || !wasLevelModeRef.current) {
       handlePlaygroundReset();
     }
     prevLevelRef.current = currentLevel;
+    wasLevelModeRef.current = true;
   }, [currentLevel, levelMode, handlePlaygroundReset]);
 
   // Entering Level Mode always lands on the Playground grid — Random/Comparison
