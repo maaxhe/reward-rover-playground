@@ -3673,6 +3673,15 @@ const handleActiveBonusClick = useCallback(() => {
     prevLevelRef.current = currentLevel;
   }, [currentLevel, levelMode, handlePlaygroundReset]);
 
+  // Entering Level Mode always lands on the Playground grid — Random/Comparison
+  // mode carry their own ungated hyperparameter sliders and would let a player
+  // skip level restrictions if the mode was left on one of them from Free Mode.
+  useEffect(() => {
+    if (levelMode && mode !== "playground") {
+      setMode("playground");
+    }
+  }, [levelMode, mode]);
+
   const handleReplayBest = useCallback(() => {
     if (mode === "playground" && playgroundState.episodeHistory.length > 0) {
       // Find the best successful episode
@@ -3995,6 +4004,11 @@ const handleActiveBonusClick = useCallback(() => {
   );
 
   const handleModeChange = (targetMode: Mode) => {
+    // Level Mode only ever shows the Playground grid — Random/Comparison
+    // mode expose their own hyperparameter sliders and grids that aren't
+    // gated by level progress, which would let players skip levels and
+    // see "locked" learning parameters. Free Mode is unrestricted.
+    if (levelMode && targetMode !== "playground") return;
     setMode(targetMode);
     setCelebration(null);
     // Reset celebration tracking when switching modes
@@ -5265,6 +5279,7 @@ const handleActiveBonusClick = useCallback(() => {
           mode={mode}
           onModeChange={handleModeChange}
           translate={translate}
+          levelMode={levelMode}
         />
 
         {mode === "comparison" && (
@@ -7218,12 +7233,15 @@ type ControlBarProps = {
   mode: Mode;
   onModeChange: (mode: Mode) => void;
   translate: (de: string, en: string) => string;
+  /** Level Mode only ever shows Playground — Random/Comparison would bypass level gating. */
+  levelMode?: boolean;
 };
 
 const ControlBar = ({
   mode,
   onModeChange,
   translate,
+  levelMode = false,
 }: ControlBarProps) => {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -7235,6 +7253,8 @@ const ControlBar = ({
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
+
+  if (levelMode) return null;
 
   return (
     <div className="rounded-lg border border-border/40 bg-card/60 p-4 backdrop-blur-sm text-foreground">
