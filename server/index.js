@@ -6,8 +6,6 @@ import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
-import { OAuth2Client } from "google-auth-library";
-import appleSignin from "apple-signin-auth";
 import { statements } from "./db.js";
 import { authenticate, getJwtSecret } from "./middleware/auth.js";
 import { isAdmin } from "./middleware/isAdmin.js";
@@ -20,9 +18,6 @@ const PORT = process.env.PORT || 3001;
 const API_PREFIX = "/api";
 const GLOBAL_ENV_KEY = "global_env";
 const JWT_SECRET = getJwtSecret();
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const APPLE_CLIENT_ID = process.env.APPLE_CLIENT_ID;
-const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 
 app.use(cors({ origin: process.env.CORS_ORIGIN || "*" }));
 app.use(express.json({ limit: "2mb" }));
@@ -35,39 +30,16 @@ const createToken = (user) => {
   );
 };
 
-const resolveOAuthUser = ({ provider, providerId, email }) => {
-  const existing = statements.getUserByProvider.get(provider, providerId);
-  if (existing) return existing;
-
-  if (email) {
-    const byEmail = statements.getUserByEmail.get(email);
-    if (byEmail) return byEmail;
-  }
-
-  const username = email || `${provider}_${providerId.slice(0, 8)}`;
-  const password_hash = crypto.randomBytes(32).toString("hex");
-  const info = statements.createOAuthUser.run({
-    username,
-    password_hash,
-    role: "user",
-    provider,
-    provider_id: providerId,
-    email: email ?? null,
-  });
-  return {
-    id: info.lastInsertRowid,
-    username,
-    role: "user",
-    provider,
-    provider_id: providerId,
-    email: email ?? null,
-  };
-};
-
 app.post(`${API_PREFIX}/auth/register`, async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) {
     return res.status(400).json({ error: "Username and password are required" });
+  }
+  if (typeof username !== "string" || username.trim().length < 3 || username.length > 32) {
+    return res.status(400).json({ error: "Username must be 3-32 characters" });
+  }
+  if (typeof password !== "string" || password.length < 6) {
+    return res.status(400).json({ error: "Password must be at least 6 characters" });
   }
 
   const existing = statements.getUserByUsername.get(username);
@@ -113,63 +85,6 @@ app.post(`${API_PREFIX}/auth/login`, async (req, res) => {
 
   const token = createToken(user);
   return res.json({ token, user: { id: user.id, username: user.username, role: user.role } });
-});
-
-app.post(`${API_PREFIX}/auth/oauth/google`, async (req, res) => {
-  if (!googleClient || !GOOGLE_CLIENT_ID) {
-    return res.status(500).json({ error: "Google auth not configured" });
-  }
-  const { idToken } = req.body || {};
-  if (!idToken) {
-    return res.status(400).json({ error: "idToken is required" });
-  }
-  try {
-    const ticket = await googleClient.verifyIdToken({
-      idToken,
-      audience: GOOGLE_CLIENT_ID,
-    });
-    const payload = ticket.getPayload();
-    if (!payload?.sub) {
-      return res.status(401).json({ error: "Invalid Google token" });
-    }
-    const user = resolveOAuthUser({
-      provider: "google",
-      providerId: payload.sub,
-      email: payload.email,
-    });
-    const token = createToken(user);
-    return res.json({ token, user: { id: user.id, username: user.username, role: user.role } });
-  } catch (error) {
-    return res.status(401).json({ error: "Invalid Google token" });
-  }
-});
-
-app.post(`${API_PREFIX}/auth/oauth/apple`, async (req, res) => {
-  if (!APPLE_CLIENT_ID) {
-    return res.status(500).json({ error: "Apple auth not configured" });
-  }
-  const { idToken } = req.body || {};
-  if (!idToken) {
-    return res.status(400).json({ error: "idToken is required" });
-  }
-  try {
-    const payload = await appleSignin.verifyIdToken(idToken, {
-      audience: APPLE_CLIENT_ID,
-      ignoreExpiration: false,
-    });
-    if (!payload?.sub) {
-      return res.status(401).json({ error: "Invalid Apple token" });
-    }
-    const user = resolveOAuthUser({
-      provider: "apple",
-      providerId: payload.sub,
-      email: payload.email,
-    });
-    const token = createToken(user);
-    return res.json({ token, user: { id: user.id, username: user.username, role: user.role } });
-  } catch (error) {
-    return res.status(401).json({ error: "Invalid Apple token" });
-  }
 });
 
 app.post(`${API_PREFIX}/save`, authenticate, (req, res) => {
@@ -239,6 +154,28 @@ app.get(`${API_PREFIX}/load`, authenticate, (req, res) => {
     createdAt: row.created_at,
   }));
   return res.json({ items: payload });
+});
+
+const readProgress = (userId) =>
+  statements.getProgress.get(userId) || { level: 1, episodes: 0, freemode_unlocked: 0 };
+
+app.get(`${API_PREFIX}/progress`, authenticate, (req, res) => {
+  return res.json(readProgress(req.user.id));
+});
+
+app.put(`${API_PREFIX}/progress`, authenticate, (req, res) => {
+  const { level, episodes, freemode_unlocked } = req.body || {};
+  const toInt = (v, min, max) => {
+    const n = Number.parseInt(v, 10);
+    return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : min;
+  };
+  statements.upsertProgress.run({
+    user_id: req.user.id,
+    level: toInt(level, 1, 11),
+    episodes: toInt(episodes, 0, 1_000_000),
+    freemode_unlocked: freemode_unlocked ? 1 : 0,
+  });
+  return res.json(readProgress(req.user.id));
 });
 
 app.get(`${API_PREFIX}/global-env`, (req, res) => {

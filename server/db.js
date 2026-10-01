@@ -74,6 +74,15 @@ db.exec(`
     FOREIGN KEY(challenge_id) REFERENCES DailyChallenges(id) ON DELETE CASCADE
   );
 
+  CREATE TABLE IF NOT EXISTS LevelProgress (
+    user_id INTEGER PRIMARY KEY,
+    level INTEGER NOT NULL DEFAULT 1,
+    episodes INTEGER NOT NULL DEFAULT 0,
+    freemode_unlocked INTEGER NOT NULL DEFAULT 0,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES Users(id) ON DELETE CASCADE
+  );
+
   CREATE INDEX IF NOT EXISTS idx_savedstates_user_id ON SavedStates(user_id);
   CREATE INDEX IF NOT EXISTS idx_templates_global ON EnvironmentTemplates(is_global);
   CREATE INDEX IF NOT EXISTS idx_daily_submissions_challenge_score
@@ -149,6 +158,19 @@ const statements = {
      VALUES (@key, @value, CURRENT_TIMESTAMP)
      ON CONFLICT(key)
      DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP`,
+  ),
+  getProgress: db.prepare(
+    "SELECT level, episodes, freemode_unlocked FROM LevelProgress WHERE user_id = ?",
+  ),
+  // Merge by taking the max of each field so a stale client can never lower progress.
+  upsertProgress: db.prepare(
+    `INSERT INTO LevelProgress (user_id, level, episodes, freemode_unlocked, updated_at)
+     VALUES (@user_id, @level, @episodes, @freemode_unlocked, CURRENT_TIMESTAMP)
+     ON CONFLICT(user_id) DO UPDATE SET
+       level = MAX(level, excluded.level),
+       episodes = MAX(episodes, excluded.episodes),
+       freemode_unlocked = MAX(freemode_unlocked, excluded.freemode_unlocked),
+       updated_at = CURRENT_TIMESTAMP`,
   ),
   getDailyByDate: db.prepare("SELECT id, date_key, seed, config_json FROM DailyChallenges WHERE date_key = ?"),
   getDailyById: db.prepare("SELECT id, date_key, seed, config_json FROM DailyChallenges WHERE id = ?"),

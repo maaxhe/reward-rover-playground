@@ -3,6 +3,13 @@ import type { ToWorkerMsg, FromWorkerMsg, SnapshotPayload } from "../../workers/
 import type { CSSProperties } from "react";
 import { useLevel } from "@/contexts/LevelContext";
 import { getUnlockedFeatures } from "@/lib/levelProgression";
+import { LEVEL_WORLDS } from "@/lib/levelWorlds";
+import { SIMULATION_SPEEDS, type SimulationSpeed } from "@/lib/rl/simulation";
+import { CELEBRATION_FACTS } from "@/lib/rl/celebrationFacts";
+import { PRESET_LEVELS, type GridConfig, type PresetLevel } from "@/lib/rl/presets";
+import { evaluateObjective } from "@/lib/levelObjectives";
+import { LevelObjectivePanel } from "./LevelObjectivePanel";
+import { ControlBar, PlaygroundControls, RandomControls, ScrollIndicator } from "./RLGameControls";
 import type { LevelNumber, UnlockedFeatures } from "@/lib/levelProgression";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -253,15 +260,6 @@ const BONUS_WEIGHTS: Record<BonusType, number> = {
   teleport: 2,
 };
 
-type SimulationSpeed = "1x" | "2x" | "5x" | "max";
-
-const SIMULATION_SPEEDS: Array<{ key: SimulationSpeed; label: string; delayMs: number }> = [
-  { key: "1x", label: "1x", delayMs: 220 },
-  { key: "2x", label: "2x", delayMs: 110 },
-  { key: "5x", label: "5x", delayMs: 44 },
-  { key: "max", label: "Max", delayMs: 20 },
-];
-
 const AUTH_TOKEN_KEY = "rr_token";
 const AUTH_USER_KEY = "rr_user";
 const safeLocalStorageGet = (key: string) => {
@@ -281,776 +279,10 @@ const safeSessionStorageGet = (key: string) => {
   }
 };
 
-// Preset-Level-Definitionen
-interface PresetLevel {
-  key: string;
-  name: Record<Language, string>;
-  description: Record<Language, string>;
-  size: number;
-  tiles: Array<{ x: number; y: number; type: TileType }>;
-  agent?: { x: number; y: number };
-  goal?: { x: number; y: number };
-}
-
-type GridConfig = Pick<PresetLevel, "size" | "tiles" | "agent" | "goal">;
-
 type AuthUser = {
   id: number;
   username: string;
   role: "admin" | "user";
-};
-
-const PRESET_LEVELS: PresetLevel[] = [
-  {
-    key: "trap",
-    name: { de: "🪤 Die Falle", en: "🪤 The Trap" },
-    description: {
-      de: "Belohnungen locken in eine Sackgasse - der Rover muss lernen zu widerstehen!",
-      en: "Rewards lure into a dead end - the rover must learn to resist!",
-    },
-    size: 6,
-    tiles: [
-      // Wände um Falle
-      { x: 3, y: 1, type: "obstacle" },
-      { x: 3, y: 2, type: "obstacle" },
-      { x: 3, y: 3, type: "obstacle" },
-      { x: 4, y: 3, type: "obstacle" },
-      // Belohnungen in der Falle
-      { x: 4, y: 1, type: "reward" },
-      { x: 4, y: 2, type: "reward" },
-      // Bestrafung am Ende
-      { x: 5, y: 2, type: "punishment" },
-      // Hindernisse zur Erschwerung
-      { x: 1, y: 1, type: "obstacle" },
-      { x: 1, y: 3, type: "obstacle" },
-    ],
-    agent: { x: 0, y: 4 },
-    goal: { x: 5, y: 4 },
-  },
-  {
-    key: "twopaths",
-    name: { de: "🚦 Zwei Wege", en: "🚦 Two Paths" },
-    description: {
-      de: "Welcher Weg ist besser? Der schnelle mit Risiko oder der sichere Umweg?",
-      en: "Which path is better? The fast risky one or the safe detour?",
-    },
-    size: 6,
-    tiles: [
-      // Mittlere Wand
-      { x: 2, y: 1, type: "obstacle" },
-      { x: 2, y: 2, type: "obstacle" },
-      { x: 2, y: 3, type: "obstacle" },
-      { x: 2, y: 4, type: "obstacle" },
-      // Oberer Weg (riskant)
-      { x: 3, y: 1, type: "reward" },
-      { x: 4, y: 1, type: "punishment" },
-      // Unterer Weg (sicher)
-      { x: 3, y: 4, type: "reward" },
-      { x: 4, y: 4, type: "reward" },
-    ],
-    agent: { x: 0, y: 2 },
-    goal: { x: 5, y: 2 },
-  },
-  {
-    key: "maze",
-    name: { de: "Mini Maze", en: "Mini Maze" },
-    description: {
-      de: "Verzweigtes Mini-Labyrinth mit riskanten Portalen – Umwege sind garantiert.",
-      en: "A branching mini maze with risky portals – detours guaranteed.",
-    },
-    size: 6,
-    tiles: [
-      // Blockierte Zugänge und Mittelpassagen
-      { x: 0, y: 0, type: "obstacle" },
-      { x: 1, y: 0, type: "obstacle" },
-      { x: 3, y: 0, type: "obstacle" },
-      { x: 3, y: 1, type: "obstacle" },
-      { x: 2, y: 2, type: "obstacle" },
-      { x: 3, y: 2, type: "obstacle" },
-      { x: 3, y: 3, type: "obstacle" },
-      { x: 4, y: 3, type: "obstacle" },
-      { x: 0, y: 4, type: "obstacle" },
-      { x: 4, y: 5, type: "obstacle" },
-      { x: 5, y: 5, type: "obstacle" },
-      // Gefährliche Portale
-      { x: 0, y: 2, type: "portal" },
-      { x: 1, y: 4, type: "portal" },
-      // Belohnungen entlang der Nebenpfade
-      { x: 2, y: 1, type: "reward" },
-      { x: 4, y: 4, type: "reward" },
-      // Strafen an Engstellen
-      { x: 4, y: 2, type: "punishment" },
-      { x: 2, y: 3, type: "punishment" },
-    ],
-    agent: { x: 0, y: 5 },
-    goal: { x: 5, y: 0 },
-  },
-  {
-    key: "gauntlet",
-    name: { de: "⚡ Spießrutenlauf", en: "⚡ The Gauntlet" },
-    description: {
-      de: "Viele Strafen versperren den direkten Weg - Vorsicht ist geboten!",
-      en: "Many penalties block the direct path - caution is required!",
-    },
-    size: 6,
-    tiles: [
-      // Strafen-Linie
-      { x: 2, y: 1, type: "punishment" },
-      { x: 2, y: 2, type: "punishment" },
-      { x: 2, y: 3, type: "punishment" },
-      { x: 2, y: 4, type: "punishment" },
-      // Belohnungen an den Rändern
-      { x: 1, y: 0, type: "reward" },
-      { x: 1, y: 5, type: "reward" },
-      { x: 3, y: 0, type: "reward" },
-      { x: 3, y: 5, type: "reward" },
-    ],
-    agent: { x: 0, y: 2 },
-    goal: { x: 5, y: 2 },
-  },
-  {
-    key: "bouncer",
-    name: { de: "🚪 Der Türsteher", en: "🚪 The Bouncer" },
-    description: {
-      de: "Das Ziel ist blockiert – nur durch eine Strafe führt der einzige Eingang.",
-      en: "The goal is blocked — only a penalty opens the only entrance.",
-    },
-    size: 6,
-    tiles: [
-      // Raum um das Ziel (eine Öffnung bleibt frei)
-      { x: 4, y: 5, type: "obstacle" },
-      { x: 3, y: 5, type: "obstacle" },
-      { x: 5, y: 3, type: "obstacle" },
-      // Türsteher-Strafe am Eingang
-      { x: 4, y: 4, type: "punishment" },
-    ],
-    agent: { x: 0, y: 0 },
-    goal: { x: 5, y: 5 },
-  },
-  {
-    key: "portalJump",
-    name: { de: "Portal Jump", en: "Portal Jump" },
-    description: {
-      de: "Eine Mauer trennt das Feld – nur ein Portal führt auf die andere Seite.",
-      en: "A solid wall splits the field — only a portal lets you pass.",
-    },
-    size: 6,
-    tiles: [
-      // Trennwand
-      ...Array.from({ length: 6 }, (_, y) => ({ x: 3, y, type: "obstacle" as const })),
-      // Portal-Paar
-      { x: 1, y: 2, type: "portal" },
-      { x: 4, y: 2, type: "portal" },
-    ],
-    agent: { x: 0, y: 0 },
-    goal: { x: 5, y: 5 },
-  },
-  {
-    key: "arena",
-    name: { de: "Arena", en: "Arena" },
-    description: {
-      de: "Portale, Strafkorridore und flankierende Belohnungen – hier entscheidet mutiges Timing den Sieg.",
-      en: "Portals, hazard lanes, and flank rewards crank up the duel – bold timing wins this arena.",
-    },
-    size: 9,
-    tiles: [
-      // Äußere Pfeiler
-      { x: 1, y: 1, type: "obstacle" },
-      { x: 7, y: 1, type: "obstacle" },
-      { x: 1, y: 7, type: "obstacle" },
-      { x: 7, y: 7, type: "obstacle" },
-      // Innere Ringmauern
-      { x: 3, y: 2, type: "obstacle" },
-      { x: 5, y: 2, type: "obstacle" },
-      { x: 2, y: 3, type: "obstacle" },
-      { x: 6, y: 3, type: "obstacle" },
-      { x: 2, y: 5, type: "obstacle" },
-      { x: 6, y: 5, type: "obstacle" },
-      { x: 3, y: 6, type: "obstacle" },
-      { x: 5, y: 6, type: "obstacle" },
-      // Riskanter Mittelgang
-      { x: 3, y: 4, type: "punishment" },
-      { x: 4, y: 3, type: "punishment" },
-      { x: 4, y: 4, type: "punishment" },
-      { x: 4, y: 5, type: "punishment" },
-      { x: 5, y: 4, type: "punishment" },
-      { x: 2, y: 4, type: "punishment" },
-      { x: 6, y: 4, type: "punishment" },
-      // Belohnungen an den Flanken
-      { x: 2, y: 2, type: "reward" },
-      { x: 6, y: 2, type: "reward" },
-      { x: 2, y: 6, type: "reward" },
-      { x: 6, y: 6, type: "reward" },
-      { x: 4, y: 1, type: "reward" },
-      { x: 4, y: 7, type: "reward" },
-      // Portalnetz für schnelle Seitenwechsel
-      { x: 1, y: 4, type: "portal" },
-      { x: 7, y: 4, type: "portal" },
-      { x: 3, y: 1, type: "portal" },
-      { x: 5, y: 7, type: "portal" },
-    ],
-    agent: { x: 4, y: 8 },
-    goal: { x: 4, y: 0 },
-  },
-  {
-    key: "riskyBridge",
-    name: { de: "🌉 Die unsichere Brücke", en: "The Risky Bridge" },
-    description: {
-      de: "Ein schmaler Steg führt direkt zum Ziel, doch Strafen flankieren ihn – der sichere Umweg ist viel länger.",
-      en: "A one-tile bridge heads straight for the goal, but penalties flank it – the safe detour is much longer.",
-    },
-    size: 9,
-    tiles: [
-      // Brücke und riskanter Fluss
-      ...Array.from({ length: 7 }, (_, x) => ({ x: x + 1, y: 2, type: "obstacle" as const })),
-      ...Array.from({ length: 7 }, (_, x) => ({ x: x + 1, y: 6, type: "obstacle" as const })),
-      ...Array.from({ length: 7 }, (_, x) => ({ x: x + 1, y: 3, type: "punishment" as const })),
-      ...Array.from({ length: 7 }, (_, x) => ({ x: x + 1, y: 5, type: "punishment" as const })),
-    ],
-    agent: { x: 0, y: 4 },
-    goal: { x: 8, y: 4 },
-  },
-  {
-    key: "trappedMaze",
-    name: { de: "🧩 Labyrinth mit Fallen", en: "🧩 Trapped Maze" },
-    description: {
-      de: "Belohnungen stecken in Sackgassen, doch das Ziel in der Mitte erfordert einen riskanten Schritt.",
-      en: "Rewards hide in dead ends, but the central goal demands a risky step.",
-    },
-    size: 9,
-    tiles: [
-      // Labyrinth-Wände
-      { x: 2, y: 0, type: "obstacle" },
-      { x: 2, y: 1, type: "obstacle" },
-      { x: 2, y: 2, type: "obstacle" },
-      { x: 2, y: 4, type: "obstacle" },
-      { x: 2, y: 5, type: "obstacle" },
-      { x: 2, y: 6, type: "obstacle" },
-      { x: 2, y: 8, type: "obstacle" },
-      { x: 6, y: 0, type: "obstacle" },
-      { x: 6, y: 1, type: "obstacle" },
-      { x: 6, y: 2, type: "obstacle" },
-      { x: 6, y: 3, type: "obstacle" },
-      { x: 6, y: 4, type: "obstacle" },
-      { x: 6, y: 6, type: "obstacle" },
-      { x: 6, y: 7, type: "obstacle" },
-      { x: 6, y: 8, type: "obstacle" },
-      { x: 3, y: 2, type: "obstacle" },
-      { x: 5, y: 2, type: "obstacle" },
-      { x: 3, y: 6, type: "obstacle" },
-      { x: 4, y: 6, type: "obstacle" },
-      // Zielkammer - nur von oben erreichbar
-      { x: 3, y: 4, type: "obstacle" },
-      { x: 5, y: 4, type: "obstacle" },
-      { x: 4, y: 5, type: "obstacle" },
-      // Belohnungen in Sackgassen
-      { x: 1, y: 1, type: "reward" },
-      { x: 1, y: 7, type: "reward" },
-      { x: 7, y: 1, type: "reward" },
-      { x: 7, y: 7, type: "reward" },
-      // Fallen auf dem Weg
-      { x: 4, y: 3, type: "punishment" },
-      { x: 7, y: 5, type: "punishment" },
-    ],
-    agent: { x: 0, y: 8 },
-    goal: { x: 4, y: 4 },
-  },
-  {
-    key: "twoRooms",
-    name: { de: "🚪 Zwei Räume", en: "🚪 Two Rooms" },
-    description: {
-      de: "Eine Wand teilt das Feld, nur ein Durchgang führt in den lohnenden zweiten Raum.",
-      en: "A wall splits the field; only one doorway leads to the rewarding second room.",
-    },
-    size: 9,
-    tiles: [
-      // Trennwand mit Durchgang
-      { x: 4, y: 0, type: "obstacle" },
-      { x: 4, y: 1, type: "obstacle" },
-      { x: 4, y: 2, type: "obstacle" },
-      { x: 4, y: 3, type: "obstacle" },
-      { x: 4, y: 5, type: "obstacle" },
-      { x: 4, y: 6, type: "obstacle" },
-      { x: 4, y: 7, type: "obstacle" },
-      { x: 4, y: 8, type: "obstacle" },
-      // Raum 1 - kleine Strafen
-      { x: 1, y: 2, type: "punishment" },
-      { x: 2, y: 5, type: "punishment" },
-      { x: 3, y: 7, type: "punishment" },
-      // Raum 2 - gemischte Anreize
-      { x: 6, y: 2, type: "reward" },
-      { x: 7, y: 5, type: "reward" },
-      { x: 5, y: 7, type: "reward" },
-      { x: 6, y: 6, type: "punishment" },
-      { x: 7, y: 3, type: "punishment" },
-    ],
-    agent: { x: 1, y: 7 },
-    goal: { x: 7, y: 1 },
-  },
-  {
-    key: "fourRooms",
-    name: { de: "🏠 Vier Räume", en: "Four Rooms" },
-    description: {
-      de: "Der Klassiker: Vier Räume mit engen Durchgängen zwischen den Quadranten.",
-      en: "A classic benchmark: four rooms with narrow doorways between quadrants.",
-    },
-    size: 9,
-    tiles: [
-      // Kreuzwände mit Durchgängen - Alle 4 Räume sind jetzt erreichbar
-      // Vertikale Wand (x=4) mit Öffnungen bei y=2 und y=6
-      ...Array.from({ length: 9 }, (_, y) => ({ x: 4, y, type: "obstacle" as const })).filter(({ y }) => y !== 2 && y !== 6),
-      // Horizontale Wand (y=4) mit Öffnungen bei x=2 und x=6
-      ...Array.from({ length: 9 }, (_, x) => ({ x, y: 4, type: "obstacle" as const })).filter(({ x }) => x !== 2 && x !== 6),
-    ],
-    agent: { x: 0, y: 0 },
-    goal: { x: 8, y: 8 },
-  },
-  {
-    key: "lavaBridge",
-    name: { de: "🌋 Die Lavabrücke", en: "Lava Bridge" },
-    description: {
-      de: "Ein schmaler Steg führt durch Lava – der sichere Umweg kostet wertvolle Schritte.",
-      en: "A narrow bridge crosses lava — the safe detour costs many steps.",
-    },
-    size: 9,
-    tiles: [
-      // Lavafelder
-      ...Array.from({ length: 7 }, (_, x) => ({ x: x + 1, y: 3, type: "punishment" as const })),
-      ...Array.from({ length: 7 }, (_, x) => ({ x: x + 1, y: 5, type: "punishment" as const })),
-      // Umwege mit Mauern in den Außenbereichen
-      { x: 1, y: 0, type: "obstacle" },
-      { x: 2, y: 0, type: "obstacle" },
-      { x: 6, y: 0, type: "obstacle" },
-      { x: 7, y: 0, type: "obstacle" },
-      { x: 1, y: 1, type: "obstacle" },
-      { x: 4, y: 1, type: "obstacle" },
-      { x: 7, y: 1, type: "obstacle" },
-      { x: 0, y: 2, type: "obstacle" },
-      { x: 3, y: 2, type: "obstacle" },
-      { x: 5, y: 2, type: "obstacle" },
-      { x: 8, y: 2, type: "obstacle" },
-      { x: 0, y: 6, type: "obstacle" },
-      { x: 3, y: 6, type: "obstacle" },
-      { x: 5, y: 6, type: "obstacle" },
-      { x: 8, y: 6, type: "obstacle" },
-      { x: 1, y: 7, type: "obstacle" },
-      { x: 4, y: 7, type: "obstacle" },
-      { x: 7, y: 7, type: "obstacle" },
-      { x: 2, y: 8, type: "obstacle" },
-      { x: 6, y: 8, type: "obstacle" },
-    ],
-    agent: { x: 0, y: 4 },
-    goal: { x: 8, y: 4 },
-  },
-  {
-    key: "islandHopping",
-    name: { de: "🏝️ Insel-Hopping", en: "Island Hopping" },
-    description: {
-      de: "Drei Inseln sind nur über Portale verbunden – ohne Sprünge bleibt der Rover stecken.",
-      en: "Three islands are linked only by portals — without jumps the rover is stuck.",
-    },
-    size: 9,
-    tiles: [
-      // Inseln freilassen, alles dazwischen blockieren
-      ...Array.from({ length: 9 }, (_, y) =>
-        Array.from({ length: 9 }, (_, x) => ({ x, y, type: "obstacle" as const })),
-      )
-        .flat()
-        .filter(
-          ({ x, y }) =>
-            !(
-              (x <= 2 && y <= 2) ||
-              (x >= 3 && x <= 5 && y >= 3 && y <= 5) ||
-              (x >= 6 && y >= 6)
-            ),
-        ),
-      // Portal-Paar A (Insel 1 -> Insel 2)
-      { x: 2, y: 1, type: "portal" },
-      { x: 3, y: 3, type: "portal" },
-      // Portal-Paar B (Insel 2 -> Insel 3)
-      { x: 5, y: 5, type: "portal" },
-      { x: 7, y: 7, type: "portal" },
-      // Belohnung in Insel 2
-      { x: 4, y: 4, type: "reward" },
-    ],
-    agent: { x: 0, y: 0 },
-    goal: { x: 8, y: 8 },
-  },
-  {
-    key: "labyrinthXL",
-    name: { de: "🧭 Großes Labyrinth", en: "🧭 Grand Maze" },
-    description: {
-      de: "Komplexes 14×14-Labyrinth mit verschlungenen Wegen, Portalen und Abzweigungen – du brauchst Ausdauer!",
-      en: "Complex 14×14 labyrinth packed with twists, portals, and branches – stamina required!",
-    },
-    size: 14,
-    tiles: [
-      // Außenring
-      ...Array.from({ length: 14 }, (_, x) => ({ x, y: 0, type: "obstacle" as const })),
-      ...Array.from({ length: 14 }, (_, x) => ({ x, y: 13, type: "obstacle" as const })),
-      ...Array.from({ length: 12 }, (_, y) => ({ x: 0, y: y + 1, type: "obstacle" as const })),
-      ...Array.from({ length: 12 }, (_, y) => ({ x: 13, y: y + 1, type: "obstacle" as const })),
-      // Verdichtete Kernmauern formen verschlungene Wege
-      { x: 7, y: 1, type: "obstacle" },
-      { x: 8, y: 1, type: "obstacle" },
-      { x: 11, y: 1, type: "obstacle" },
-      { x: 12, y: 1, type: "obstacle" },
-      { x: 1, y: 2, type: "obstacle" },
-      { x: 2, y: 2, type: "obstacle" },
-      { x: 3, y: 2, type: "obstacle" },
-      { x: 7, y: 2, type: "obstacle" },
-      { x: 10, y: 2, type: "obstacle" },
-      { x: 11, y: 2, type: "obstacle" },
-      { x: 12, y: 2, type: "obstacle" },
-      { x: 1, y: 3, type: "obstacle" },
-      { x: 5, y: 3, type: "obstacle" },
-      { x: 9, y: 3, type: "obstacle" },
-      { x: 10, y: 3, type: "obstacle" },
-      { x: 11, y: 3, type: "obstacle" },
-      { x: 12, y: 3, type: "obstacle" },
-      { x: 3, y: 4, type: "obstacle" },
-      { x: 4, y: 4, type: "obstacle" },
-      { x: 10, y: 4, type: "obstacle" },
-      { x: 11, y: 4, type: "obstacle" },
-      { x: 12, y: 4, type: "obstacle" },
-      { x: 11, y: 5, type: "obstacle" },
-      { x: 12, y: 5, type: "obstacle" },
-      { x: 1, y: 6, type: "obstacle" },
-      { x: 4, y: 6, type: "obstacle" },
-      { x: 5, y: 6, type: "obstacle" },
-      { x: 6, y: 6, type: "obstacle" },
-      { x: 7, y: 6, type: "obstacle" },
-      { x: 11, y: 6, type: "obstacle" },
-      { x: 12, y: 6, type: "obstacle" },
-      { x: 1, y: 7, type: "obstacle" },
-      { x: 8, y: 7, type: "obstacle" },
-      { x: 12, y: 7, type: "obstacle" },
-      { x: 1, y: 8, type: "obstacle" },
-      { x: 8, y: 8, type: "obstacle" },
-      { x: 12, y: 8, type: "obstacle" },
-      { x: 1, y: 9, type: "obstacle" },
-      { x: 6, y: 9, type: "obstacle" },
-      { x: 9, y: 9, type: "obstacle" },
-      { x: 1, y: 10, type: "obstacle" },
-      { x: 2, y: 10, type: "obstacle" },
-      { x: 1, y: 11, type: "obstacle" },
-      { x: 2, y: 11, type: "obstacle" },
-      { x: 7, y: 11, type: "obstacle" },
-      { x: 8, y: 11, type: "obstacle" },
-      { x: 9, y: 11, type: "obstacle" },
-      { x: 1, y: 12, type: "obstacle" },
-      { x: 2, y: 12, type: "obstacle" },
-      // Belohnungen auf Nebenpfaden
-      { x: 9, y: 1, type: "reward" },
-      { x: 5, y: 2, type: "reward" },
-      { x: 2, y: 8, type: "reward" },
-      { x: 7, y: 9, type: "reward" },
-      { x: 11, y: 10, type: "reward" },
-      // Strafen bewachen Engstellen
-      { x: 10, y: 1, type: "punishment" },
-      { x: 6, y: 3, type: "punishment" },
-      { x: 1, y: 4, type: "punishment" },
-      { x: 9, y: 8, type: "punishment" },
-      { x: 4, y: 9, type: "punishment" },
-      { x: 5, y: 11, type: "punishment" },
-      { x: 10, y: 11, type: "punishment" },
-      // Neu positionierte Portale
-      { x: 9, y: 4, type: "portal" },
-      { x: 3, y: 9, type: "portal" },
-    ],
-    agent: { x: 1, y: 1 },
-    goal: { x: 12, y: 12 },
-  },
-  {
-    key: "spiral",
-    name: { de: "Spirale", en: "Spiral" },
-    description: {
-      de: "Eine gefährliche Spirale mit Portalen im Zentrum – nur die klügsten Rover finden den Weg!",
-      en: "A dangerous spiral with portals at the center – only the smartest rovers find the way!",
-    },
-    size: 9,
-    tiles: [
-      // Outer ring (gap at top left for entry at 1,2)
-      { x: 1, y: 1, type: "obstacle" },
-      // Gap at x: 2, y: 1 for entry
-      { x: 3, y: 1, type: "obstacle" },
-      { x: 4, y: 1, type: "obstacle" },
-      { x: 5, y: 1, type: "obstacle" },
-      { x: 6, y: 1, type: "obstacle" },
-      { x: 7, y: 1, type: "obstacle" },
-      { x: 7, y: 2, type: "obstacle" },
-      { x: 7, y: 3, type: "obstacle" },
-      { x: 7, y: 4, type: "obstacle" },
-      { x: 7, y: 5, type: "obstacle" },
-      { x: 7, y: 6, type: "obstacle" },
-      { x: 7, y: 7, type: "obstacle" },
-      { x: 6, y: 7, type: "obstacle" },
-      { x: 5, y: 7, type: "obstacle" },
-      { x: 4, y: 7, type: "obstacle" },
-      { x: 3, y: 7, type: "obstacle" },
-      { x: 2, y: 7, type: "obstacle" },
-      { x: 1, y: 7, type: "obstacle" },
-      { x: 1, y: 6, type: "obstacle" },
-      { x: 1, y: 5, type: "obstacle" },
-      { x: 1, y: 4, type: "obstacle" },
-      { x: 1, y: 3, type: "obstacle" },
-      { x: 1, y: 2, type: "obstacle" },
-
-      // Second ring - creates spiral (accessible center)
-      { x: 3, y: 3, type: "obstacle" },
-      { x: 4, y: 3, type: "obstacle" },
-      { x: 5, y: 3, type: "obstacle" },
-      { x: 5, y: 4, type: "obstacle" },
-      { x: 5, y: 5, type: "obstacle" },
-      // Gap at (4,5) to access center portal
-      { x: 3, y: 5, type: "obstacle" },
-      { x: 3, y: 4, type: "obstacle" },
-
-      // Rewards along the spiral path
-      { x: 2, y: 1, type: "reward" },  // Entry reward top left
-      { x: 2, y: 4, type: "reward" },  // Along the path
-      { x: 4, y: 2, type: "reward" },  // Inner area
-      { x: 6, y: 4, type: "reward" },  // Near center
-
-      // Portals - center portal now accessible
-      { x: 4, y: 4, type: "portal" },  // Now accessible from (4,5) gap
-      { x: 6, y: 6, type: "portal" },
-
-      // Punishments for risk
-      { x: 2, y: 2, type: "punishment" },
-      { x: 6, y: 2, type: "punishment" },
-      { x: 6, y: 5, type: "punishment" },
-    ],
-    agent: { x: 0, y: 0 },
-    goal: { x: 8, y: 8 },
-  },
-  {
-    key: "crossroads",
-    name: { de: "⚡ Kreuzung", en: "⚡ Crossroads" },
-    description: {
-      de: "Vier Wege, eine Entscheidung – welcher Pfad führt zum Sieg?",
-      en: "Four paths, one decision – which path leads to victory?",
-    },
-    size: 11,
-    tiles: [
-      // Center cross structure - The Hub
-      { x: 5, y: 3, type: "obstacle" },
-      { x: 5, y: 4, type: "obstacle" },
-      { x: 5, y: 6, type: "obstacle" },
-      { x: 5, y: 7, type: "obstacle" },
-      { x: 3, y: 5, type: "obstacle" },
-      { x: 4, y: 5, type: "obstacle" },
-      { x: 6, y: 5, type: "obstacle" },
-      { x: 7, y: 5, type: "obstacle" },
-      { x: 5, y: 5, type: "portal" },  // Center portal!
-
-      // North path - The Gauntlet (high risk, high reward)
-      { x: 5, y: 0, type: "reward" },
-      { x: 5, y: 1, type: "portal" },
-      { x: 5, y: 2, type: "punishment" },
-      { x: 4, y: 0, type: "punishment" },
-      { x: 6, y: 0, type: "punishment" },
-      { x: 4, y: 1, type: "obstacle" },
-      { x: 6, y: 1, type: "obstacle" },
-      { x: 4, y: 2, type: "reward" },
-      { x: 6, y: 2, type: "reward" },
-
-      // South path - The Maze (safe but complex)
-      { x: 5, y: 8, type: "reward" },
-      { x: 5, y: 9, type: "reward" },
-      { x: 5, y: 10, type: "portal" },
-      { x: 4, y: 8, type: "obstacle" },
-      { x: 6, y: 8, type: "obstacle" },
-      { x: 4, y: 9, type: "reward" },
-      { x: 6, y: 9, type: "reward" },
-      { x: 3, y: 9, type: "obstacle" },
-      { x: 7, y: 9, type: "obstacle" },
-
-      // East path - Portal Highway (shortcuts everywhere)
-      { x: 8, y: 5, type: "portal" },
-      { x: 9, y: 5, type: "portal" },
-      { x: 10, y: 5, type: "reward" },
-      { x: 8, y: 4, type: "reward" },
-      { x: 8, y: 6, type: "reward" },
-      { x: 9, y: 4, type: "obstacle" },
-      { x: 9, y: 6, type: "obstacle" },
-      { x: 10, y: 4, type: "punishment" },
-      { x: 10, y: 6, type: "punishment" },
-
-      // West path - The Trap (looks easy, but punishing)
-      { x: 2, y: 5, type: "punishment" },
-      { x: 1, y: 5, type: "punishment" },
-      { x: 0, y: 5, type: "portal" },
-      { x: 1, y: 4, type: "obstacle" },
-      { x: 1, y: 6, type: "obstacle" },
-      { x: 2, y: 4, type: "punishment" },
-      { x: 2, y: 6, type: "punishment" },
-      { x: 0, y: 4, type: "reward" },
-      { x: 0, y: 6, type: "reward" },
-
-      // Corner power-ups (high value targets)
-      { x: 1, y: 1, type: "reward" },
-      { x: 9, y: 1, type: "reward" },
-      { x: 1, y: 9, type: "reward" },
-      { x: 9, y: 9, type: "reward" },
-
-      // Diagonal obstacles (create strategic choices)
-      { x: 3, y: 3, type: "obstacle" },
-      { x: 7, y: 3, type: "obstacle" },
-      { x: 3, y: 7, type: "obstacle" },
-      { x: 7, y: 7, type: "obstacle" },
-      { x: 2, y: 2, type: "portal" },
-      { x: 8, y: 2, type: "portal" },
-      { x: 2, y: 8, type: "punishment" },
-      { x: 8, y: 8, type: "punishment" },
-    ],
-    agent: { x: 0, y: 0 },
-    goal: { x: 10, y: 10 },
-  },
-];
-
-// One small hand-built world per Level Mode stage (1–10), so advancing a
-// level lands the rover in a fresh scenario instead of a blank grid. Each
-// world foreshadows what the level teaches — e.g. rewards/punishments/walls
-// appear on the board even before the matching placement tool unlocks, so
-// there's always something to learn from.
-const LEVEL_WORLDS: Record<LevelNumber, GridConfig> = {
-  1: {
-    size: 5,
-    tiles: [],
-    agent: { x: 0, y: 4 },
-    goal: { x: 4, y: 0 },
-  },
-  2: {
-    size: 5,
-    tiles: [
-      { x: 2, y: 1, type: "obstacle" },
-      { x: 2, y: 3, type: "obstacle" },
-    ],
-    agent: { x: 0, y: 4 },
-    goal: { x: 4, y: 0 },
-  },
-  3: {
-    size: 6,
-    tiles: [
-      { x: 3, y: 4, type: "reward" },
-      { x: 1, y: 1, type: "obstacle" },
-      { x: 4, y: 2, type: "obstacle" },
-    ],
-    agent: { x: 0, y: 5 },
-    goal: { x: 5, y: 0 },
-  },
-  4: {
-    size: 6,
-    tiles: [
-      { x: 2, y: 4, type: "reward" },
-      { x: 4, y: 1, type: "reward" },
-      { x: 1, y: 2, type: "obstacle" },
-    ],
-    agent: { x: 0, y: 5 },
-    goal: { x: 5, y: 0 },
-  },
-  5: {
-    size: 6,
-    tiles: [
-      { x: 2, y: 4, type: "reward" },
-      { x: 4, y: 1, type: "reward" },
-      { x: 3, y: 2, type: "punishment" },
-      { x: 1, y: 4, type: "punishment" },
-    ],
-    agent: { x: 0, y: 5 },
-    goal: { x: 5, y: 0 },
-  },
-  6: {
-    size: 7,
-    tiles: [
-      { x: 2, y: 1, type: "obstacle" },
-      { x: 2, y: 2, type: "obstacle" },
-      { x: 2, y: 3, type: "obstacle" },
-      { x: 4, y: 3, type: "obstacle" },
-      { x: 4, y: 4, type: "obstacle" },
-      { x: 4, y: 5, type: "obstacle" },
-      { x: 3, y: 5, type: "reward" },
-      { x: 5, y: 1, type: "punishment" },
-    ],
-    agent: { x: 0, y: 6 },
-    goal: { x: 6, y: 0 },
-  },
-  7: {
-    size: 8,
-    tiles: [
-      { x: 2, y: 1, type: "obstacle" },
-      { x: 2, y: 2, type: "obstacle" },
-      { x: 2, y: 3, type: "obstacle" },
-      { x: 5, y: 4, type: "obstacle" },
-      { x: 5, y: 5, type: "obstacle" },
-      { x: 5, y: 6, type: "obstacle" },
-      { x: 4, y: 2, type: "reward" },
-      { x: 1, y: 6, type: "reward" },
-      { x: 6, y: 2, type: "punishment" },
-    ],
-    agent: { x: 0, y: 7 },
-    goal: { x: 7, y: 0 },
-  },
-  8: {
-    size: 8,
-    tiles: [
-      { x: 3, y: 0, type: "obstacle" },
-      { x: 3, y: 1, type: "obstacle" },
-      { x: 3, y: 2, type: "obstacle" },
-      { x: 3, y: 3, type: "obstacle" },
-      { x: 3, y: 5, type: "obstacle" },
-      { x: 3, y: 6, type: "obstacle" },
-      { x: 3, y: 7, type: "obstacle" },
-      { x: 1, y: 4, type: "portal" },
-      { x: 5, y: 4, type: "portal" },
-      { x: 6, y: 1, type: "reward" },
-      { x: 6, y: 6, type: "punishment" },
-    ],
-    agent: { x: 0, y: 4 },
-    goal: { x: 7, y: 0 },
-  },
-  9: {
-    size: 9,
-    tiles: [
-      { x: 2, y: 2, type: "obstacle" },
-      { x: 2, y: 3, type: "obstacle" },
-      { x: 2, y: 4, type: "obstacle" },
-      { x: 6, y: 4, type: "obstacle" },
-      { x: 6, y: 5, type: "obstacle" },
-      { x: 6, y: 6, type: "obstacle" },
-      { x: 1, y: 6, type: "portal" },
-      { x: 7, y: 2, type: "portal" },
-      { x: 4, y: 1, type: "reward" },
-      { x: 4, y: 7, type: "reward" },
-      { x: 5, y: 2, type: "punishment" },
-      { x: 3, y: 6, type: "punishment" },
-    ],
-    agent: { x: 0, y: 8 },
-    goal: { x: 8, y: 0 },
-  },
-  10: {
-    size: 10,
-    tiles: [
-      { x: 3, y: 1, type: "obstacle" },
-      { x: 3, y: 2, type: "obstacle" },
-      { x: 3, y: 3, type: "obstacle" },
-      { x: 3, y: 4, type: "obstacle" },
-      { x: 6, y: 5, type: "obstacle" },
-      { x: 6, y: 6, type: "obstacle" },
-      { x: 6, y: 7, type: "obstacle" },
-      { x: 6, y: 8, type: "obstacle" },
-      { x: 1, y: 7, type: "portal" },
-      { x: 8, y: 2, type: "portal" },
-      { x: 5, y: 1, type: "reward" },
-      { x: 1, y: 3, type: "reward" },
-      { x: 8, y: 8, type: "reward" },
-      { x: 4, y: 6, type: "punishment" },
-      { x: 7, y: 4, type: "punishment" },
-    ],
-    agent: { x: 0, y: 9 },
-    goal: { x: 9, y: 0 },
-  },
 };
 
 const pickWeightedBonus = (): BonusType => {
@@ -1184,7 +416,7 @@ const SPEEDRUN_STAGES: SpeedrunStageConfig[] = [
 
 type TileState = LibTileState;
 
-interface PlaygroundState {
+export interface PlaygroundState {
   agent: Position;
   goal: Position;
   grid: TileState[][];
@@ -1210,7 +442,7 @@ interface EpisodeStats {
   timeUsed?: number;
 }
 
-interface RandomModeState {
+export interface RandomModeState {
   agent: Position;
   goals: Position[];
   grid: TileState[][];
@@ -2181,7 +1413,7 @@ const buildSpeedrunState = (
   };
 };
 
-type PlaceableTile = "obstacle" | "reward" | "punishment" | "portal";
+export type PlaceableTile = "obstacle" | "reward" | "punishment" | "portal";
 
 type ChallengeTile = "reward" | "obstacle" | "punishment" | "portal";
 
@@ -2220,217 +1452,16 @@ const BONUS_DETAILS: Record<BonusType, { icon: string; label: Record<Language, s
   },
 };
 
-const CELEBRATION_FACTS: Array<Record<Language, string>> = [
-    {
-      de: "Wusstest du? Q-Learning gehört zur Familie der Temporal-Difference-Methoden.",
-      en: "Did you know? Q-learning is part of the temporal-difference family of methods.",
-    },
-    {
-      de: "RL treibt Game-Agents an, die in modernen Videospielen schwierige Bosskämpfe meistern.",
-      en: "RL powers game agents that learn to defeat tough bosses in modern video games.",
-    },
-    {
-      de: "Selbstfahrende Autos setzen RL ein, um sichere und effiziente Routen zu planen.",
-      en: "Self-driving cars rely on RL to plan safe and efficient routes.",
-    },
-    {
-      de: "DeepMinds AlphaGo nutzte RL, um menschliche Go-Weltmeister zu schlagen.",
-      en: "DeepMind's AlphaGo used RL to defeat world champion Go players.",
-    },
-    {
-      de: "Empfehlungssysteme lernen per RL, welche Produkte du als Nächstes spannend findest.",
-      en: "Recommendation systems use RL to decide which product you might like next.",
-    },
-    {
-      de: "RL hilft dabei, Stromnetze im Gleichgewicht zu halten – in Echtzeit.",
-      en: "Power-grid controllers use RL to keep supply and demand balanced in real time.",
-    },
-    {
-      de: "Roboterarme trainieren mit RL, um Objekte präzise zu greifen – auch bei neuen Formen.",
-      en: "Industrial robot arms train with RL to grasp unfamiliar objects precisely.",
-    },
-    {
-      de: "In der Medizin unterstützt RL adaptive Dosierungspläne für Behandlungen.",
-      en: "Healthcare researchers explore RL to adapt treatment dosing plans.",
-    },
-    {
-      de: "RL-Agenten testen in der Finanzwelt Handelsstrategien unter simulierten Märkten.",
-      en: "Finance teams experiment with RL agents in simulated markets to test strategies.",
-    },
-    {
-      de: "Hyperparameter-Tuning für andere KI-Modelle kann durch RL automatisiert werden.",
-      en: "RL can automate hyperparameter tuning for other AI models.",
-    },
-    {
-      de: "Nutze den Step-Button, um jede Entscheidungsfolge des Rovers nachzuvollziehen.",
-      en: "Use the step button to replay every decision the rover makes.",
-    },
-    {
-      de: "Tipp: Drücke die Pfeiltasten (↑↓←→), um die Bewegungsrichtung des Rovers zu beeinflussen!",
-      en: "Tip: Press arrow keys (↑↓←→) to influence the rover's movement direction!",
-    },
-    {
-      de: "Shortcut: Mit der Leertaste kannst du das Training pausieren und fortsetzen.",
-      en: "Shortcut: Press Space to pause and resume training.",
-    },
-    {
-      de: "Tipp: Drücke 'R', um das Spielfeld zurückzusetzen und von vorne zu beginnen.",
-      en: "Tip: Press 'R' to reset the playfield and start fresh.",
-    },
-    {
-      de: "Aktiviere die Policy-Pfeile in den Einstellungen, um zu sehen, welche Richtung der Rover bevorzugt!",
-      en: "Enable policy arrows in settings to see which direction the rover prefers!",
-    },
-    {
-      de: "Die Q-Werte zeigen, wie wertvoll der Rover jedes Feld einschätzt – höher ist besser!",
-      en: "Q-values show how valuable the rover considers each tile – higher is better!",
-    },
-    {
-      de: "Niedrige Exploration Rate = mehr Nutzung der gelernten Strategie (Exploitation).",
-      en: "Low exploration rate = more use of learned strategy (exploitation).",
-    },
-    {
-      de: "Hohe Exploration Rate = mehr zufällige Entscheidungen (Exploration neuer Wege).",
-      en: "High exploration rate = more random decisions (exploring new paths).",
-    },
-    {
-      de: "Alpha (Lernrate) bestimmt, wie stark neue Erfahrungen alte Werte überschreiben.",
-      en: "Alpha (learning rate) controls how much new experiences override old values.",
-    },
-    {
-      de: "Gamma (Discount-Faktor) bestimmt, wie wichtig zukünftige Belohnungen sind.",
-      en: "Gamma (discount factor) controls how much future rewards matter.",
-    },
-    {
-      de: "Tipp: Die Heatmap zeigt dir, welche Felder der Rover am häufigsten besucht hat!",
-      en: "Tip: The heatmap shows which tiles the rover visited most often!",
-    },
-    {
-      de: "Nutze die Undo-Funktion (Strg+Z), um Änderungen am Spielfeld rückgängig zu machen!",
-      en: "Use the undo function (Ctrl+Z) to revert changes to the playfield!",
-    },
-    {
-      de: "Probiere die Preset-Levels aus – sie bieten spannende vorgefertigte Herausforderungen!",
-      en: "Try the preset levels – they offer exciting pre-made challenges!",
-    },
-    {
-      de: "Im Vergleichsmodus kannst du zwei verschiedene Lernstrategien gegeneinander antreten lassen!",
-      en: "In comparison mode, you can pit two different learning strategies against each other!",
-    },
-    {
-      de: "Portale teleportieren den Rover zu einem zufälligen freien Feld – nutze sie strategisch!",
-      en: "Portals teleport the rover to a random free tile – use them strategically!",
-    },
-    {
-      de: "Die Belohnung für das Erreichen des Ziels beträgt standardmäßig 100 Punkte!",
-      en: "Reaching the goal grants a default reward of 100 points!",
-    },
-    {
-      de: "Jeder Schritt kostet den Rover -1 Punkt – kurze Wege werden dadurch belohnt!",
-      en: "Each step costs the rover -1 point – shorter paths are rewarded!",
-    },
-    {
-      de: "Tipp: Beobachte die Bestenliste, um deine besten Episoden nachzuverfolgen!",
-      en: "Tip: Watch the leaderboard to track your best episodes!",
-    },
-    {
-      de: "Der Rover lernt durch Trial-and-Error – genau wie wir Menschen!",
-      en: "The rover learns through trial-and-error – just like humans do!",
-    },
-    {
-      de: "Nach mehreren Episoden erkennt der Rover Muster und findet effizientere Routen!",
-      en: "After several episodes, the rover recognizes patterns and finds more efficient routes!",
-    },
-    {
-      de: "Tipp: Ändere die Feldgröße in den Einstellungen für neue Herausforderungen!",
-      en: "Tip: Change the field size in settings for new challenges!",
-    },
-    {
-      de: "Im Playground-Modus kannst du eigene Level mit Hindernissen und Belohnungen gestalten!",
-      en: "In playground mode, you can design custom levels with obstacles and rewards!",
-    },
-    {
-      de: "Speedrun-Modus: Schaffe es zum Ziel, bevor die Zeit abläuft!",
-      en: "Speedrun mode: Reach the goal before time runs out!",
-    },
-    {
-      de: "Die Verlaufsdiagramme zeigen dir, wie sich die Performance über Zeit verbessert!",
-      en: "Progress charts show how performance improves over time!",
-    },
-    {
-      de: "Tipp: Kombiniere Heatmap und Policy-Pfeile für maximalen Einblick ins Lernen!",
-      en: "Tip: Combine heatmap and policy arrows for maximum learning insight!",
-    },
-    {
-      de: "Challenge-Modus im Zufallsmodus: Gestalte das Level während der Rover lernt!",
-      en: "Challenge mode in random mode: Design the level while the rover learns!",
-    },
-    {
-      de: "Wusstest du? Der Rover speichert keine Karte, sondern nur Werte pro Feld!",
-      en: "Did you know? The rover stores no map, just values per tile!",
-    },
-    {
-      de: "Reinforcement Learning ist einer der drei Hauptzweige des Machine Learning!",
-      en: "Reinforcement learning is one of the three main branches of machine learning!",
-    },
-    {
-      de: "Die Q-Tabelle wird mit jedem Schritt aktualisiert – Live-Learning in Aktion!",
-      en: "The Q-table updates with each step – live learning in action!",
-    },
-    {
-      de: "Tipp: Experimentiere mit verschiedenen Alpha- und Gamma-Werten für unterschiedliche Lernstile!",
-      en: "Tip: Experiment with different alpha and gamma values for different learning styles!",
-    },
-    {
-      de: "Der Rover wählt manchmal bewusst suboptimale Wege, um neue Strategien zu entdecken!",
-      en: "The rover sometimes deliberately chooses suboptimal paths to discover new strategies!",
-    },
-    {
-      de: "RL wird auch in der Robotik verwendet, um komplexe Bewegungsabläufe zu lernen!",
-      en: "RL is also used in robotics to learn complex movement sequences!",
-    },
-    {
-      de: "Die Tutorial-Funktion erklärt dir alle Grundlagen – perfekt für Einsteiger!",
-      en: "The tutorial feature explains all the basics – perfect for beginners!",
-    },
-    {
-      de: "Tipp: Schau dir die RL-Formel in den Einstellungen an, um die Mathematik zu verstehen!",
-      en: "Tip: Check out the RL formula in settings to understand the math!",
-    },
-    {
-      de: "Die Legende zeigt dir alle Feldtypen und ihre Bedeutung – sehr hilfreich!",
-      en: "The legend shows all tile types and their meaning – very helpful!",
-    },
-    {
-      de: "Mit der Maus kannst du im Playground-Modus mehrere Felder hintereinander platzieren!",
-      en: "Use the mouse to place multiple tiles in a row in playground mode!",
-    },
-    {
-      de: "Der Dark-Mode schont deine Augen bei langen Trainings-Sessions!",
-      en: "Dark mode is easier on your eyes during long training sessions!",
-    },
-    {
-      de: "Tipp: Wechsle zwischen Deutsch und Englisch, um die App in deiner Lieblingssprache zu nutzen!",
-      en: "Tip: Switch between German and English to use the app in your preferred language!",
-    },
-    {
-      de: "Die Statistiken zeigen dir Durchschnittswerte über alle Episoden hinweg!",
-      en: "Statistics show you average values across all episodes!",
-    },
-    {
-      de: "Je mehr Episoden der Rover absolviert, desto besser wird seine Strategie!",
-      en: "The more episodes the rover completes, the better its strategy becomes!",
-    },
-  ];
-
 interface RLGameProps {
   /** Learning parameters are owned by the surrounding layout (left sidebar) and passed in. */
   explorationRate?: number;
   alpha?: number;
   gamma?: number;
+  /** Reports the login token (or null after logout) so the layout can sync level progress to the account. */
+  onAuthTokenChange?: (token: string | null) => void;
 }
 
-export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85 }: RLGameProps = {}) {
+export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAuthTokenChange }: RLGameProps = {}) {
   const { levelMode, currentLevel, onLevelSolved } = useLevel();
   const unlockedFeatures = levelMode ? getUnlockedFeatures(currentLevel as LevelNumber) : null;
 
@@ -2463,7 +1494,9 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85 }: RLG
   const [showLeaderboard, setShowLeaderboard] = useState(true);
   const [showStatistics, setShowStatistics] = useState(true);
   const [showActions, setShowActions] = useState(false);
-  const [consumeRewards, setConsumeRewards] = useState(false);
+  const [consumeRewardsSetting, setConsumeRewards] = useState(false);
+  // Level Mode always consumes tiles: otherwise the rover can farm a reward by stepping on and off it forever and never finishes the episode.
+  const consumeRewards = levelMode || consumeRewardsSetting;
   const [isAutoRestartEnabled, setIsAutoRestartEnabled] = useState(false);
   const [showRewardHistory, setShowRewardHistory] = useState(true);
   const [showLegend, setShowLegend] = useState(false);
@@ -2536,24 +1569,22 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85 }: RLG
   });
   const [hasLoadedGlobalEnv, setHasLoadedGlobalEnv] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
-  const [googleReady, setGoogleReady] = useState(false);
-  const [googleRendered, setGoogleRendered] = useState(false);
-  const [googleRenderFailed, setGoogleRenderFailed] = useState(false);
-  const googleButtonRef = useRef<HTMLDivElement | null>(null);
   const [environmentName, setEnvironmentName] = useState("");
   const [saveEnvError, setSaveEnvError] = useState<string | null>(null);
   const [isSavingEnv, setIsSavingEnv] = useState(false);
   const [isLoadingEnvs, setIsLoadingEnvs] = useState(false);
   const [savedEnvironments, setSavedEnvironments] = useState<
-    Array<{ id: number; name: string; gridConfig: GridConfig; progressData: any; createdAt: string }>
+    Array<{ id: number; name: string; gridConfig: GridConfig; progressData: unknown; createdAt: string }>
   >([]);
   const simulationDelayMs =
     SIMULATION_SPEEDS.find((speed) => speed.key === simulationSpeed)?.delayMs ?? SIMULATION_SPEEDS[0].delayMs;
   const comparisonDelayMs =
     SIMULATION_SPEEDS.find((speed) => speed.key === comparisonSpeed)?.delayMs ?? SIMULATION_SPEEDS[0].delayMs;
   const apiBase = import.meta.env.VITE_API_BASE ?? "";
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
   const isAdmin = authUser?.role === "admin";
+  useEffect(() => {
+    onAuthTokenChange?.(authToken);
+  }, [authToken, onAuthTokenChange]);
   const introToggleLabel = showIntro
     ? translate("Anleitung ausblenden", "Hide guide")
     : translate("Anleitung & Infos anzeigen", "Show guide & info");
@@ -2596,21 +1627,6 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85 }: RLG
     }
   }, [authUser, rememberMe]);
 
-  useEffect(() => {
-    if (!googleClientId) return;
-    if (document.getElementById("google-identity")) {
-      setGoogleReady(true);
-      return;
-    }
-    const script = document.createElement("script");
-    script.id = "google-identity";
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    script.onload = () => setGoogleReady(true);
-    document.head.appendChild(script);
-  }, [googleClientId]);
-
   const applyAuthPayload = useCallback(
     (payload: { token?: string; user?: AuthUser }, title?: { de: string; en: string }) => {
       if (!payload?.token || !payload?.user) {
@@ -2629,30 +1645,6 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85 }: RLG
     [translate],
   );
 
-  const handleOAuthLogin = useCallback(
-    async (provider: "google", idToken: string) => {
-      if (!idToken) return;
-      setAuthError(null);
-      try {
-        const response = await fetch(`${apiBase}/api/auth/oauth/${provider}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ idToken }),
-        });
-        if (!response.ok) {
-          const errorBody = await response.json().catch(() => ({}));
-          setAuthError(errorBody.error || translate("Login fehlgeschlagen.", "Login failed."));
-          return;
-        }
-        const payload = await response.json();
-        applyAuthPayload(payload, { de: "Erfolgreich angemeldet!", en: "Signed in successfully!" });
-      } catch {
-        setAuthError(translate("Server nicht erreichbar.", "Server not reachable."));
-      }
-    },
-    [apiBase, applyAuthPayload, translate],
-  );
-
   const handleLogout = useCallback(() => {
     setAuthToken(null);
     setAuthUser(null);
@@ -2668,6 +1660,10 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85 }: RLG
       return;
     }
 
+    if (authIsRegistering && authPassword.length < 6) {
+      setAuthError(translate("Das Passwort braucht mindestens 6 Zeichen.", "The password needs at least 6 characters."));
+      return;
+    }
     setAuthError(null);
     try {
       const endpoint = authIsRegistering ? "/api/auth/register" : "/api/auth/login";
@@ -2724,51 +1720,6 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85 }: RLG
       goal: state.goal,
     };
   }, []);
-
-  useEffect(() => {
-    if (!authDialogOpen || !googleReady || !googleClientId) return;
-    let cancelled = false;
-    let attempts = 0;
-    const maxAttempts = 8;
-    setGoogleRendered(false);
-    setGoogleRenderFailed(false);
-
-    const tryRender = () => {
-      if (cancelled) return;
-      const google = (window as typeof window & { google?: any }).google;
-      const container = googleButtonRef.current;
-      const googleAccounts = google?.accounts?.id;
-      if (!googleAccounts || !container) {
-        if (attempts < maxAttempts) {
-          attempts += 1;
-          window.setTimeout(tryRender, 50);
-        } else {
-          setGoogleRenderFailed(true);
-        }
-        return;
-      }
-      container.innerHTML = "";
-      googleAccounts.initialize({
-        client_id: googleClientId,
-        callback: (response: { credential?: string }) => {
-          if (response?.credential) {
-            handleOAuthLogin("google", response.credential);
-          }
-        },
-      });
-      googleAccounts.renderButton(container, {
-        theme: "outline",
-        size: "large",
-        width: 360,
-      });
-      setGoogleRendered(true);
-    };
-
-    tryRender();
-    return () => {
-      cancelled = true;
-    };
-  }, [authDialogOpen, googleReady, googleClientId, handleOAuthLogin]);
 
   // Tutorial Slides
   const tutorialSlides = useMemo(() => [
@@ -3064,7 +2015,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85 }: RLG
       }
       const payload = await response.json();
       setSavedEnvironments(
-        (payload?.items ?? []).map((item: any) => ({
+        (payload?.items ?? []).map((item: { id: number; name: string | null; gridConfig: GridConfig; progressData: unknown; createdAt: string }) => ({
           id: item.id,
           name: item.name || translate("Unbenannt", "Untitled"),
           gridConfig: item.gridConfig,
@@ -3427,11 +2378,6 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85 }: RLG
         if (hasMoved && (tileType === "reward" || tileType === "punishment")) {
           setRewardAnimation({ x: next.agent.x, y: next.agent.y, type: tileType });
         }
-        // Check if goal was reached
-        const reachedGoal = prev.goals.some(goal => next.agent.x === goal.x && next.agent.y === goal.y) &&
-                            !prev.goals.some(goal => prev.agent.x === goal.x && prev.agent.y === goal.y);
-        if (reachedGoal) {
-        }
         return next;
       });
     }, 220);
@@ -3758,10 +2704,6 @@ const handleActiveBonusClick = useCallback(() => {
     const latest = playgroundState.episodeHistory[playgroundState.episodeHistory.length - 1];
     if (!latest || !latest.success) return;
     if (latest.episode <= lastCelebratedEpisodeRef.current.playground) return;
-    // Level Mode: reaching the goal means this level is solved → unlock the next one.
-    if (levelMode) {
-      onLevelSolved?.();
-    }
     if (isAutoRestartEnabled) {
       lastCelebratedEpisodeRef.current.playground = latest.episode;
       setCelebration(null);
@@ -3786,7 +2728,38 @@ const handleActiveBonusClick = useCallback(() => {
     requestAnimationFrame(() => {
       setCelebration({ title, steps: latest.steps, reward: latest.reward, rank, fact });
     });
-  }, [mode, playgroundState.episodeHistory, playgroundState.episode, translate, language, isAutoRestartEnabled, levelMode, onLevelSolved]);
+  }, [mode, playgroundState.episodeHistory, playgroundState.episode, translate, language, isAutoRestartEnabled]);
+
+  // Level Mode: a level counts as solved when its objective is met (learned behaviour,
+  // not a single lucky run), then the next level unlocks.
+  const objectiveStatus = useMemo(
+    () =>
+      levelMode
+        ? evaluateObjective({
+            level: currentLevel as LevelNumber,
+            grid: playgroundState.grid,
+            spawn: playgroundState.spawn,
+            goal: playgroundState.goal,
+            history: playgroundState.episodeHistory,
+            alpha,
+            gamma,
+          })
+        : null,
+    [levelMode, currentLevel, playgroundState.grid, playgroundState.spawn, playgroundState.goal, playgroundState.episodeHistory, alpha, gamma],
+  );
+  const solvedLevelRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!objectiveStatus?.solved || solvedLevelRef.current === currentLevel) return;
+    solvedLevelRef.current = currentLevel;
+    onLevelSolved?.();
+    toast({
+      title: translate("Level geschafft!", "Level solved!"),
+      description:
+        currentLevel >= 10
+          ? translate("Du hast alle Level gemeistert. Der Free Mode ist freigeschaltet!", "You mastered every level. Free Mode is unlocked!")
+          : translate("Das nächste Level ist freigeschaltet.", "The next level is unlocked."),
+    });
+  }, [objectiveStatus?.solved, currentLevel, onLevelSolved, translate]);
 
   const handlePlaygroundStart = () =>
     setPlaygroundState((prev) => ({ ...prev, isRunning: true }));
@@ -3829,7 +2802,7 @@ const handleActiveBonusClick = useCallback(() => {
     );
   }, [tileSize, levelMode, currentLevel]);
 
-  // Level Mode: advancing to a higher level (or (re-)entering Level Mode at all,
+  // Level Mode: switching to another level (or (re-)entering Level Mode at all,
   // e.g. coming back from Free Mode) loads that level's own small world, so
   // each level is a genuine, populated challenge instead of a blank grid.
   const prevLevelRef = useRef<number>(currentLevel);
@@ -3840,7 +2813,7 @@ const handleActiveBonusClick = useCallback(() => {
       wasLevelModeRef.current = false;
       return;
     }
-    if (currentLevel > prevLevelRef.current || !wasLevelModeRef.current) {
+    if (currentLevel !== prevLevelRef.current || !wasLevelModeRef.current) {
       handlePlaygroundReset();
     }
     prevLevelRef.current = currentLevel;
@@ -4125,20 +3098,18 @@ const handleActiveBonusClick = useCallback(() => {
     }
   }, [apiBase, authToken, buildGridConfigFromState, isAdmin, playgroundState, translate]);
 
-  const handleLoadEnvironment = useCallback((gridConfig: any, progressData: any) => {
+  const handleLoadEnvironment = useCallback((gridConfig: GridConfig, progressData: unknown) => {
     if (gridConfig) {
       applyGridConfig(gridConfig);
     }
-    if (progressData?.episodeHistory) {
-      setPlaygroundState((prev) => ({
-        ...prev,
-        episodeHistory: progressData.episodeHistory || [],
-      }));
+    const history = (progressData as { episodeHistory?: EpisodeStats[] } | null)?.episodeHistory;
+    if (history) {
+      setPlaygroundState((prev) => ({ ...prev, episodeHistory: history }));
     }
   }, [applyGridConfig]);
 
   const handleLoadSavedEnvironment = useCallback(
-    (env: { name: string; gridConfig: GridConfig; progressData: any }) => {
+    (env: { name: string; gridConfig: GridConfig; progressData: unknown }) => {
       handleLoadEnvironment(env.gridConfig, env.progressData);
       toast({
         title: translate("Umgebung geladen", "Environment loaded"),
@@ -4732,7 +3703,7 @@ const handleActiveBonusClick = useCallback(() => {
           }
         }}
       >
-        <DialogContent className="max-w-md min-h-[620px] bg-slate-900 border border-slate-800 shadow-2xl p-8 text-slate-100">
+        <DialogContent className="max-w-md bg-slate-900 border border-slate-800 shadow-2xl p-8 text-slate-100">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-white">
               {authIsRegistering
@@ -4741,8 +3712,8 @@ const handleActiveBonusClick = useCallback(() => {
             </DialogTitle>
             <DialogDescription className="text-sm text-slate-400">
               {translate(
-                "Melde dich an, um globale Challenges zu veröffentlichen.",
-                "Sign in to publish global challenges.",
+                "Nur Nutzername und Passwort. Dein Level-Fortschritt wird gespeichert und folgt dir auf jedes Gerät.",
+                "Just a username and password. Your level progress is saved and follows you to any device.",
               )}
             </DialogDescription>
           </DialogHeader>
@@ -4756,6 +3727,7 @@ const handleActiveBonusClick = useCallback(() => {
               </Label>
               <Input
                 id="auth-username"
+                onKeyDown={(event) => event.key === "Enter" && handleAuthSubmit()}
                 value={authUsername}
                 onChange={(event) => setAuthUsername(event.target.value)}
                 placeholder="max"
@@ -4771,12 +3743,24 @@ const handleActiveBonusClick = useCallback(() => {
               </Label>
               <Input
                 id="auth-password"
+                onKeyDown={(event) => event.key === "Enter" && handleAuthSubmit()}
                 type="password"
                 value={authPassword}
                 onChange={(event) => setAuthPassword(event.target.value)}
                 className="h-12 rounded-lg bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:border-transparent"
               />
             </div>
+            {authIsRegistering && (
+              <p
+                role="note"
+                className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200"
+              >
+                {translate(
+                  "Merk dir dein Passwort gut! Es gibt keine „Passwort vergessen“-Funktion. Ohne Passwort ist dein Fortschritt nicht mehr erreichbar. Mindestens 6 Zeichen.",
+                  "Remember your password! There is no “forgot password” option. Without it your progress can't be recovered. At least 6 characters.",
+                )}
+              </p>
+            )}
             <div className="flex items-center gap-2">
               <Checkbox
                 id="remember-me"
@@ -4808,62 +3792,6 @@ const handleActiveBonusClick = useCallback(() => {
                   {authIsRegistering ? translate("Login", "Login") : translate("Registrieren", "Register")}
                 </span>
               </button>
-            </div>
-            <div className="space-y-3 pt-2">
-              <div className="relative flex items-center py-2 text-xs text-slate-400">
-                <div className="flex-grow border-t border-slate-700" />
-                <span className="flex-shrink mx-4">{translate("oder", "or")}</span>
-                <div className="flex-grow border-t border-slate-700" />
-              </div>
-              {googleClientId ? (
-                <div className="space-y-3">
-                  <div className="group relative w-full">
-                    <div className="flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-slate-700 bg-slate-50 text-sm font-semibold text-slate-900 shadow-sm transition-all duration-200 group-hover:border-white group-hover:bg-white group-hover:shadow-sm pointer-events-none">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white shadow-sm">
-                        <svg viewBox="0 0 48 48" className="h-4 w-4" aria-hidden>
-                          <path
-                            fill="#EA4335"
-                            d="M24 9.5c3.54 0 6.73 1.23 9.23 3.65l6.9-6.9C35.45 2.43 30 0 24 0 14.64 0 6.44 5.36 2.52 13.19l8.3 6.45C12.73 13.09 17.93 9.5 24 9.5z"
-                          />
-                          <path
-                            fill="#34A853"
-                            d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.12h12.98c-.56 3.03-2.26 5.6-4.78 7.31l7.5 5.82c4.38-4.04 6.28-9.98 6.28-17.7z"
-                          />
-                          <path
-                            fill="#4A90E2"
-                            d="M10.82 28.77c-.48-1.41-.76-2.9-.76-4.47s.27-3.06.76-4.47l-8.3-6.45C.93 16.07 0 19 0 22.3c0 3.3.93 6.23 2.52 8.92l8.3-6.45z"
-                          />
-                          <path
-                            fill="#FBBC05"
-                            d="M24 48c6 0 11.04-1.98 14.72-5.39l-7.5-5.82c-2.08 1.39-4.74 2.2-7.22 2.2-6.07 0-11.27-3.59-13.18-8.69l-8.3 6.45C6.44 42.64 14.64 48 24 48z"
-                          />
-                        </svg>
-                      </span>
-                      <span>{translate("Mit Google anmelden", "Log in with Google")}</span>
-                    </div>
-                    <div
-                      ref={googleButtonRef}
-                      className="absolute inset-0 z-10 flex items-center justify-center opacity-0"
-                    />
-                  </div>
-                  {!googleReady && (
-                    <Button variant="outline" className="w-full" disabled>
-                      {translate("Google lädt…", "Loading Google…")}
-                    </Button>
-                  )}
-                  {googleReady && !googleRendered && (
-                    <Button variant="outline" className="w-full" disabled>
-                      {googleRenderFailed
-                        ? translate("Google konnte nicht geladen werden", "Google failed to load")
-                        : translate("Google lädt…", "Loading Google…")}
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <Button variant="outline" className="w-full" disabled>
-                  {translate("Google nicht konfiguriert", "Google not configured")}
-                </Button>
-              )}
             </div>
           </div>
         </DialogContent>
@@ -5448,6 +4376,14 @@ const handleActiveBonusClick = useCallback(() => {
             </CollapsibleContent>
           </Collapsible>
         </div>
+
+        {levelMode && objectiveStatus && (
+          <LevelObjectivePanel
+            level={currentLevel as LevelNumber}
+            status={objectiveStatus}
+            translate={translate}
+          />
+        )}
 
         <ControlBar
           mode={mode}
@@ -6215,7 +5151,7 @@ const handleActiveBonusClick = useCallback(() => {
                 mode === "comparison" && "pointer-events-none opacity-40 grayscale",
               )}
               style={{
-                ["--console-height" as any]: `${cardHeight}px`,
+                ["--console-height" as string]: `${cardHeight}px`,
               }}
             >
               <button
@@ -6685,7 +5621,7 @@ const handleActiveBonusClick = useCallback(() => {
                 "h-auto lg:h-[var(--settings-height)]"
               )}
               style={{
-                ["--settings-height" as any]: `${cardHeight}px`,
+                ["--settings-height" as string]: `${cardHeight}px`,
               }}
             >
               <button
@@ -7010,467 +5946,3 @@ const handleActiveBonusClick = useCallback(() => {
     </>
   );
 }
-
-type PlaygroundControlsProps = {
-  state: PlaygroundState;
-  onStart: () => void;
-  onPause: () => void;
-  onStep: () => void;
-  onReset: () => void;
-  onUndo: () => void;
-  canUndo: boolean;
-  onReplay?: () => void;
-  isReplaying?: boolean;
-  onStopReplay?: () => void;
-  onLoadPreset: (preset: PresetLevel) => void;
-  placementMode: PlaceableTile;
-  onPlacementModeChange: (type: PlaceableTile) => void;
-  simulationSpeed: SimulationSpeed;
-  onSimulationSpeedChange: (speed: SimulationSpeed) => void;
-  canPublishGlobal: boolean;
-  onPublishGlobal: () => void;
-  showValues: boolean;
-  onShowValuesChange: (show: boolean) => void;
-  translate: (de: string, en: string) => string;
-  numberFormatter: Intl.NumberFormat;
-  language: Language;
-  isSpeedrun?: boolean;
-  showStatistics: boolean;
-  setShowStatistics: (show: boolean) => void;
-  levelMode: boolean;
-  unlockedFeatures: UnlockedFeatures | null;
-};
-
-const PlaygroundControls = ({
-  state,
-  onStart,
-  onPause,
-  onStep,
-  onReset,
-  onUndo,
-  canUndo,
-  onReplay,
-  isReplaying = false,
-  onStopReplay,
-  onLoadPreset,
-  placementMode,
-  onPlacementModeChange,
-  simulationSpeed,
-  onSimulationSpeedChange,
-  canPublishGlobal,
-  onPublishGlobal,
-  showValues,
-  onShowValuesChange,
-  translate,
-  numberFormatter,
-  language,
-  isSpeedrun = false,
-  showStatistics,
-  setShowStatistics,
-  levelMode,
-  unlockedFeatures,
-}: PlaygroundControlsProps) => {
-  const [presetsOpen, setPresetsOpen] = useState(false);
-
-  return (
-    <div className="space-y-5">
-      <div>
-        <Button className="w-full font-semibold" size="lg" onClick={state.isRunning ? onPause : onStart}>
-          {state.isRunning ? <Pause className="mr-2 h-5 w-5" /> : <Play className="mr-2 h-5 w-5" />}
-          {state.isRunning ? translate("Pause", "Pause") : translate("Start", "Start")}
-        </Button>
-      </div>
-      <div className="flex gap-2">
-        <Button variant="secondary" size="lg" onClick={onStep} className="flex-1 font-semibold">
-          {translate("Step", "Step")}
-        </Button>
-        <Button variant="outline" size="lg" onClick={onReset} className="flex-1 font-semibold">
-          <RotateCcw className="mr-2 h-4 w-4" />
-          {translate("Zurück", "Reset")}
-        </Button>
-      </div>
-      <div className="space-y-2">
-        <Button
-          variant="outline"
-          size="lg"
-          onClick={onUndo}
-          disabled={!canUndo}
-          className="w-full font-semibold"
-        >
-          <Undo2 className="mr-2 h-4 w-4" />
-          {translate("Rückgängig", "Undo")}
-        </Button>
-        {onReplay && onStopReplay && (
-          <Button
-            variant={isReplaying ? "destructive" : "secondary"}
-            size="lg"
-            onClick={isReplaying ? onStopReplay : onReplay}
-            className="w-full font-semibold"
-          >
-            {isReplaying ? "⏹️" : "🎬"}
-            <span className="ml-2">{isReplaying ? translate("Stop", "Stop") : translate("Replay", "Replay")}</span>
-          </Button>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-base font-semibold text-foreground">
-          {translate("Geschwindigkeit", "Speed")}
-        </Label>
-        <div className="grid grid-cols-4 gap-2">
-          {SIMULATION_SPEEDS.map((option) => (
-            <Button
-              key={option.key}
-              variant={simulationSpeed === option.key ? "default" : "outline"}
-              size="sm"
-              onClick={() => onSimulationSpeedChange(option.key)}
-              className="text-xs font-semibold"
-            >
-              {option.label}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      <Collapsible open={presetsOpen} onOpenChange={setPresetsOpen} className="space-y-2">
-        <CollapsibleTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-between rounded-xl border border-border/40 bg-background/60 font-semibold text-base"
-          >
-            <span>{translate("Preset Levels", "Preset Levels")}</span>
-            <ChevronDown
-              className={cn("h-4 w-4 transition-transform duration-200", presetsOpen ? "rotate-180" : "")}
-            />
-          </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            {PRESET_LEVELS.map((preset) => (
-              <TooltipProvider key={preset.key}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onLoadPreset(preset)}
-                      className="text-xs font-semibold h-auto py-2"
-                    >
-                      {preset.name[language]}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-xs">{preset.description[language]}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ))}
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
-
-      <div className="space-y-2">
-      <Label className="text-base font-semibold text-foreground">
-        {translate("Platzierungs-Modus", "Placement Mode")}
-      </Label>
-      <div className="grid grid-cols-2 gap-2">
-        <Button
-          variant={placementMode === "obstacle" ? "default" : "outline"}
-          onClick={() => onPlacementModeChange("obstacle")}
-          disabled={levelMode && !unlockedFeatures?.canPlaceWalls}
-          className="text-sm font-semibold"
-        >
-          {translate("Mauer", "Wall")}
-        </Button>
-        <Button
-          variant={placementMode === "reward" ? "default" : "outline"}
-          onClick={() => onPlacementModeChange("reward")}
-          disabled={levelMode && !unlockedFeatures?.canPlaceRewards}
-          className="text-sm font-semibold"
-        >
-          {translate("Belohnung", "Reward")}
-        </Button>
-        <Button
-          variant={placementMode === "punishment" ? "default" : "outline"}
-          onClick={() => onPlacementModeChange("punishment")}
-          disabled={levelMode && !unlockedFeatures?.canPlacePunishments}
-          className="text-sm font-semibold"
-        >
-          {translate("Strafe", "Penalty")}
-        </Button>
-        <Button
-          variant={placementMode === "portal" ? "default" : "outline"}
-          onClick={() => onPlacementModeChange("portal")}
-          disabled={levelMode && !unlockedFeatures?.canPlacePortals}
-          className="text-sm font-semibold"
-        >
-          {translate("Portal", "Portal")}
-        </Button>
-      </div>
-    </div>
-
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-      <Badge variant="secondary" className="py-2 justify-center text-sm">
-        <span className="font-semibold">{translate("Episode:", "Episode:")}</span> {state.episode}
-      </Badge>
-      <Badge
-        variant="secondary"
-        className={cn(
-          "py-2 justify-center text-sm",
-          state.totalReward >= 0 ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400",
-        )}
-      >
-        <span className="font-semibold">{translate("Reward:", "Reward:")}</span>{" "}
-        {numberFormatter.format(state.totalReward)}
-      </Badge>
-      <Badge variant="secondary" className="py-2 justify-center text-sm">
-        <span className="font-semibold">{translate("Steps:", "Steps:")}</span> {state.currentSteps}
-      </Badge>
-    </div>
-
-    {/* Live-Statistiken */}
-    {state.episodeHistory.length > 0 && (
-      <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4">
-        <div
-          className="flex items-center justify-between cursor-pointer mb-2"
-          onClick={() => setShowStatistics(!showStatistics)}
-        >
-          <h3 className="text-sm font-bold text-foreground">
-            {translate("Statistics", "Statistics")}
-          </h3>
-          {showStatistics ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </div>
-        {showStatistics && (<div className="space-y-2 text-xs text-muted-foreground">
-          <div className="flex justify-between">
-            <span>{translate("Ø Episode-Länge:", "Avg. episode length:")}</span>
-            <span className="font-semibold text-foreground">
-              {(state.episodeHistory.reduce((sum, e) => sum + e.steps, 0) / state.episodeHistory.length).toFixed(1)}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span>{translate("Ø Reward:", "Avg. reward:")}</span>
-            <span className="font-semibold text-foreground">
-              {numberFormatter.format(state.episodeHistory.reduce((sum, e) => sum + e.reward, 0) / state.episodeHistory.length)}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span>{translate("Best Reward:", "Best reward:")}</span>
-            <span className="font-semibold text-green-400">
-              {numberFormatter.format(Math.max(...state.episodeHistory.map(e => e.reward)))}
-            </span>
-          </div>
-        </div>)}
-      </Card>
-    )}
-  </div>
-  );
-};
-
-type RandomControlsProps = {
-  state: RandomModeState;
-  onStart: () => void;
-  onPause: () => void;
-  onStep: () => void;
-  onReset: () => void;
-  translate: (de: string, en: string) => string;
-  numberFormatter: Intl.NumberFormat;
-  isSpeedrun: boolean;
-};
-
-const RandomControls = ({
-  state,
-  onStart,
-  onPause,
-  onStep,
-  onReset,
-  translate,
-  numberFormatter,
-  isSpeedrun,
-}: RandomControlsProps) => (
-  <div className="space-y-5">
-    <div>
-      <Button className="w-full font-semibold" size="lg" onClick={state.isRunning ? onPause : onStart}>
-        {state.isRunning ? <Pause className="mr-2 h-5 w-5" /> : <Play className="mr-2 h-5 w-5" />}
-        {state.isRunning ? translate("Pause", "Pause") : translate("Start", "Start")}
-      </Button>
-    </div>
-    <div className="flex gap-2">
-      <Button variant="secondary" size="lg" onClick={onStep} className="flex-1 font-semibold">
-        {translate("Step", "Step")}
-      </Button>
-      <Button variant="outline" size="lg" onClick={onReset} className="flex-1 font-semibold">
-        <RotateCcw className="mr-2 h-4 w-4" />
-        {translate("Zurück", "Reset")}
-      </Button>
-    </div>
-
-    <div className="grid grid-cols-2 gap-2">
-      <Badge variant="secondary" className="py-2 justify-center text-sm">
-        <span className="font-semibold">{translate("Episode:", "Episode:")}</span> {state.episode}
-      </Badge>
-      <Badge
-        variant="secondary"
-        className={cn(
-          "py-2 justify-center text-sm",
-          state.totalReward >= 0 ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400",
-        )}
-      >
-        <span className="font-semibold">{translate("Reward:", "Reward:")}</span>{" "}
-        {numberFormatter.format(state.totalReward)}
-      </Badge>
-    </div>
-  </div>
-);
-
-type ScrollIndicatorProps = {
-  containerRef: React.RefObject<HTMLDivElement>;
-};
-
-const ScrollIndicator = ({ containerRef }: ScrollIndicatorProps) => {
-  const [showTopIndicator, setShowTopIndicator] = useState(false);
-  const [showBottomIndicator, setShowBottomIndicator] = useState(false);
-  const [isScrolling, setIsScrolling] = useState(false);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const checkScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      const scrollThreshold = 20;
-
-      // Zeige unten Indikator wenn man nach unten scrollen kann (man ist oben)
-      const canScrollDown = scrollTop < scrollHeight - clientHeight - scrollThreshold;
-      setShowBottomIndicator(canScrollDown);
-
-      // Zeige oben Indikator wenn man nach oben scrollen kann (man ist unten)
-      const canScrollUp = scrollTop > scrollThreshold;
-      setShowTopIndicator(canScrollUp);
-    };
-
-    const handleScroll = () => {
-      setIsScrolling(true);
-
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-
-      scrollTimeoutRef.current = setTimeout(() => {
-        setIsScrolling(false);
-        checkScroll();
-      }, 800);
-    };
-
-    // Initial check with small delay to ensure proper measurement
-    setTimeout(checkScroll, 100);
-
-    container.addEventListener('scroll', handleScroll, { passive: true });
-
-    // Check on content changes
-    const resizeObserver = new ResizeObserver(() => {
-      setTimeout(checkScroll, 50);
-    });
-    resizeObserver.observe(container);
-
-    return () => {
-      container.removeEventListener('scroll', handleScroll);
-      resizeObserver.disconnect();
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, [containerRef]);
-
-  return (
-    <>
-      {showTopIndicator && !isScrolling && (
-        <div className="absolute top-0 left-0 right-0 flex justify-center pointer-events-none z-20">
-          <div className="bg-gradient-to-b from-card/95 via-card/80 to-transparent pb-6 pt-2 px-4">
-            <ChevronUp className="h-5 w-5 text-muted-foreground/50 animate-bounce" />
-          </div>
-        </div>
-      )}
-      {showBottomIndicator && !isScrolling && (
-        <div className="absolute bottom-0 left-0 right-0 flex justify-center pointer-events-none z-20">
-          <div className="bg-gradient-to-t from-card/95 via-card/80 to-transparent pt-6 pb-2 px-4">
-            <ChevronDown className="h-5 w-5 text-muted-foreground/50 animate-bounce" />
-          </div>
-        </div>
-      )}
-    </>
-  );
-};
-
-type ControlBarProps = {
-  mode: Mode;
-  onModeChange: (mode: Mode) => void;
-  translate: (de: string, en: string) => string;
-  /** Level Mode only ever shows Playground — Random/Comparison would bypass level gating. */
-  levelMode?: boolean;
-};
-
-const ControlBar = ({
-  mode,
-  onModeChange,
-  translate,
-  levelMode = false,
-}: ControlBarProps) => {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  if (levelMode) return null;
-
-  return (
-    <div className="rounded-lg border border-border/40 bg-card/60 p-4 backdrop-blur-sm text-foreground">
-      <div className="flex flex-wrap items-center justify-center gap-3">
-        <Button
-          variant={mode === "playground" ? "default" : "outline"}
-          onClick={() => onModeChange("playground")}
-          className="rounded-lg font-semibold"
-        >
-          {translate("Playground", "Playground")}
-        </Button>
-        <div className="relative">
-          <Button
-            variant={mode === "random" ? "default" : "outline"}
-            onClick={() => !isMobile && onModeChange("random")}
-            className={cn("rounded-lg font-semibold", isMobile && "cursor-not-allowed opacity-50")}
-            disabled={isMobile}
-          >
-            {translate("Zufallsmodus", "Random Mode")}
-          </Button>
-          {isMobile && (
-            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-muted-foreground">
-              {translate("Nur auf Desktop", "Desktop only")}
-            </div>
-          )}
-        </div>
-        <div className="relative">
-          <Button
-            variant={mode === "comparison" ? "default" : "outline"}
-            onClick={() => !isMobile && onModeChange("comparison")}
-            className={cn("rounded-lg font-semibold", isMobile && "cursor-not-allowed opacity-50")}
-            disabled={isMobile}
-          >
-            {translate("Vergleichsmodus", "Comparison Mode")}
-          </Button>
-          {isMobile && (
-            <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs text-muted-foreground">
-              {translate("Nur auf Desktop", "Desktop only")}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};

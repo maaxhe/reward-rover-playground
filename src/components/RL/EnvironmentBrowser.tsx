@@ -23,12 +23,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Trash2, Download, Save } from "lucide-react";
+import type { GridConfigData } from "@/lib/rl/types";
 
 interface SavedEnvironment {
   id: number;
   name: string | null;
-  gridConfig: any;
-  progressData: any;
+  gridConfig: GridConfigData;
+  progressData: unknown;
   createdAt: string;
 }
 
@@ -37,9 +38,9 @@ interface EnvironmentBrowserProps {
   onOpenChange: (open: boolean) => void;
   authToken: string | null;
   apiBase: string;
-  onLoadEnvironment: (gridConfig: any, progressData: any) => void;
-  currentGridConfig: any;
-  currentProgressData: any;
+  onLoadEnvironment: (gridConfig: GridConfigData, progressData: unknown) => void;
+  currentGridConfig: GridConfigData;
+  currentProgressData: unknown;
   translate: (de: string, en: string) => string;
 }
 

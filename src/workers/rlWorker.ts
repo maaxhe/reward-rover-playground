@@ -64,7 +64,7 @@ interface PlaygroundState {
   episodeHistory: EpisodeStats[];
   spawn: Position;
   portalCooldowns: Record<string, number>;
-  pendingPortalTeleport: { from: Position; to: Position; waitCounter: number } | null;
+  pendingPortalTeleport?: { from: Position; to: Position; waitCounter: number } | null;
   qTable: QTable;
 }
 

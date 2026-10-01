@@ -8,6 +8,7 @@ import { LevelProvider } from "@/contexts/LevelContext";
 import { Button } from "@/components/ui/button";
 import { getUnlockedFeatures } from "@/lib/levelProgression";
 import type { LevelNumber } from "@/lib/levelProgression";
+import { api } from "@/lib/api";
 
 export function RLGameNew() {
   const { translate } = useLanguage();
@@ -21,8 +22,48 @@ export function RLGameNew() {
   // Reaches 11 once level 10 is solved, which unlocks Free Mode.
   const [maxUnlockedLevel, setMaxUnlockedLevel] = useState(1);
 
+  const tokenRef = useRef<string | null>(null);
+  const [loggedIn, setLoggedIn] = useState(false);
+
   const MAX_UNLOCK_KEY = "rr-max-unlocked-level";
   const FREE_MODE_KEY = "rr-free-mode-unlocked";
+
+  const readLocalProgress = () => {
+    const n = parseInt(window.localStorage.getItem(MAX_UNLOCK_KEY) ?? "1", 10);
+    return {
+      level: Number.isNaN(n) ? 1 : Math.max(1, Math.min(11, n)),
+      freemode: window.localStorage.getItem(FREE_MODE_KEY) === "true",
+    };
+  };
+
+  // Merge local and server progress (max wins), apply it locally and push it back.
+  const syncProgress = useCallback(async (token: string) => {
+    try {
+      const local = readLocalProgress();
+      const merged = await api.updateProgress(token, {
+        level: local.level,
+        freemode_unlocked: local.freemode ? 1 : 0,
+      });
+      window.localStorage.setItem(MAX_UNLOCK_KEY, String(merged.level));
+      setMaxUnlockedLevel(Math.min(11, Math.max(1, merged.level)));
+      if (merged.freemode_unlocked) {
+        window.localStorage.setItem(FREE_MODE_KEY, "true");
+        setFreeModeUnlocked(true);
+      }
+    } catch {
+      // Offline or token expired: progress stays local, so just keep playing.
+    }
+  }, []);
+
+  // RLGame owns the login; it tells us whenever the token changes so progress can follow the account.
+  const handleAuthTokenChange = useCallback(
+    (token: string | null) => {
+      tokenRef.current = token;
+      setLoggedIn(token !== null);
+      if (token) void syncProgress(token);
+    },
+    [syncProgress],
+  );
 
   // Restore saved progress on mount (after hydration to avoid SSR mismatch).
   useEffect(() => {
@@ -49,6 +90,9 @@ export function RLGameNew() {
       const next = Math.min(11, Math.max(prev, currentLevelRef.current + 1));
       if (next !== prev && typeof window !== "undefined") {
         window.localStorage.setItem(MAX_UNLOCK_KEY, String(next));
+        if (tokenRef.current) {
+          api.updateProgress(tokenRef.current, { level: next }).catch(() => {});
+        }
       }
       return next;
     });
@@ -103,7 +147,7 @@ export function RLGameNew() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Mode Selector */}
-      <div className="border-b border-border/40 bg-card/30 px-8 py-4 sticky top-0 z-30">
+      <div className="border-b border-border/40 bg-card/30 px-4 md:px-8 py-4 sticky top-0 z-30">
         <div className="flex gap-3">
           <Button
             variant={mode === "levels" ? "default" : "outline"}
@@ -125,9 +169,9 @@ export function RLGameNew() {
       </div>
 
       {/* Main Content - 2 Column Layout */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 flex-col md:flex-row md:overflow-hidden">
         {/* Left Sidebar - Parameters & Progress */}
-        <div className="w-72 flex-shrink-0 border-r border-border/40 bg-card/20 p-6 overflow-y-auto">
+        <div className="w-full md:w-72 flex-shrink-0 border-b md:border-b-0 md:border-r border-border/40 bg-card/20 p-4 md:p-6 md:overflow-y-auto">
           {!isLevelMode && (
             <>
               <Button
@@ -180,7 +224,7 @@ export function RLGameNew() {
               )}
               <div className="mt-6" />
               <LevelUnlocksCard currentLevel={currentLevel} translate={translate} />
-              {(maxUnlockedLevel > 1 || freeModeUnlocked) && (
+              {!loggedIn && (maxUnlockedLevel > 1 || freeModeUnlocked) && (
                 <button
                   type="button"
                   onClick={resetProgress}
@@ -207,9 +251,9 @@ export function RLGameNew() {
         </div>
 
         {/* Right Content - Game */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 min-w-0 md:overflow-auto">
           <LevelProvider levelMode={isLevelMode} currentLevel={currentLevel} onLevelSolved={handleLevelSolved}>
-            <RLGame explorationRate={explorationRate} alpha={alpha} gamma={gamma} />
+            <RLGame explorationRate={explorationRate} alpha={alpha} gamma={gamma} onAuthTokenChange={handleAuthTokenChange} />
           </LevelProvider>
         </div>
       </div>

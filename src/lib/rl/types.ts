@@ -138,3 +138,11 @@ export interface PresetLevel {
   agent?: { x: number; y: number };
   goal?: { x: number; y: number };
 }
+
+/** Serialisable grid layout, as saved to the server and used for presets. */
+export interface GridConfigData {
+  size: number;
+  tiles: Array<{ x: number; y: number; type: TileType }>;
+  agent?: Position;
+  goal?: Position;
+}

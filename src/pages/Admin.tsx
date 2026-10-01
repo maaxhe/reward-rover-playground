@@ -30,8 +30,8 @@ interface Environment {
   id: number;
   name: string | null;
   username: string;
-  gridConfig: any;
-  progressData: any;
+  gridConfig: unknown;
+  progressData: unknown;
   createdAt: string;
 }
 
@@ -41,7 +41,7 @@ const Admin = () => {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("rr_token");
   });
-  const [authUser, setAuthUser] = useState<any>(() => {
+  const [authUser, setAuthUser] = useState<{ username: string; role: string } | null>(() => {
     if (typeof window === "undefined") return null;
     const raw = localStorage.getItem("rr_user");
     if (!raw) return null;
