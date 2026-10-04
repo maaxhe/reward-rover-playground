@@ -100,7 +100,7 @@ export const LEVEL_OBJECTIVES: Record<LevelNumber, LevelObjective> = {
   },
   10: {
     efficientEpisodes: 5,
-    stepFactor: 1.4,
+    stepFactor: 1.6,
     hint: {
       de: "Meisterprüfung: Fünf Läufe in Folge fast auf dem optimalen Weg. Danach kennst du alle Stellschrauben und der Free Mode wartet.",
       en: "Master test: five runs in a row almost on the optimal path. After that you know every knob, and Free Mode awaits.",
