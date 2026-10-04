@@ -47,8 +47,10 @@ import {
 } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useLanguage } from "@/contexts/LanguageContext";
-import type { Position, TileState as LibTileState } from "@/lib/rl/types";
+import type { Position, TileState as LibTileState, PlaygroundState, ComparisonRoverState } from "@/lib/rl/types";
 import { recordConsumedTile, restoreConsumedTiles, type ConsumedTile } from "@/lib/rl/consumedTiles";
+import { stepPlayground } from "@/lib/rl/playgroundStep";
+import { runComparisonRoverStep } from "@/lib/rl/comparisonStep";
 import {
   type QTable,
   chooseAction,
@@ -417,22 +419,7 @@ const SPEEDRUN_STAGES: SpeedrunStageConfig[] = [
 
 type TileState = LibTileState;
 
-export interface PlaygroundState {
-  agent: Position;
-  goal: Position;
-  grid: TileState[][];
-  isRunning: boolean;
-  episode: number;
-  totalReward: number;
-  currentSteps: number;
-  episodeHistory: EpisodeStats[];
-  spawn: Position;
-  portalCooldowns: Record<string, number>;
-  pendingPortalTeleport?: { from: Position; to: Position; waitCounter: number } | null;
-  qTable: QTable;
-  /** Reward/punishment tiles eaten this episode; restored when the next episode starts. */
-  consumedTiles?: ConsumedTile[];
-}
+export type { PlaygroundState };
 
 interface EpisodeStats {
   episode: number;
@@ -446,6 +433,8 @@ interface EpisodeStats {
 }
 
 export interface RandomModeState {
+  /** Reward/punishment tiles eaten this episode; restored when the next episode starts. */
+  consumedTiles?: ConsumedTile[];
   agent: Position;
   goals: Position[];
   grid: TileState[][];
@@ -468,24 +457,6 @@ export interface RandomModeState {
     baseSize: number;
   };
   latestDrop: BonusType | null;
-  portalCooldowns: Record<string, number>;
-  qTable: QTable;
-}
-
-interface ComparisonRoverState {
-  agent: Position;
-  goal: Position;
-  grid: TileState[][];
-  isRunning: boolean;
-  episode: number;
-  totalReward: number;
-  currentSteps: number;
-  episodeHistory: EpisodeStats[];
-  spawn: Position;
-  alpha: number;
-  gamma: number;
-  explorationRate: number;
-  name: string;
   portalCooldowns: Record<string, number>;
   qTable: QTable;
 }
@@ -609,133 +580,8 @@ const runPlaygroundStep = (
   alpha = 0.1,
   gamma = 0.85,
   autoRestart = false,
-): PlaygroundState => {
-  const current = state.agent;
-  let nextPos = current;
-  const cooledCooldowns = decrementPortalCooldowns(state.portalCooldowns);
-  let portalCooldowns = cooledCooldowns;
-  let pendingPortalTeleport = state.pendingPortalTeleport;
-
-  // If we have a pending portal teleport, check if wait is over
-  if (pendingPortalTeleport) {
-    if (pendingPortalTeleport.waitCounter <= 0) {
-      // Wait is over, execute teleport
-      nextPos = pendingPortalTeleport.to;
-      pendingPortalTeleport = null;
-    } else {
-      // Still waiting on portal, decrement counter and stay in place
-      pendingPortalTeleport = {
-        ...pendingPortalTeleport,
-        waitCounter: pendingPortalTeleport.waitCounter - 1,
-      };
-      nextPos = current; // Stay on portal
-    }
-  }
-  // No pending teleport, choose normal action
-  else {
-    nextPos = chooseAction(state.grid, current, state.qTable, explorationRate, bias);
-
-    // Check for new portal teleportation
-    if (
-      state.grid[nextPos.y][nextPos.x].type === "portal" &&
-      !isPortalOnCooldown(portalCooldowns, nextPos)
-    ) {
-      const entryPortal = nextPos;
-      const targetPortal = teleportThroughPortal(state.grid, nextPos);
-      portalCooldowns = withPortalCooldowns(portalCooldowns, [entryPortal, targetPortal]);
-      // Wait for ~500ms (2 steps at 220ms = 440ms)
-      pendingPortalTeleport = { from: entryPortal, to: targetPortal, waitCounter: 2 };
-    }
-  }
-
-  const reward = getTileReward(state.grid, [state.goal], nextPos);
-
-  const newGrid = cloneGrid(state.grid);
-
-  // Capture tile type before consumption for animation hint
-  const movedTileType = state.grid[nextPos.y][nextPos.x].type;
-
-  // Belohnungen und Strafen verschwinden beim Einsammeln (optional)
-  let consumedTiles = state.consumedTiles ?? [];
-  if (consumeRewards) {
-    if (movedTileType === "reward" || movedTileType === "punishment") {
-      consumedTiles = recordConsumedTile(consumedTiles, nextPos.x, nextPos.y, state.grid[nextPos.y][nextPos.x]);
-      newGrid[nextPos.y][nextPos.x] = {
-        ...newGrid[nextPos.y][nextPos.x],
-        type: "empty",
-        value: 0,
-      };
-    }
-  }
-
-  // Q-Learning update: Q(s,a) ← Q(s,a) + α[R + γ·max_a' Q(s',a') − Q(s,a)]
-  const isPortalWait = nextPos.x === current.x && nextPos.y === current.y;
-  let newQTable = state.qTable;
-  const currentCell = newGrid[current.y][current.x];
-
-  if (!isPortalWait) {
-    const actionIdx = posToActionIndex(current, nextPos);
-    const currentQ = getQValue(state.qTable, current, actionIdx);
-    const maxNextQ = getMaxQValue(newGrid, nextPos, state.qTable);
-    const newQ = currentQ + alpha * (reward + gamma * maxNextQ - currentQ);
-    newQTable = setQValue(state.qTable, current, actionIdx, newQ);
-    newGrid[current.y][current.x] = {
-      ...currentCell,
-      qValue: getDisplayQValue(newQTable, current),
-      value: getDisplayQValue(newQTable, current),
-      visits: currentCell.visits + 1,
-    };
-  } else {
-    newGrid[current.y][current.x] = {
-      ...currentCell,
-      visits: currentCell.visits + 1,
-    };
-  }
-
-  const reachedGoal = nextPos.x === state.goal.x && nextPos.y === state.goal.y;
-  const newSteps = state.currentSteps + 1;
-
-  if (reachedGoal) {
-    const episodeStat: EpisodeStats = {
-      episode: state.episode + 1,
-      steps: newSteps,
-      reward: state.totalReward + reward,
-      success: true,
-      mode: "playground",
-    };
-    const newHistory = [...state.episodeHistory.slice(-19), episodeStat];
-
-    // New episode: eaten rewards/punishments come back (unless the player replaced the tile meanwhile).
-    restoreConsumedTiles(newGrid, consumedTiles);
-
-    return {
-      ...state,
-      consumedTiles: [],
-      agent: { ...state.spawn },
-      grid: newGrid,
-      qTable: newQTable,
-      totalReward: 0,
-      isRunning: autoRestart,
-      episode: state.episode + 1,
-      currentSteps: 0,
-      episodeHistory: newHistory,
-      portalCooldowns: {},
-      pendingPortalTeleport: null,
-    };
-  }
-
-  return {
-    ...state,
-    consumedTiles,
-    agent: nextPos,
-    grid: newGrid,
-    qTable: newQTable,
-    totalReward: state.totalReward + reward,
-    currentSteps: newSteps,
-    portalCooldowns,
-    pendingPortalTeleport,
-  };
-};
+): PlaygroundState =>
+  stepPlayground(state, { explorationRate, alpha, gamma, consumeRewards, autoRestart, directionBias: bias ?? null }).nextState;
 
 const runRandomModeStep = (
   state: RandomModeState,
@@ -767,9 +613,11 @@ const runRandomModeStep = (
   const newGrid = cloneGrid(state.grid);
 
   // Belohnungen und Strafen verschwinden beim Einsammeln (optional)
+  let consumedTiles = state.consumedTiles ?? [];
   if (consumeRewards) {
     const tileType = state.grid[nextPos.y][nextPos.x].type;
     if (tileType === "reward" || tileType === "punishment") {
+      consumedTiles = recordConsumedTile(consumedTiles, nextPos.x, nextPos.y, state.grid[nextPos.y][nextPos.x]);
       newGrid[nextPos.y][nextPos.x] = {
         ...newGrid[nextPos.y][nextPos.x],
         type: "empty",
@@ -798,6 +646,7 @@ const runRandomModeStep = (
 
   // Wenn Ziel erreicht: Episode-Stats speichern und Challenge-Resources auffüllen
   if (reachedGoal) {
+    restoreConsumedTiles(newGrid, consumedTiles);
     const isSpeedrun = state.speedrun.active;
     const timeUsed = isSpeedrun ? state.speedrun.timeLimit - state.speedrun.timeLeft : undefined;
     const episodeStat: EpisodeStats = {
@@ -817,6 +666,7 @@ const runRandomModeStep = (
       const stageConfig = getSpeedrunStageConfig(nextStage);
       return {
         ...state,
+        consumedTiles: [],
         agent: { ...state.spawn },
         grid: newGrid,
         qTable: newQTable,
@@ -843,6 +693,7 @@ const runRandomModeStep = (
 
     return {
       ...state,
+      consumedTiles: [],
       agent: { ...state.spawn },
       grid: newGrid,
       qTable: newQTable,
@@ -862,100 +713,13 @@ const runRandomModeStep = (
 
   return {
     ...state,
+    consumedTiles,
     agent: nextPos,
     grid: newGrid,
     qTable: newQTable,
     totalReward: state.totalReward + reward,
     currentSteps: newSteps,
     spawn: state.spawn,
-    portalCooldowns,
-  };
-};
-
-const runComparisonRoverStep = (
-  state: ComparisonRoverState,
-  consumeRewards = true,
-): ComparisonRoverState => {
-  const current = state.agent;
-  let nextPos = chooseAction(state.grid, current, state.qTable, state.explorationRate, null);
-  const cooledCooldowns = decrementPortalCooldowns(state.portalCooldowns);
-  let portalCooldowns = cooledCooldowns;
-
-  // Check for portal teleportation
-  if (
-    state.grid[nextPos.y][nextPos.x].type === "portal" &&
-    !isPortalOnCooldown(portalCooldowns, nextPos)
-  ) {
-    const entryPortal = nextPos;
-    const targetPortal = teleportThroughPortal(state.grid, nextPos);
-    portalCooldowns = withPortalCooldowns(portalCooldowns, [entryPortal, targetPortal]);
-    nextPos = targetPortal;
-  }
-
-  const reward = getTileReward(state.grid, [state.goal], nextPos);
-
-  const newGrid = cloneGrid(state.grid);
-
-  // Belohnungen und Strafen verschwinden beim Einsammeln (optional)
-  if (consumeRewards) {
-    const tileType = state.grid[nextPos.y][nextPos.x].type;
-    if (tileType === "reward" || tileType === "punishment") {
-      newGrid[nextPos.y][nextPos.x] = {
-        ...newGrid[nextPos.y][nextPos.x],
-        type: "empty",
-        value: 0,
-      };
-    }
-  }
-
-  // Q-Learning update: Q(s,a) ← Q(s,a) + α[R + γ·max_a' Q(s',a') − Q(s,a)]
-  const actionIdx = posToActionIndex(current, nextPos);
-  const currentQ = getQValue(state.qTable, current, actionIdx);
-  const maxNextQ = getMaxQValue(newGrid, nextPos, state.qTable);
-  const newQ = currentQ + state.alpha * (reward + state.gamma * maxNextQ - currentQ);
-  const newQTable = setQValue(state.qTable, current, actionIdx, newQ);
-
-  const currentCell = newGrid[current.y][current.x];
-  newGrid[current.y][current.x] = {
-    ...currentCell,
-    qValue: getDisplayQValue(newQTable, current),
-    value: getDisplayQValue(newQTable, current),
-    visits: currentCell.visits + 1,
-  };
-
-  const reachedGoal = nextPos.x === state.goal.x && nextPos.y === state.goal.y;
-  const newSteps = state.currentSteps + 1;
-
-  if (reachedGoal) {
-    const episodeStat: EpisodeStats = {
-      episode: state.episode + 1,
-      steps: newSteps,
-      reward: state.totalReward + reward,
-      success: true,
-      mode: "playground",
-    };
-    const newHistory = [...state.episodeHistory.slice(-19), episodeStat];
-
-    return {
-      ...state,
-      agent: { ...state.spawn },
-      grid: newGrid,
-      qTable: newQTable,
-      totalReward: 0,
-      episode: state.episode + 1,
-      currentSteps: 0,
-      episodeHistory: newHistory,
-      portalCooldowns: {},
-    };
-  }
-
-  return {
-    ...state,
-    agent: nextPos,
-    grid: newGrid,
-    qTable: newQTable,
-    totalReward: state.totalReward + reward,
-    currentSteps: newSteps,
     portalCooldowns,
   };
 };

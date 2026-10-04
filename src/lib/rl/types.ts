@@ -1,4 +1,6 @@
 import type { TileType } from "@/components/RL/Tile";
+import type { QTable } from "./qLearning";
+import type { ConsumedTile } from "./consumedTiles";
 
 export type Language = "de" | "en";
 export type Mode = "playground" | "random" | "comparison";
@@ -45,6 +47,9 @@ export interface PlaygroundState {
   spawn: Position;
   portalCooldowns: Record<string, number>;
   pendingPortalTeleport?: { from: Position; to: Position; waitCounter: number } | null;
+  qTable: QTable;
+  /** Reward/punishment tiles eaten this episode; restored when the next episode starts. */
+  consumedTiles?: ConsumedTile[];
 }
 
 export interface RandomModeState {
@@ -88,6 +93,9 @@ export interface ComparisonRoverState {
   explorationRate: number;
   name: string;
   portalCooldowns: Record<string, number>;
+  qTable: QTable;
+  /** Reward/punishment tiles eaten this episode; restored when the next episode starts. */
+  consumedTiles?: ConsumedTile[];
 }
 
 export interface ComparisonState {

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { evaluateObjective, LEVEL_OBJECTIVES, shortestPathLength } from "./levelObjectives";
 import { LEVEL_WORLDS } from "./levelWorlds";
 import type { LevelNumber } from "./levelProgression";
@@ -57,7 +57,21 @@ const simulate = (level: LevelNumber, alpha: number, gamma: number, epsilon: num
   return Infinity;
 };
 
+// Deterministic Math.random (mulberry32) so the learnability numbers don't flicker between runs.
+const seedRandom = (seed: number) => {
+  let a = seed;
+  vi.spyOn(Math, "random").mockImplementation(() => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  });
+};
+
 describe("level objectives", () => {
+  beforeEach(() => seedRandom(12345));
+  afterEach(() => vi.restoreAllMocks());
+
   it("every level world has a path to the goal", () => {
     for (let l = 1; l <= 10; l++) {
       const { grid, world } = buildGrid(l as LevelNumber);
@@ -70,10 +84,11 @@ describe("level objectives", () => {
     (level) => {
       const alpha = level === 1 ? 0.1 : level === 2 ? 0.5 : 0.3;
       const gamma = level >= 3 ? 0.9 : 0.85;
-      const runs = Array.from({ length: 15 }, () => simulate(level, alpha, gamma, 0.2, 400, true));
+      const runs = Array.from({ length: 60 }, () => simulate(level, alpha, gamma, 0.2, 400, true));
       runs.sort((a, b) => a - b);
-      console.log(`level ${level}: median ${runs[7]} p90 ${runs[13]} episodes`);
-      expect(runs[13]).toBeLessThan(400);
+      const p90 = runs[Math.floor(runs.length * 0.9)];
+      console.log(`level ${level}: median ${runs[30]} p90 ${p90} episodes`);
+      expect(p90).toBeLessThan(400);
     },
   );
 
