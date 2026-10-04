@@ -76,16 +76,25 @@ describe("stepPlayground", () => {
   });
 
   it("keeps a tile the player placed on an eaten spot", () => {
-    const state = runEpisodes(makeState(), params({ explorationRate: 1 }), 1, (s) => {
-      if (s.consumedTiles?.length) {
-        const [{ x, y }] = s.consumedTiles;
-        const grid = s.grid.map((row) => row.map((c) => ({ ...c })));
-        grid[y][x] = tile("obstacle");
-        return { ...s, grid };
-      }
-      return s;
-    });
-    expect(count(state, "obstacle")).toBeGreaterThanOrEqual(1);
+    let verified = 0;
+    // A random walk sometimes reaches the goal without eating anything; only count runs where it did.
+    for (let attempt = 0; attempt < 200 && verified < 5; attempt++) {
+      let placed = false;
+      const state = runEpisodes(makeState(), params({ explorationRate: 1 }), 1, (s) => {
+        if (s.consumedTiles?.length && !placed) {
+          placed = true;
+          const [{ x, y }] = s.consumedTiles;
+          const grid = s.grid.map((row) => row.map((c) => ({ ...c })));
+          grid[y][x] = tile("obstacle");
+          return { ...s, grid };
+        }
+        return s;
+      });
+      if (!placed) continue;
+      verified++;
+      expect(count(state, "obstacle")).toBeGreaterThanOrEqual(1);
+    }
+    expect(verified).toBe(5);
   });
 
   it("stops after the goal when autoRestart is off and resets the episode counters", () => {
