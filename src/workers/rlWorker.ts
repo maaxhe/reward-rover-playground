@@ -28,6 +28,7 @@ import {
   isPortalOnCooldown,
 } from "../lib/rl/portalUtils";
 import { cloneGrid } from "../lib/rl/gridUtils";
+import { recordConsumedTile, restoreConsumedTiles, type ConsumedTile } from "../lib/rl/consumedTiles";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -66,6 +67,7 @@ interface PlaygroundState {
   portalCooldowns: Record<string, number>;
   pendingPortalTeleport?: { from: Position; to: Position; waitCounter: number } | null;
   qTable: QTable;
+  consumedTiles?: ConsumedTile[];
 }
 
 interface RLParams {
@@ -132,8 +134,10 @@ const runPlaygroundStep = (
   // Capture tile type before consumption for animation hint
   const movedTileType = state.grid[nextPos.y][nextPos.x].type;
 
+  let consumedTiles = state.consumedTiles ?? [];
   if (params.consumeRewards) {
     if (movedTileType === "reward" || movedTileType === "punishment") {
+      consumedTiles = recordConsumedTile(consumedTiles, nextPos.x, nextPos.y, state.grid[nextPos.y][nextPos.x]);
       newGrid[nextPos.y][nextPos.x] = { ...newGrid[nextPos.y][nextPos.x], type: "empty", value: 0 };
     }
   }
@@ -168,6 +172,7 @@ const runPlaygroundStep = (
       : null;
 
   if (reachedGoal) {
+    restoreConsumedTiles(newGrid, consumedTiles);
     const episodeStat: EpisodeStats = {
       episode: state.episode + 1,
       steps: newSteps,
@@ -178,6 +183,7 @@ const runPlaygroundStep = (
     return {
       nextState: {
         ...state,
+        consumedTiles: [],
         agent: { ...state.spawn },
         grid: newGrid,
         qTable: newQTable,
@@ -196,6 +202,7 @@ const runPlaygroundStep = (
   return {
     nextState: {
       ...state,
+      consumedTiles,
       agent: nextPos,
       grid: newGrid,
       qTable: newQTable,

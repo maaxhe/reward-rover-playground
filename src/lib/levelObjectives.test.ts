@@ -5,6 +5,7 @@ import type { LevelNumber } from "./levelProgression";
 import { createEmptyGrid } from "./rl/gridUtils";
 import { chooseAction, getTileReward, getQValue, getMaxQValue, posToActionIndex, setQValue, type QTable } from "./rl/qLearning";
 import { teleportThroughPortal } from "./rl/portalUtils";
+import { recordConsumedTile, restoreConsumedTiles, type ConsumedTile } from "./rl/consumedTiles";
 import type { EpisodeStats, TileState } from "./rl/types";
 
 const buildGrid = (level: LevelNumber) => {
@@ -25,6 +26,7 @@ const simulate = (level: LevelNumber, alpha: number, gamma: number, epsilon: num
   for (let episode = 1; episode <= maxEpisodes; episode++) {
     let pos = { ...world.agent };
     let steps = 0;
+    let eaten: ConsumedTile[] = [];
     while (steps < 3000) {
       const next = chooseAction(grid, pos, q, epsilon, null);
       let landing = next;
@@ -35,6 +37,7 @@ const simulate = (level: LevelNumber, alpha: number, gamma: number, epsilon: num
       }
       const reward = getTileReward(grid, [world.goal], landing);
       if (consume && (grid[landing.y][landing.x].type === "reward" || grid[landing.y][landing.x].type === "punishment")) {
+        eaten = recordConsumedTile(eaten, landing.x, landing.y, grid[landing.y][landing.x]);
         grid[landing.y][landing.x] = { ...grid[landing.y][landing.x], type: "empty" };
       }
       const a = posToActionIndex(pos, next);
@@ -44,6 +47,7 @@ const simulate = (level: LevelNumber, alpha: number, gamma: number, epsilon: num
       steps += 1 + extra;
       if (pos.x === world.goal.x && pos.y === world.goal.y) break;
     }
+    restoreConsumedTiles(grid, eaten);
     history.push({ episode, steps, reward: 0, success: true, mode: "playground" });
     const status = evaluateObjective({
       level, grid, spawn: world.agent, goal: world.goal, history: history.slice(-20), alpha: Math.max(alpha, 0.5), gamma: Math.max(gamma, 0.9),

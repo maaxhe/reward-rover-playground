@@ -48,6 +48,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { Position, TileState as LibTileState } from "@/lib/rl/types";
+import { recordConsumedTile, restoreConsumedTiles, type ConsumedTile } from "@/lib/rl/consumedTiles";
 import {
   type QTable,
   chooseAction,
@@ -429,6 +430,8 @@ export interface PlaygroundState {
   portalCooldowns: Record<string, number>;
   pendingPortalTeleport?: { from: Position; to: Position; waitCounter: number } | null;
   qTable: QTable;
+  /** Reward/punishment tiles eaten this episode; restored when the next episode starts. */
+  consumedTiles?: ConsumedTile[];
 }
 
 interface EpisodeStats {
@@ -653,8 +656,10 @@ const runPlaygroundStep = (
   const movedTileType = state.grid[nextPos.y][nextPos.x].type;
 
   // Belohnungen und Strafen verschwinden beim Einsammeln (optional)
+  let consumedTiles = state.consumedTiles ?? [];
   if (consumeRewards) {
     if (movedTileType === "reward" || movedTileType === "punishment") {
+      consumedTiles = recordConsumedTile(consumedTiles, nextPos.x, nextPos.y, state.grid[nextPos.y][nextPos.x]);
       newGrid[nextPos.y][nextPos.x] = {
         ...newGrid[nextPos.y][nextPos.x],
         type: "empty",
@@ -700,8 +705,12 @@ const runPlaygroundStep = (
     };
     const newHistory = [...state.episodeHistory.slice(-19), episodeStat];
 
+    // New episode: eaten rewards/punishments come back (unless the player replaced the tile meanwhile).
+    restoreConsumedTiles(newGrid, consumedTiles);
+
     return {
       ...state,
+      consumedTiles: [],
       agent: { ...state.spawn },
       grid: newGrid,
       qTable: newQTable,
@@ -717,6 +726,7 @@ const runPlaygroundStep = (
 
   return {
     ...state,
+    consumedTiles,
     agent: nextPos,
     grid: newGrid,
     qTable: newQTable,
@@ -1494,9 +1504,11 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   const [showLeaderboard, setShowLeaderboard] = useState(true);
   const [showStatistics, setShowStatistics] = useState(true);
   const [showActions, setShowActions] = useState(false);
-  const [consumeRewardsSetting, setConsumeRewards] = useState(false);
-  // Level Mode always consumes tiles: otherwise the rover can farm a reward by stepping on and off it forever and never finishes the episode.
-  const consumeRewards = levelMode || consumeRewardsSetting;
+  // Level Mode starts with consumption on (the rover can't farm a reward forever); eaten tiles come back each episode, and the player can still switch it off.
+  const [consumeRewards, setConsumeRewards] = useState(levelMode);
+  useEffect(() => {
+    if (levelMode) setConsumeRewards(true);
+  }, [levelMode]);
   const [isAutoRestartEnabled, setIsAutoRestartEnabled] = useState(false);
   const [showRewardHistory, setShowRewardHistory] = useState(true);
   const [showLegend, setShowLegend] = useState(false);
