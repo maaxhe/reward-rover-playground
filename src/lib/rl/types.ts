@@ -50,6 +50,8 @@ export interface PlaygroundState {
   qTable: QTable;
   /** Reward/punishment tiles eaten this episode; restored when the next episode starts. */
   consumedTiles?: ConsumedTile[];
+  /** Level Mode: how often each reward/punishment tile was hit this episode ("x,y" → count). */
+  tileVisits?: Record<string, number>;
 }
 
 export interface RandomModeState {

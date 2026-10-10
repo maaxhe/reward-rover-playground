@@ -19,11 +19,20 @@ import type { EpisodeStats, PlaygroundState, Position } from "./types";
 
 export const MAX_EPISODE_HISTORY = 20;
 
+/** Each repeat hit of a reward/punishment tile in one episode pays this fraction of the previous hit. */
+export const REWARD_DECAY_FACTOR = 0.5;
+
 export interface PlaygroundParams {
   explorationRate: number;
   alpha: number;
   gamma: number;
   consumeRewards: boolean;
+  /**
+   * Level Mode: rewards/punishments stay on the board, but each further hit of the same tile within
+   * one episode pays half as much (1, ½, ¼, …). The tile total is bounded, so the rover cannot farm
+   * a reward forever instead of finishing the episode. Ignored when consumeRewards is on.
+   */
+  rewardDecay?: boolean;
   autoRestart: boolean;
   directionBias: Position | null;
 }
@@ -63,7 +72,16 @@ export const stepPlayground = (state: PlaygroundState, params: PlaygroundParams)
     }
   }
 
-  const reward = getTileReward(state.grid, [state.goal], nextPos);
+  let reward = getTileReward(state.grid, [state.goal], nextPos);
+  let tileVisits = state.tileVisits ?? {};
+  const stepTileType = state.grid[nextPos.y][nextPos.x].type;
+  const movedOntoTile = nextPos.x !== current.x || nextPos.y !== current.y;
+  if (params.rewardDecay && !params.consumeRewards && movedOntoTile && (stepTileType === "reward" || stepTileType === "punishment")) {
+    const tileKey = `${nextPos.x},${nextPos.y}`;
+    const hits = tileVisits[tileKey] ?? 0;
+    reward *= REWARD_DECAY_FACTOR ** hits;
+    tileVisits = { ...tileVisits, [tileKey]: hits + 1 };
+  }
   const newGrid = cloneGrid(state.grid);
   const movedTileType = state.grid[nextPos.y][nextPos.x].type;
 
@@ -114,6 +132,7 @@ export const stepPlayground = (state: PlaygroundState, params: PlaygroundParams)
       nextState: {
         ...state,
         consumedTiles: [],
+        tileVisits: {},
         agent: { ...state.spawn },
         grid: newGrid,
         qTable: newQTable,
@@ -133,6 +152,7 @@ export const stepPlayground = (state: PlaygroundState, params: PlaygroundParams)
     nextState: {
       ...state,
       consumedTiles,
+      tileVisits,
       agent: nextPos,
       grid: newGrid,
       qTable: newQTable,

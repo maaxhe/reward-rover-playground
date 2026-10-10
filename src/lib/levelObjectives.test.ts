@@ -3,6 +3,7 @@ import { evaluateObjective, LEVEL_OBJECTIVES, shortestPathLength } from "./level
 import { LEVEL_WORLDS } from "./levelWorlds";
 import type { LevelNumber } from "./levelProgression";
 import { createEmptyGrid } from "./rl/gridUtils";
+import { REWARD_DECAY_FACTOR } from "./rl/playgroundStep";
 import { chooseAction, getTileReward, getQValue, getMaxQValue, posToActionIndex, setQValue, type QTable } from "./rl/qLearning";
 import { teleportThroughPortal } from "./rl/portalUtils";
 import { recordConsumedTile, restoreConsumedTiles, type ConsumedTile } from "./rl/consumedTiles";
@@ -27,6 +28,7 @@ const simulate = (level: LevelNumber, alpha: number, gamma: number, epsilon: num
     let pos = { ...world.agent };
     let steps = 0;
     let eaten: ConsumedTile[] = [];
+    const hits: Record<string, number> = {};
     while (steps < 3000) {
       const next = chooseAction(grid, pos, q, epsilon, null);
       let landing = next;
@@ -35,7 +37,14 @@ const simulate = (level: LevelNumber, alpha: number, gamma: number, epsilon: num
         landing = teleportThroughPortal(grid, next);
         extra = 2;
       }
-      const reward = getTileReward(grid, [world.goal], landing);
+      let reward = getTileReward(grid, [world.goal], landing);
+      const landed = grid[landing.y][landing.x].type;
+      if (!consume && (landed === "reward" || landed === "punishment")) {
+        // Level Mode rules: tiles stay, every repeat hit in one episode pays half as much.
+        const key = `${landing.x},${landing.y}`;
+        reward *= REWARD_DECAY_FACTOR ** (hits[key] ?? 0);
+        hits[key] = (hits[key] ?? 0) + 1;
+      }
       if (consume && (grid[landing.y][landing.x].type === "reward" || grid[landing.y][landing.x].type === "punishment")) {
         eaten = recordConsumedTile(eaten, landing.x, landing.y, grid[landing.y][landing.x]);
         grid[landing.y][landing.x] = { ...grid[landing.y][landing.x], type: "empty" };
@@ -84,7 +93,7 @@ describe("level objectives", () => {
     (level) => {
       const alpha = level === 1 ? 0.1 : level === 2 ? 0.5 : 0.3;
       const gamma = level >= 3 ? 0.9 : 0.85;
-      const runs = Array.from({ length: 60 }, () => simulate(level, alpha, gamma, 0.2, 400, true));
+      const runs = Array.from({ length: 60 }, () => simulate(level, alpha, gamma, 0.2, 400, false));
       runs.sort((a, b) => a - b);
       const p90 = runs[Math.floor(runs.length * 0.9)];
       console.log(`level ${level}: median ${runs[30]} p90 ${p90} episodes`);

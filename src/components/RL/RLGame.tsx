@@ -580,8 +580,9 @@ const runPlaygroundStep = (
   alpha = 0.1,
   gamma = 0.85,
   autoRestart = false,
+  rewardDecay = false,
 ): PlaygroundState =>
-  stepPlayground(state, { explorationRate, alpha, gamma, consumeRewards, autoRestart, directionBias: bias ?? null }).nextState;
+  stepPlayground(state, { explorationRate, alpha, gamma, consumeRewards, rewardDecay, autoRestart, directionBias: bias ?? null }).nextState;
 
 const runRandomModeStep = (
   state: RandomModeState,
@@ -1268,11 +1269,10 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   const [showLeaderboard, setShowLeaderboard] = useState(true);
   const [showStatistics, setShowStatistics] = useState(true);
   const [showActions, setShowActions] = useState(false);
-  // Level Mode starts with consumption on (the rover can't farm a reward forever); eaten tiles come back each episode, and the player can still switch it off.
-  const [consumeRewards, setConsumeRewards] = useState(levelMode);
-  useEffect(() => {
-    if (levelMode) setConsumeRewards(true);
-  }, [levelMode]);
+  // Level Mode has fixed rules: rewards stay on the board and pay less on every repeat hit (see rewardDecay).
+  // Only Free Mode lets the player choose whether eaten tiles disappear.
+  const [consumeRewardsSetting, setConsumeRewards] = useState(false);
+  const consumeRewards = levelMode ? false : consumeRewardsSetting;
   const [isAutoRestartEnabled, setIsAutoRestartEnabled] = useState(false);
   const [showRewardHistory, setShowRewardHistory] = useState(true);
   const [showLegend, setShowLegend] = useState(false);
@@ -2075,12 +2075,13 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
         alpha,
         gamma,
         consumeRewards,
+        rewardDecay: levelMode,
         autoRestart: isAutoRestartEnabled && !isReplaying,
         directionBias,
       },
     };
     worker.postMessage(msg);
-  }, [explorationRate, alpha, gamma, consumeRewards, isAutoRestartEnabled, directionBias, isReplaying]);
+  }, [explorationRate, alpha, gamma, consumeRewards, levelMode, isAutoRestartEnabled, directionBias, isReplaying]);
 
   // ── Web Worker: sync speed ────────────────────────────────────────────────
   useEffect(() => {
@@ -2121,6 +2122,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
           alpha,
           gamma,
           consumeRewards,
+          rewardDecay: levelMode,
           autoRestart: isAutoRestartEnabled && !isReplaying,
           directionBias,
         },
@@ -2550,7 +2552,7 @@ const handleActiveBonusClick = useCallback(() => {
       const initMsg: ToWorkerMsg = {
         type: "INIT",
         state: { ...playgroundState, isRunning: false },
-        params: { explorationRate, alpha, gamma, consumeRewards, autoRestart: false, directionBias },
+        params: { explorationRate, alpha, gamma, consumeRewards, rewardDecay: levelMode, autoRestart: false, directionBias },
         delayMs: simulationDelayMs,
       };
       worker.postMessage(initMsg);
@@ -2558,7 +2560,7 @@ const handleActiveBonusClick = useCallback(() => {
     } else {
       // Fallback: run on main thread
       setPlaygroundState((prev) => {
-        const next = runPlaygroundStep({ ...prev, isRunning: true }, explorationRate, directionBias, consumeRewards, alpha, gamma);
+        const next = runPlaygroundStep({ ...prev, isRunning: true }, explorationRate, directionBias, consumeRewards, alpha, gamma, false, levelMode);
         return { ...next, isRunning: prev.isRunning };
       });
     }
@@ -5256,16 +5258,8 @@ const handleActiveBonusClick = useCallback(() => {
                     ? Math.max(...activeGrid.flat().map(cell => cell.visits), 1)
                     : 1;
 
-                  // In levels, eaten rewards/punishments stay visible (they are only paid once per episode).
-                  const eatenTiles = new Map<string, ConsumedTile>();
-                  if (levelMode && mode === "playground") {
-                    for (const t of playgroundState.consumedTiles ?? []) eatenTiles.set(`${t.x},${t.y}`, t);
-                  }
-
                   return activeGrid.map((row, y) =>
-                  row.map((shownCell, x) => {
-                    const eaten = eatenTiles.get(`${x},${y}`);
-                    const cell = eaten && shownCell.type === "empty" ? { ...shownCell, type: eaten.type, value: eaten.value } : shownCell;
+                  row.map((cell, x) => {
                     const isAgent =
                       mode === "playground"
                         ? playgroundState.agent.x === x && playgroundState.agent.y === y
@@ -5532,16 +5526,22 @@ const handleActiveBonusClick = useCallback(() => {
                       <Switch
                         id="consume-rewards-settings"
                         checked={consumeRewards}
+                        disabled={levelMode}
                         onCheckedChange={setConsumeRewards}
                         aria-label={translate("Belohnungen/Strafen verschwinden umschalten", "Toggle consume rewards")}
                       />
                     </div>
                     {showConsumeRewardsInfo && (
                       <p className="text-xs text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
-                        {translate(
-                          "Belohnungen und Strafen verschwinden nach dem Einsammeln.",
-                          "Rewards and penalties disappear after collection.",
-                        )}
+                        {levelMode
+                          ? translate(
+                              "In Levels bleiben Belohnungen und Strafen liegen. Jeder weitere Treffer im selben Durchlauf zählt nur halb so viel – so kann der Rover sie nicht endlos abgrasen.",
+                              "In levels rewards and penalties stay on the board. Every repeat hit in the same episode pays half as much, so the rover can't farm them forever.",
+                            )
+                          : translate(
+                              "Belohnungen und Strafen verschwinden nach dem Einsammeln.",
+                              "Rewards and penalties disappear after collection.",
+                            )}
                       </p>
                     )}
                   </div>
