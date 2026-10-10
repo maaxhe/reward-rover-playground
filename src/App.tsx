@@ -8,6 +8,9 @@ import Index from "./pages/Index";
 // The admin dashboard is rarely opened — keep it (and its deps) out of the main bundle.
 const Admin = lazy(() => import("./pages/Admin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const ClassroomHome = lazy(() => import("./pages/classroom/ClassroomHome"));
+const ClassroomHost = lazy(() => import("./pages/classroom/ClassroomHost"));
+const ClassroomPlay = lazy(() => import("./pages/classroom/ClassroomPlay"));
 
 const queryClient = new QueryClient();
 
@@ -21,6 +24,9 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/klasse" element={<ClassroomHome />} />
+          <Route path="/klasse/host/:code" element={<ClassroomHost />} />
+          <Route path="/klasse/play/:code" element={<ClassroomPlay />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
