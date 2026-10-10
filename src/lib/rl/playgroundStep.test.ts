@@ -55,9 +55,10 @@ describe("stepPlayground", () => {
   it("really consumes tiles during an episode", () => {
     let state = makeState();
     let sawGone = false;
-    for (let i = 0; i < 5000 && state.episode < 1; i++) {
+    // A single random episode may never touch a reward tile, so give it several tries.
+    for (let i = 0; i < 20000 && !sawGone; i++) {
       state = stepPlayground(state, params()).nextState;
-      if (state.episode === 0 && state.consumedTiles!.length > 0) {
+      if (state.consumedTiles!.length > 0) {
         sawGone = true;
         expect(count(state, "reward") + count(state, "punishment")).toBeLessThan(2);
       }

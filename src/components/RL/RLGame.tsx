@@ -4962,7 +4962,6 @@ const handleActiveBonusClick = useCallback(() => {
                 onReplay={handleReplayBest}
                 isReplaying={isReplaying}
                 onStopReplay={handleStopReplay}
-                onLoadPreset={handleLoadPreset}
                 placementMode={placementMode}
                 onPlacementModeChange={changePlacementMode}
                 simulationSpeed={simulationSpeed}
@@ -5257,8 +5256,16 @@ const handleActiveBonusClick = useCallback(() => {
                     ? Math.max(...activeGrid.flat().map(cell => cell.visits), 1)
                     : 1;
 
+                  // In levels, eaten rewards/punishments stay visible (they are only paid once per episode).
+                  const eatenTiles = new Map<string, ConsumedTile>();
+                  if (levelMode && mode === "playground") {
+                    for (const t of playgroundState.consumedTiles ?? []) eatenTiles.set(`${t.x},${t.y}`, t);
+                  }
+
                   return activeGrid.map((row, y) =>
-                  row.map((cell, x) => {
+                  row.map((shownCell, x) => {
+                    const eaten = eatenTiles.get(`${x},${y}`);
+                    const cell = eaten && shownCell.type === "empty" ? { ...shownCell, type: eaten.type, value: eaten.value } : shownCell;
                     const isAgent =
                       mode === "playground"
                         ? playgroundState.agent.x === x && playgroundState.agent.y === y
@@ -5639,6 +5646,41 @@ const handleActiveBonusClick = useCallback(() => {
                 </div>
               )}
             </Card>
+
+            {mode === "playground" && !levelMode && (
+              <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-3">
+                <h3 className="text-lg font-bold text-foreground">
+                  {translate("Preset-Levels", "Preset levels")}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {translate(
+                    "Fertige Welten zum Ausprobieren – ersetzt das aktuelle Feld.",
+                    "Ready-made worlds to try out – replaces the current grid.",
+                  )}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {PRESET_LEVELS.map((preset) => (
+                    <TooltipProvider key={preset.key}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleLoadPreset(preset)}
+                            className="text-xs font-semibold h-auto py-2"
+                          >
+                            {preset.name[language]}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">{preset.description[language]}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
+                </div>
+              </Card>
+            )}
 
             {mode === "random" && (
               <>

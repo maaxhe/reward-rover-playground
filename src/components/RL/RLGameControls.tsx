@@ -10,7 +10,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { cn } from "@/lib/utils";
 import type { UnlockedFeatures } from "@/lib/levelProgression";
 import type { Language, Mode } from "@/lib/rl/types";
-import { PRESET_LEVELS, type PresetLevel } from "@/lib/rl/presets";
 import { SIMULATION_SPEEDS, type SimulationSpeed } from "@/lib/rl/simulation";
 import type { PlaceableTile, PlaygroundState, RandomModeState } from "./RLGame";
 import { ChevronDown, ChevronUp, Pause, Play, RotateCcw, Undo2 } from "lucide-react";
@@ -26,7 +25,6 @@ type PlaygroundControlsProps = {
   onReplay?: () => void;
   isReplaying?: boolean;
   onStopReplay?: () => void;
-  onLoadPreset: (preset: PresetLevel) => void;
   placementMode: PlaceableTile;
   onPlacementModeChange: (type: PlaceableTile) => void;
   simulationSpeed: SimulationSpeed;
@@ -56,7 +54,6 @@ export const PlaygroundControls = ({
   onReplay,
   isReplaying = false,
   onStopReplay,
-  onLoadPreset,
   placementMode,
   onPlacementModeChange,
   simulationSpeed,
@@ -74,8 +71,6 @@ export const PlaygroundControls = ({
   levelMode,
   unlockedFeatures,
 }: PlaygroundControlsProps) => {
-  const [presetsOpen, setPresetsOpen] = useState(false);
-
   return (
     <div className="space-y-5">
       <div>
@@ -135,44 +130,6 @@ export const PlaygroundControls = ({
           ))}
         </div>
       </div>
-
-      <Collapsible open={presetsOpen} onOpenChange={setPresetsOpen} className="space-y-2">
-        <CollapsibleTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-between rounded-xl border border-border/40 bg-background/60 font-semibold text-base"
-          >
-            <span>{translate("Preset Levels", "Preset Levels")}</span>
-            <ChevronDown
-              className={cn("h-4 w-4 transition-transform duration-200", presetsOpen ? "rotate-180" : "")}
-            />
-          </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            {PRESET_LEVELS.map((preset) => (
-              <TooltipProvider key={preset.key}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onLoadPreset(preset)}
-                      className="text-xs font-semibold h-auto py-2"
-                    >
-                      {preset.name[language]}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-xs">{preset.description[language]}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ))}
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
 
       <div className="space-y-2">
       <Label className="text-base font-semibold text-foreground">
