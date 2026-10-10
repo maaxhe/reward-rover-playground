@@ -1283,7 +1283,6 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   const consumeRewards = levelMode ? false : consumeRewardsSetting;
   const [isAutoRestartEnabled, setIsAutoRestartEnabled] = useState(false);
   const [showRewardHistory, setShowRewardHistory] = useState(true);
-  const [showLegend, setShowLegend] = useState(false);
   const [showQValuesInfo, setShowQValuesInfo] = useState(false);
   const [showHeatmapInfo, setShowHeatmapInfo] = useState(false);
   const [showConsumeRewardsInfo, setShowConsumeRewardsInfo] = useState(false);
@@ -3326,22 +3325,6 @@ const handleActiveBonusClick = useCallback(() => {
         "Spiele eine Episode, um deinen ersten Eintrag freizuschalten.",
         "Complete an episode to unlock your first entry.",
       );
-  const legend = (
-    <div className="mt-3 grid gap-3 text-sm">
-      {legendItems.map((item) => (
-        <div key={item.label} className="flex items-center gap-3 group">
-          <span className={cn("legend-dot transition-transform group-hover:scale-110", item.className)} aria-hidden />
-          <div className="flex flex-col">
-            <span className="font-bold text-foreground">
-              {item.emoji} {item.label}
-            </span>
-            <span className="text-sm text-muted-foreground leading-relaxed">{item.description}</span>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
   const gridStyle: React.CSSProperties = {
     gridTemplateColumns: `repeat(${gridSize}, ${tileSizePx}px)`,
     gridTemplateRows: `repeat(${gridSize}, ${tileSizePx}px)`,
@@ -5255,22 +5238,6 @@ const handleActiveBonusClick = useCallback(() => {
                 </div>
               ))}
             </Card>
-
-            <Collapsible open={showLegend} onOpenChange={setShowLegend}>
-              <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4">
-                <CollapsibleTrigger className="w-full">
-                  <div className="flex items-center justify-between cursor-pointer mb-3">
-                    <h3 className="text-base font-bold text-foreground">
-                      {translate("📚 Legende", "📚 Legend")}
-                    </h3>
-                    {showLegend ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-                  {legend}
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
               </>
               )}
 
@@ -5381,6 +5348,23 @@ const handleActiveBonusClick = useCallback(() => {
                 🤖
               </div>
             </div>
+            </div>
+
+            <div
+              className="mx-auto mt-4 w-full rounded-xl border border-border/50 bg-secondary/20 p-3"
+              style={{ maxWidth: gridPixelDimension + 40 }}
+              aria-label={translate("Legende", "Legend")}
+            >
+              <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm">
+                {legendItems.map((item) => (
+                  <li key={item.label} className="flex items-center gap-2" title={item.description}>
+                    <span className={cn("legend-dot", item.className)} aria-hidden />
+                    <span className="font-semibold text-foreground">
+                      {item.emoji} {item.label}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
 
             {mode === "playground" && (
