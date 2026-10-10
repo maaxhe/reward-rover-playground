@@ -14,6 +14,7 @@ const ClassroomHome = () => {
   const [name, setName] = useState("");
   const [minutes, setMinutes] = useState(5);
   const [budget, setBudget] = useState(60);
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -48,7 +49,7 @@ const ClassroomHome = () => {
 
   const create = () =>
     run(async () => {
-      const room = await competitionApi.createRoom({ trainingMinutes: minutes, episodeBudget: budget });
+      const room = await competitionApi.createRoom(password, { trainingMinutes: minutes, episodeBudget: budget });
       sessionStore.setHostKey(room.code, room.hostKey);
       navigate(`/klasse/host/${room.code}`);
     });
@@ -98,7 +99,11 @@ const ClassroomHome = () => {
               Weniger Episoden heißt: Die Wahl von ε, α und γ entscheidet stärker über das Ergebnis.
             </p>
           </div>
-          <Button className="w-full" variant="secondary" disabled={busy} onClick={create}>
+          <div className="space-y-2">
+            <Label htmlFor="teacher-pw">Lehrkraft-Passwort</Label>
+            <Input id="teacher-pw" type="password" autoComplete="off" value={password} onChange={(e) => setPassword(e.target.value)} />
+          </div>
+          <Button className="w-full" variant="secondary" disabled={busy || !password} onClick={create}>
             Raum erstellen
           </Button>
         </Card>

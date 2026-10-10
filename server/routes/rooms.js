@@ -113,9 +113,32 @@ const leaderboardOf = (room) => {
   return rows.map((row, i) => ({ ...row, rank: row.submitted ? i + 1 : null }));
 };
 
+/** Creating a room needs the teacher password from ROOM_CREATE_PASSWORD (.env). Unset = creation disabled. */
+const passwordMatches = (given) => {
+  const expected = process.env.ROOM_CREATE_PASSWORD;
+  if (!expected) return false;
+  const a = crypto.createHash("sha256").update(String(given ?? "")).digest();
+  const b = crypto.createHash("sha256").update(expected).digest();
+  return crypto.timingSafeEqual(a, b);
+};
+const failedAttempts = new Map();
+const MAX_FAILED_PER_10_MIN = 8;
+
 router.post("/rooms", (req, res) => {
   const now = Date.now();
   const ip = req.ip || "unknown";
+  if (!process.env.ROOM_CREATE_PASSWORD) {
+    return res.status(503).json({ error: "Room creation is not configured" });
+  }
+  const fails = (failedAttempts.get(ip) || []).filter((t) => now - t < 10 * 60 * 1000);
+  if (fails.length >= MAX_FAILED_PER_10_MIN) {
+    return res.status(429).json({ error: "Too many wrong passwords, try again in a few minutes" });
+  }
+  if (!passwordMatches(req.body?.password)) {
+    fails.push(now);
+    failedAttempts.set(ip, fails);
+    return res.status(401).json({ error: "Wrong password" });
+  }
   const recent = (roomCreations.get(ip) || []).filter((t) => now - t < 60 * 60 * 1000);
   if (recent.length >= ROOMS_PER_IP_PER_HOUR) {
     return res.status(429).json({ error: "Too many rooms created, try again later" });
@@ -321,6 +344,9 @@ setInterval(() => {
   const now = Date.now();
   for (const [code, room] of rooms) {
     if (now - room.createdAt > ROOM_TTL_MS) rooms.delete(code);
+  }
+  for (const [ip, times] of failedAttempts) {
+    if (times.every((t) => now - t > 10 * 60 * 1000)) failedAttempts.delete(ip);
   }
   for (const [ip, times] of roomCreations) {
     if (times.every((t) => now - t > 60 * 60 * 1000)) roomCreations.delete(ip);

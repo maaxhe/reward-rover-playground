@@ -78,8 +78,8 @@ async function call<T>(path: string, options?: RequestInit & { hostKey?: string 
 }
 
 export const competitionApi = {
-  createRoom: (settings: Partial<RoomSettings> = {}) =>
-    call<{ code: string; hostKey: string }>("/rooms", { method: "POST", body: JSON.stringify(settings) }),
+  createRoom: (password: string, settings: Partial<RoomSettings> = {}) =>
+    call<{ code: string; hostKey: string }>("/rooms", { method: "POST", body: JSON.stringify({ ...settings, password }) }),
 
   /** Lobby only. `reroll` builds a new world; `seed` pins a specific one. */
   updateSettings: (code: string, hostKey: string, patch: Partial<RoomSettings> & { reroll?: boolean; seed?: number }) =>

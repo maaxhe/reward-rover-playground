@@ -81,6 +81,15 @@ export function LiveRover({ translate }: Props) {
   }
 
   const cell = 52;
+  const gap = 3;
+  const pad = 10;
+  // Glide between neighbouring tiles; a jump (new episode, portal) snaps instead of sweeping across the board.
+  const prevAgent = useRef(view.agent);
+  const jumped = Math.abs(view.agent.x - prevAgent.current.x) + Math.abs(view.agent.y - prevAgent.current.y) > 1;
+  useEffect(() => {
+    prevAgent.current = view.agent;
+  }, [view.agent]);
+
   return (
     <figure className="lr-figure">
       <div
@@ -111,11 +120,22 @@ export function LiveRover({ translate }: Props) {
                     {ARROW[dir]}
                   </span>
                 )}
-                {isAgent && <span className="lr-rover" aria-hidden />}
               </div>
             );
           }),
         )}
+        <div
+          className="lr-rover-slot"
+          style={{
+            width: cell,
+            height: cell,
+            transform: `translate(${pad + view.agent.x * (cell + gap)}px, ${pad + view.agent.y * (cell + gap)}px)`,
+            transition: jumped || !running ? "none" : `transform ${TICK_MS}ms linear`,
+          }}
+          aria-hidden
+        >
+          <span className="lr-rover" />
+        </div>
       </div>
       <figcaption className="lr-caption">
         <p>{caption}</p>
