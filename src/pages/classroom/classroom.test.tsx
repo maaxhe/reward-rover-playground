@@ -73,6 +73,8 @@ describe("classroom pages", () => {
     render(<MemoryRouter initialEntries={["/klasse/host/1234"]}><Routes><Route path="/klasse/host/:code" element={<ClassroomHost />} /></Routes></MemoryRouter>);
     await waitFor(() => expect(screen.getByText("1234")).toBeTruthy());
     expect(screen.getByText("▶ Training starten")).toBeTruthy();
+    // QR code pointing at the join link with the room code prefilled
+    expect(screen.getByLabelText(/QR-Code zum Beitreten.*klasse\?code=1234/)).toBeTruthy();
     await act(async () => {});
   });
 });

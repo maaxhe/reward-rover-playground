@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CompetitionBoard, useTileSize } from "@/components/RL/CompetitionBoard";
@@ -67,12 +68,18 @@ const ClassroomHost = () => {
     <ClassroomShell wide>
       <div className="grid gap-6 lg:grid-cols-[1fr_auto]">
         <div className="space-y-4">
-          <Card className="rounded-lg border-border/40 bg-card/60 p-5">
-            <p className="text-sm text-muted-foreground">Raum-Code · {joinUrl.replace(/^https?:\/\//, "")}</p>
-            <p className="text-6xl font-extrabold tracking-[0.3em] gradient-text">{room.code}</p>
-            <p className="mt-2 text-sm">
-              {room.playerCount} {room.playerCount === 1 ? "Person" : "Personen"} · Training {room.trainingMs / 60000} Min · Budget {room.episodeBudget} Episoden
-            </p>
+          <Card className="flex flex-wrap items-center gap-5 rounded-lg border-border/40 bg-card/60 p-5">
+            {/* White tile + quiet zone keep the code scannable in dark mode and on a projector. */}
+            <div className="rounded-xl bg-white p-3 shadow-md">
+              <QRCodeSVG value={joinUrl} size={160} level="M" marginSize={0} aria-label={`QR-Code zum Beitreten: ${joinUrl}`} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm text-muted-foreground">Scannen oder Code eingeben auf {joinUrl.replace(/^https?:\/\//, "").split("?")[0]}</p>
+              <p className="text-6xl font-extrabold tracking-[0.3em] gradient-text">{room.code}</p>
+              <p className="mt-2 text-sm">
+                {room.playerCount} {room.playerCount === 1 ? "Person" : "Personen"} · Training {room.trainingMs / 60000} Min · Budget {room.episodeBudget} Episoden
+              </p>
+            </div>
           </Card>
 
           <Card className="flex flex-wrap items-center gap-3 rounded-lg border-border/40 bg-card/60 p-4">
