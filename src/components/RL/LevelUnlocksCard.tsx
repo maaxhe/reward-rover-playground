@@ -13,7 +13,8 @@ const FEATURE_LABELS = {
     canPlaceRewards: "Belohnungen platzieren",
     canPlacePunishments: "Strafen platzieren",
     canPlacePortals: "Portale nutzen",
-    canChangeGridSize: "Gittergröße ändern",
+    canChangeGridSize: "Gittergröße (mittel)",
+    canUseLargeGrid: "Großes Feld",
     canAdjustAlpha: "Lernrate (α)",
     canAdjustGamma: "Diskontfaktor (γ)",
   },
@@ -22,7 +23,8 @@ const FEATURE_LABELS = {
     canPlaceRewards: "Place rewards",
     canPlacePunishments: "Place penalties",
     canPlacePortals: "Use portals",
-    canChangeGridSize: "Change grid size",
+    canChangeGridSize: "Grid size (medium)",
+    canUseLargeGrid: "Large board",
     canAdjustAlpha: "Learning rate (α)",
     canAdjustGamma: "Discount factor (γ)",
   },
@@ -40,6 +42,7 @@ export function LevelUnlocksCard({ currentLevel, translate }: LevelUnlocksCardPr
     ["canPlacePunishments", labels.canPlacePunishments],
     ["canPlaceWalls", labels.canPlaceWalls],
     ["canChangeGridSize", labels.canChangeGridSize],
+    ["canUseLargeGrid", labels.canUseLargeGrid],
     ["canPlacePortals", labels.canPlacePortals],
   ];
 

@@ -2881,6 +2881,7 @@ const handleActiveBonusClick = useCallback(() => {
 
   const handleLoadSavedEnvironment = useCallback(
     (env: { name: string; gridConfig: GridConfig; progressData: unknown }) => {
+      if (levelMode) return;
       handleLoadEnvironment(env.gridConfig, env.progressData);
       toast({
         title: translate("Umgebung geladen", "Environment loaded"),
@@ -2890,7 +2891,7 @@ const handleActiveBonusClick = useCallback(() => {
         ),
       });
     },
-    [handleLoadEnvironment, translate],
+    [handleLoadEnvironment, translate, levelMode],
   );
 
   useEffect(() => {
@@ -5290,7 +5291,7 @@ const handleActiveBonusClick = useCallback(() => {
             </div>
             </div>
 
-            {mode === "playground" && (
+            {mode === "playground" && !levelMode && (
               <div className="mt-4 space-y-4 hidden lg:block">
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold text-foreground">
@@ -5539,7 +5540,10 @@ const handleActiveBonusClick = useCallback(() => {
                     key={sizeKey}
                     variant={tileSize === sizeKey ? "default" : "outline"}
                     onClick={() => handleTileSizeChange(sizeKey)}
-                    disabled={levelMode && !unlockedFeatures?.canChangeGridSize}
+                    disabled={
+                      levelMode &&
+                      (!unlockedFeatures?.canChangeGridSize || (sizeKey === "l" && !unlockedFeatures?.canUseLargeGrid))
+                    }
                     className="rounded-lg text-base font-semibold w-full justify-between px-4"
                   >
                     <span>{sizeLabels[sizeKey]}</span>
@@ -5551,62 +5555,70 @@ const handleActiveBonusClick = useCallback(() => {
               </div>
               {levelMode && !unlockedFeatures?.canChangeGridSize && (
                 <p className="text-xs text-muted-foreground italic mt-3">
-                  🔒 {translate("Schalte Level 7 frei, um die Gittergröße anzupassen.", "Reach level 7 to change grid size.")}
+                  🔒 {translate("Schalte Level 5 frei, um das Feld auf Mittel zu stellen.", "Reach level 5 to switch to the medium board.")}
+                </p>
+              )}
+              {levelMode && unlockedFeatures?.canChangeGridSize && !unlockedFeatures?.canUseLargeGrid && (
+                <p className="text-xs text-muted-foreground italic mt-3">
+                  🔒 {translate("Schalte Level 7 frei, um das große Feld zu nutzen.", "Reach level 7 to use the large board.")}
                 </p>
               )}
             </Card>
 
-            <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-3 hidden lg:block">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-foreground">
-                  {translate("Meine Umgebungen", "My environments")}
-                </h3>
-                {authUser && (
-                  <Badge variant="secondary" className="bg-foreground/10 text-foreground border-foreground/15">
-                    {savedEnvironments.length}
-                  </Badge>
-                )}
-              </div>
-              {isLoadingEnvs ? (
-                <p className="text-xs text-muted-foreground">
-                  {translate("Umgebungen werden geladen…", "Loading environments…")}
-                </p>
-              ) : !authUser ? (
-                <p className="text-xs text-muted-foreground">
-                  {translate(
-                    "Zum Anzeigen deiner Umgebungen bitte einloggen.",
-                    "Log in to see your environments.",
+            {/* Saved environments are Free Mode only: loading one in a level would replace the level world. */}
+            {!levelMode && (
+              <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-3 hidden lg:block">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-foreground">
+                    {translate("Meine Umgebungen", "My environments")}
+                  </h3>
+                  {authUser && (
+                    <Badge variant="secondary" className="bg-foreground/10 text-foreground border-foreground/15">
+                      {savedEnvironments.length}
+                    </Badge>
                   )}
-                </p>
-              ) : savedEnvironments.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  {translate(
-                    "Noch keine gespeicherten Umgebungen.",
-                    "No saved environments yet.",
-                  )}
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {savedEnvironments.map((env) => (
-                    <div
-                      key={env.id}
-                      className="flex items-center gap-3 rounded-xl border border-border/40 bg-background/60 p-3"
-                    >
-                      {renderEnvironmentPreview(env.gridConfig)}
-                      <div className="flex-1">
-                        <div className="text-sm font-semibold text-foreground">{env.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {env.gridConfig.size} × {env.gridConfig.size}
-                        </div>
-                      </div>
-                      <Button variant="outline" size="sm" onClick={() => handleLoadSavedEnvironment(env)}>
-                        {translate("Laden", "Load")}
-                      </Button>
-                    </div>
-                  ))}
                 </div>
-              )}
-            </Card>
+                {isLoadingEnvs ? (
+                  <p className="text-xs text-muted-foreground">
+                    {translate("Umgebungen werden geladen…", "Loading environments…")}
+                  </p>
+                ) : !authUser ? (
+                  <p className="text-xs text-muted-foreground">
+                    {translate(
+                      "Zum Anzeigen deiner Umgebungen bitte einloggen.",
+                      "Log in to see your environments.",
+                    )}
+                  </p>
+                ) : savedEnvironments.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    {translate(
+                      "Noch keine gespeicherten Umgebungen.",
+                      "No saved environments yet.",
+                    )}
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {savedEnvironments.map((env) => (
+                      <div
+                        key={env.id}
+                        className="flex items-center gap-3 rounded-xl border border-border/40 bg-background/60 p-3"
+                      >
+                        {renderEnvironmentPreview(env.gridConfig)}
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-foreground">{env.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {env.gridConfig.size} × {env.gridConfig.size}
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => handleLoadSavedEnvironment(env)}>
+                          {translate("Laden", "Load")}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            )}
 
             {mode === "playground" && !levelMode && (
               <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-3">

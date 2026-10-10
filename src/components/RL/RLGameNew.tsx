@@ -150,7 +150,10 @@ export function RLGameNew() {
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Mode Selector */}
       <div className="border-b border-border/40 bg-card/30 px-4 md:px-8 py-4 sticky top-0 z-30">
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Link to="/" className="mr-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
+            ← {translate("Startseite", "Home")}
+          </Link>
           <Button
             variant={mode === "levels" ? "default" : "outline"}
             onClick={() => setMode("levels")}

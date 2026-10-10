@@ -5,7 +5,10 @@ export interface UnlockedFeatures {
   canPlaceRewards: boolean;
   canPlacePunishments: boolean;
   canPlacePortals: boolean;
+  /** Medium board (Level 5+). */
   canChangeGridSize: boolean;
+  /** Largest board (Level 7+). */
+  canUseLargeGrid: boolean;
   canAdjustAlpha: boolean;
   canAdjustGamma: boolean;
 }
@@ -32,6 +35,7 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
       canPlacePunishments: false,
       canPlacePortals: false,
       canChangeGridSize: false,
+      canUseLargeGrid: false,
       canAdjustAlpha: false,
       canAdjustGamma: false,
     },
@@ -48,6 +52,7 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
       canPlacePunishments: false,
       canPlacePortals: false,
       canChangeGridSize: false,
+      canUseLargeGrid: false,
       canAdjustAlpha: true,
       canAdjustGamma: false,
     },
@@ -64,6 +69,7 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
       canPlacePunishments: false,
       canPlacePortals: false,
       canChangeGridSize: false,
+      canUseLargeGrid: false,
       canAdjustAlpha: true,
       canAdjustGamma: true,
     },
@@ -80,6 +86,7 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
       canPlacePunishments: false,
       canPlacePortals: false,
       canChangeGridSize: false,
+      canUseLargeGrid: false,
       canAdjustAlpha: true,
       canAdjustGamma: true,
     },
@@ -95,7 +102,8 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
       canPlaceRewards: true,
       canPlacePunishments: true,
       canPlacePortals: false,
-      canChangeGridSize: false,
+      canChangeGridSize: true,
+      canUseLargeGrid: false,
       canAdjustAlpha: true,
       canAdjustGamma: true,
     },
@@ -111,7 +119,8 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
       canPlaceRewards: true,
       canPlacePunishments: true,
       canPlacePortals: false,
-      canChangeGridSize: false,
+      canChangeGridSize: true,
+      canUseLargeGrid: false,
       canAdjustAlpha: true,
       canAdjustGamma: true,
     },
@@ -128,6 +137,7 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
       canPlacePunishments: true,
       canPlacePortals: false,
       canChangeGridSize: true,
+      canUseLargeGrid: true,
       canAdjustAlpha: true,
       canAdjustGamma: true,
     },
@@ -144,6 +154,7 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
       canPlacePunishments: true,
       canPlacePortals: true,
       canChangeGridSize: true,
+      canUseLargeGrid: true,
       canAdjustAlpha: true,
       canAdjustGamma: true,
     },
@@ -160,6 +171,7 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
       canPlacePunishments: true,
       canPlacePortals: true,
       canChangeGridSize: true,
+      canUseLargeGrid: true,
       canAdjustAlpha: true,
       canAdjustGamma: true,
     },
@@ -176,6 +188,7 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
       canPlacePunishments: true,
       canPlacePortals: true,
       canChangeGridSize: true,
+      canUseLargeGrid: true,
       canAdjustAlpha: true,
       canAdjustGamma: true,
     },
