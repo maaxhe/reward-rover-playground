@@ -22,6 +22,8 @@ export const ClassroomShell = ({ children, wide = false }: { children: ReactNode
       <main className={cn("mx-auto px-4 py-6", wide ? "max-w-6xl" : "max-w-3xl")}>{children}</main>
       <footer className="mx-auto max-w-6xl px-4 pb-8 text-xs text-muted-foreground">
         <Link to="/impressum" className="underline underline-offset-2 hover:text-foreground">Impressum</Link>
+        {" · "}
+        <Link to="/datenschutz" className="underline underline-offset-2 hover:text-foreground">Datenschutz</Link>
       </footer>
     </div>
   </LanguageProvider>

@@ -3,6 +3,7 @@ import { render, screen, fireEvent, cleanup, act } from "@testing-library/react"
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import Landing from "./Landing";
 import Impressum from "./Impressum";
+import Datenschutz from "./Datenschutz";
 import { DEMO_WORLD } from "@/components/landing/LiveRover";
 import { shortestPathLength } from "@/lib/levelObjectives";
 import { worldToState } from "@/lib/competition/world";
@@ -72,5 +73,18 @@ describe("imprint", () => {
     expect(screen.getByText(/§ 5 DDG/)).toBeTruthy();
     expect(screen.getByText("Maximilian E. Herrmann", { selector: "strong" })).toBeTruthy();
     expect(screen.getByText("contact@maximilianherrmann.com").getAttribute("href")).toBe("mailto:contact@maximilianherrmann.com");
+  });
+});
+
+describe("privacy notice", () => {
+  it("is linked from the landing footer and covers accounts, rooms and analytics", () => {
+    renderLanding();
+    expect(screen.getByText("Datenschutz").getAttribute("href")).toBe("/datenschutz");
+    cleanup();
+    render(<MemoryRouter><Datenschutz /></MemoryRouter>);
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Datenschutzerklärung");
+    for (const h of [/Account/, /Klassen-Challenge/, /Umami/, /Deine Rechte/]) {
+      expect(screen.getByRole("heading", { level: 2, name: h })).toBeTruthy();
+    }
   });
 });

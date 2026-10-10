@@ -154,6 +154,8 @@ const LandingContent = () => {
             <a href={REPO_URL} rel="noopener noreferrer">{translate("Quellcode", "Source code")}</a>
             {" · "}
             <Link to="/impressum">{translate("Impressum", "Imprint")}</Link>
+            {" · "}
+            <Link to="/datenschutz">{translate("Datenschutz", "Privacy")}</Link>
           </span>
         </div>
       </footer>

@@ -270,6 +270,10 @@ export function RLGameNew() {
         <Link to="/impressum" className="underline underline-offset-2 hover:text-foreground">
           {translate("Impressum", "Imprint")}
         </Link>
+        {" · "}
+        <Link to="/datenschutz" className="underline underline-offset-2 hover:text-foreground">
+          {translate("Datenschutz", "Privacy")}
+        </Link>
       </footer>
     </div>
   );
