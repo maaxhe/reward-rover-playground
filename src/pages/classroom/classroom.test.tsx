@@ -15,6 +15,9 @@ const roomPayload = (over: Record<string, unknown> = {}) => ({
   trainingEndsAt: Date.now() + 120000,
   trainingMs: 120000,
   episodeBudget: 40,
+  round: 1,
+  seed: 5,
+  settings: { trainingMinutes: 2, episodeBudget: 40, size: 8, obstacles: 11, rewards: 6, punishments: 5, minDistance: 8 },
   world,
   playerCount: 2,
   leaderboard: [
@@ -50,6 +53,10 @@ describe("classroom pages", () => {
     });
     render(<MemoryRouter initialEntries={["/klasse/play/1234"]}><Routes><Route path="/klasse/play/:code" element={<ClassroomPlay />} /></Routes></MemoryRouter>);
     await waitFor(() => expect(screen.getByText("Anna")).toBeTruthy());
+    // "Schnell" must start switched off, otherwise the episode budget is gone in seconds.
+    const fastSwitch = screen.getByRole("switch", { name: /Schnell/ });
+    expect(fastSwitch.getAttribute("aria-checked")).toBe("false");
+    fireEvent.click(fastSwitch); // normal speed is too slow for a unit test
     fireEvent.click(screen.getByText("▶ Trainieren"));
     await waitFor(() => expect(screen.getByText(/Episoden:/).textContent).toMatch(/Episoden:\s*[1-9]/), { timeout: 3000 });
     fireEvent.click(screen.getByText("✓ Jetzt werten"));
@@ -62,6 +69,7 @@ describe("classroom pages", () => {
     mockFetch((url) => (url.includes("/submit") ? { totalReward: 0, steps: 1, reachedGoal: false, improved: false, bestReward: 0 } : roomPayload({ episodeBudget: 10 })));
     render(<MemoryRouter initialEntries={["/klasse/play/1234"]}><Routes><Route path="/klasse/play/:code" element={<ClassroomPlay />} /></Routes></MemoryRouter>);
     await waitFor(() => expect(screen.getByText("▶ Trainieren")).toBeTruthy());
+    fireEvent.click(screen.getByRole("switch", { name: /Schnell/ })); // normal speed would take minutes
     fireEvent.click(screen.getByText("▶ Trainieren"));
     await waitFor(() => expect(screen.getByText("Budget aufgebraucht")).toBeTruthy(), { timeout: 5000 });
     expect(screen.getByText(/Episoden:/).textContent).toMatch(/10\s*\/\s*10/);
@@ -75,6 +83,24 @@ describe("classroom pages", () => {
     expect(screen.getByText("▶ Training starten")).toBeTruthy();
     // QR code pointing at the join link with the room code prefilled
     expect(screen.getByLabelText(/QR-Code zum Beitreten.*klasse\?code=1234/)).toBeTruthy();
+    expect(screen.getByText("⚙ Einstellungen")).toBeTruthy();
+    expect(screen.getByText("🎲 Welt neu würfeln")).toBeTruthy();
     await act(async () => {});
+  });
+
+  it("host can restart a finished round (same or new world)", async () => {
+    localStorage.setItem("rr-class-host-1234", JSON.stringify("hostkey"));
+    const calls: Array<{ url: string; body: unknown }> = [];
+    mockFetch((url, init) => {
+      if (init?.method === "POST") calls.push({ url, body: JSON.parse(String(init.body ?? "{}")) });
+      return roomPayload({ phase: "finished" });
+    });
+    render(<MemoryRouter initialEntries={["/klasse/host/1234"]}><Routes><Route path="/klasse/host/:code" element={<ClassroomHost />} /></Routes></MemoryRouter>);
+    await waitFor(() => expect(screen.getByText("🎲 Nochmal – neue Welt")).toBeTruthy());
+    expect(screen.queryByText("⚙ Einstellungen")).toBeNull();
+    fireEvent.click(screen.getByText("↻ Nochmal – gleiche Welt"));
+    await waitFor(() => expect(calls.some((c) => c.url.endsWith("/restart") && (c.body as { newWorld: boolean }).newWorld === false)).toBe(true));
+    fireEvent.click(screen.getByText("🎲 Nochmal – neue Welt"));
+    await waitFor(() => expect(calls.some((c) => c.url.endsWith("/restart") && (c.body as { newWorld: boolean }).newWorld === true)).toBe(true));
   });
 });

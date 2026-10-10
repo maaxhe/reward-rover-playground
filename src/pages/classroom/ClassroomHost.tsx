@@ -8,13 +8,14 @@ import { competitionApi, sessionStore, type LeaderboardRow, type Replay } from "
 import { worldToState } from "@/lib/competition/world";
 import { ClassroomShell, Leaderboard, MEDALS, formatCountdown } from "./shared";
 import { ReplayBoard } from "./ReplayBoard";
+import { SettingsPanel } from "./SettingsPanel";
 import { useRoom, useTick } from "./useRoom";
 
 const ClassroomHost = () => {
   const { code = "" } = useParams();
   const hostKey = useMemo(() => sessionStore.getHostKey(code), [code]);
   const { room, error, refresh, serverNow } = useRoom(code);
-  const tileSize = useTileSize(8, 44, 80);
+  const tileSize = useTileSize(room?.world.size ?? 8, 44, 80);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [selected, setSelected] = useState<LeaderboardRow | null>(null);
@@ -77,7 +78,7 @@ const ClassroomHost = () => {
               <p className="text-sm text-muted-foreground">Scannen oder Code eingeben auf {joinUrl.replace(/^https?:\/\//, "").split("?")[0]}</p>
               <p className="text-6xl font-extrabold tracking-[0.3em] gradient-text">{room.code}</p>
               <p className="mt-2 text-sm">
-                {room.playerCount} {room.playerCount === 1 ? "Person" : "Personen"} · Training {room.trainingMs / 60000} Min · Budget {room.episodeBudget} Episoden
+                {room.playerCount} {room.playerCount === 1 ? "Person" : "Personen"} · Training {room.settings.trainingMinutes} Min · Budget {room.settings.episodeBudget} Episoden · {room.world.size}×{room.world.size}
               </p>
             </div>
           </Card>
@@ -97,7 +98,18 @@ const ClassroomHost = () => {
                 </Button>
               </>
             )}
-            {room.phase === "finished" && <span className="text-xl font-bold">🏁 Beendet – tippe auf einen Namen für den Replay</span>}
+            {room.phase === "finished" && (
+              <>
+                <span className="basis-full text-xl font-bold">🏁 Beendet – tippe auf einen Namen für den Replay</span>
+                <Button disabled={busy} onClick={() => act(() => competitionApi.restart(code, hostKey, false))}>
+                  ↻ Nochmal – gleiche Welt
+                </Button>
+                <Button variant="secondary" disabled={busy} onClick={() => act(() => competitionApi.restart(code, hostKey, true))}>
+                  🎲 Nochmal – neue Welt
+                </Button>
+                <span className="text-xs text-muted-foreground">Alle bleiben im Raum, Ergebnisse werden gelöscht. In der Lobby kannst du noch Einstellungen ändern.</span>
+              </>
+            )}
             {actionError && <span className="text-sm text-destructive">{actionError}</span>}
           </Card>
 
@@ -111,6 +123,17 @@ const ClassroomHost = () => {
                 </Card>
               ))}
             </div>
+          )}
+
+          {room.phase === "lobby" && (
+            <SettingsPanel
+              code={code}
+              hostKey={hostKey}
+              settings={room.settings}
+              seed={room.seed}
+              onChanged={refresh}
+              onError={setActionError}
+            />
           )}
 
           <Leaderboard

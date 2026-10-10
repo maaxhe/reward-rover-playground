@@ -51,6 +51,8 @@ const ClassroomPlay = () => {
   return (
     <ClassroomShell wide>
       <Trainer
+        key={`${room.round}-${room.seed}`}
+        round={room.round}
         code={code}
         session={session}
         world={room.world}
@@ -68,6 +70,7 @@ const ClassroomPlay = () => {
 
 interface TrainerProps {
   code: string;
+  round: number;
   session: { playerId: string; token: string };
   world: CompetitionWorld;
   phase: "lobby" | "training" | "finished";
@@ -79,16 +82,17 @@ interface TrainerProps {
   playerCount: number;
 }
 
-const Trainer = ({ code, session, world, phase, episodeBudget, remainingMs, leaderboard, meId, myRank, playerCount }: TrainerProps) => {
+const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingMs, leaderboard, meId, myRank, playerCount }: TrainerProps) => {
   const tileSize = useTileSize(world.size, 52, 48);
   const stateRef = useRef<PlaygroundState>(worldToState(world));
   const [view, setView] = useState<PlaygroundState>(stateRef.current);
-  const usedBase = useRef(sessionStore.getUsedEpisodes(code));
+  const usedBase = useRef(sessionStore.getUsedEpisodes(code, round));
   const [params, setParams] = useState({ explorationRate: 0.3, alpha: 0.3, gamma: 0.9 });
   const paramsRef = useRef(params);
   paramsRef.current = params;
   const [running, setRunning] = useState(false);
-  const [fast, setFast] = useState(true);
+  // Off by default: at full speed the whole episode budget is gone in seconds and the training time stops mattering.
+  const [fast, setFast] = useState(false);
   const [showArrows, setShowArrows] = useState(true);
   const [serverResult, setServerResult] = useState<SubmitResult | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -124,8 +128,8 @@ const Trainer = ({ code, session, world, phase, episodeBudget, remainingMs, lead
   }, [canTrain, running]);
 
   useEffect(() => {
-    sessionStore.setUsedEpisodes(code, usedBase.current + view.episode);
-  }, [code, view.episode]);
+    sessionStore.setUsedEpisodes(code, round, usedBase.current + view.episode);
+  }, [code, round, view.episode]);
 
   // ── Submit current Q-table so the server can run the fair test ─────────────
   const submit = useCallback(async () => {
@@ -251,7 +255,7 @@ const Trainer = ({ code, session, world, phase, episodeBudget, remainingMs, lead
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <div className="flex items-center gap-2">
                 <Switch id="fast" checked={fast} onCheckedChange={setFast} />
-                <Label htmlFor="fast" className="text-sm">Schnell</Label>
+                <Label htmlFor="fast" className="text-sm">Schnell (verbraucht das Budget in Sekunden)</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Switch id="arrows" checked={showArrows} onCheckedChange={setShowArrows} />

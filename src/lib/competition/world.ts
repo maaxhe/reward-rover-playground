@@ -4,11 +4,13 @@ import { GOAL_REWARD, REWARD_VALUE, PUNISHMENT_VALUE, STEP_PENALTY } from "@/lib
 import type { PlaygroundState, Position } from "@/lib/rl/types";
 import type { QTable } from "@/lib/rl/qLearning";
 
-/** Mirrors server/lib/competition.js MAX_TEST_STEPS. */
-export const MAX_TEST_STEPS = 120;
+/** Mirrors server/lib/competition.js maxStepsFor: bigger boards get longer test runs. */
+export const maxStepsFor = (size: number) => size * size * 2;
 
 export interface CompetitionWorld {
   size: number;
+  /** Length of the test run; older rooms may not send it. */
+  maxSteps?: number;
   agent: Position;
   goal: Position;
   tiles: Array<{ x: number; y: number; type: "obstacle" | "reward" | "punishment" }>;
@@ -55,7 +57,8 @@ export const runTest = (world: CompetitionWorld, qTable: QTable): TestResult => 
   let reachedGoal = false;
   const path: Position[] = [{ ...pos }];
 
-  for (let step = 0; step < MAX_TEST_STEPS; step += 1) {
+  const maxSteps = world.maxSteps ?? maxStepsFor(world.size);
+  for (let step = 0; step < maxSteps; step += 1) {
     pos = chooseAction(grid, pos, qTable, 0, null);
     path.push({ ...pos });
     if (pos.x === world.goal.x && pos.y === world.goal.y) {

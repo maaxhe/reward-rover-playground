@@ -8,3 +8,10 @@ publish = "dist"
   to = "https://rl-agent.maximleopold.com/api/:splat"
   status = 200
   force = true
+
+# Single-page app: deep links like /klasse (QR codes!) and /admin must serve index.html.
+# Must stay below the /api rule, which is matched first.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildWorld, evaluateGreedy, isValidQTable, WORLD_SIZE } from "../../../server/lib/competition.js";
+import { buildWorld, evaluateGreedy, isValidQTable, normalizeWorldSettings, DEFAULT_WORLD_SETTINGS } from "../../../server/lib/competition.js";
 import { runTest, worldToState, type CompetitionWorld } from "./world";
 import { stepPlayground } from "@/lib/rl/playgroundStep";
 import type { QTable } from "@/lib/rl/qLearning";
@@ -24,13 +24,54 @@ describe("competition world", () => {
     const a = buildWorld(42) as CompetitionWorld;
     const b = buildWorld(42) as CompetitionWorld;
     expect(a).toEqual(b);
-    expect(a.size).toBe(WORLD_SIZE);
+    expect(a.size).toBe(DEFAULT_WORLD_SETTINGS.size);
     expect(a.tiles.some((t) => t.x === a.goal.x && t.y === a.goal.y)).toBe(false);
     expect(Math.abs(a.agent.x - a.goal.x) + Math.abs(a.agent.y - a.goal.y)).toBeGreaterThanOrEqual(8);
   });
 
   it("builds a world for many seeds without throwing", () => {
     for (let seed = 1; seed < 300; seed += 1) expect(() => buildWorld(seed)).not.toThrow();
+  });
+});
+
+describe("world settings", () => {
+  it("builds the requested number of tiles and respects distance", () => {
+    const w = buildWorld(9, { size: 10, obstacles: 15, rewards: 4, punishments: 3, minDistance: 12 }) as CompetitionWorld;
+    const count = (t: string) => w.tiles.filter((x) => x.type === t).length;
+    expect(w.size).toBe(10);
+    expect(count("obstacle")).toBe(15);
+    expect(count("reward")).toBe(4);
+    expect(count("punishment")).toBe(3);
+    expect(Math.abs(w.agent.x - w.goal.x) + Math.abs(w.agent.y - w.goal.y)).toBeGreaterThanOrEqual(12);
+    expect(w.maxSteps).toBe(200);
+  });
+
+  it("clamps impossible settings into buildable ones", () => {
+    const n = normalizeWorldSettings({ size: 99, obstacles: 999, rewards: -4, punishments: 50, minDistance: 999 });
+    expect(n.size).toBe(12);
+    expect(n.obstacles).toBeLessThanOrEqual(Math.floor(12 * 12 * 0.3));
+    expect(n.rewards).toBe(0);
+    expect(n.punishments).toBe(12);
+    expect(n.minDistance).toBeLessThanOrEqual(2 * 12 - 4);
+    expect(() => buildWorld(1, n)).not.toThrow();
+  });
+
+  it("builds every extreme combination", () => {
+    for (const size of [5, 8, 12]) {
+      for (const obstacles of [0, 999]) {
+        for (const minDistance of [2, 999]) {
+          expect(() => buildWorld(size * 7 + obstacles, { size, obstacles, rewards: 12, punishments: 12, minDistance })).not.toThrow();
+        }
+      }
+    }
+  });
+
+  it("server and client test runs agree on custom worlds too", () => {
+    for (let seed = 1; seed <= 20; seed += 1) {
+      const world = buildWorld(seed, { size: 5 + (seed % 8), obstacles: 6, rewards: 8, punishments: 8, minDistance: 5 }) as CompetitionWorld;
+      const q = randomQTable(world.size, lcg(seed * 3));
+      expect(runTest(world, q)).toEqual(evaluateGreedy(world, q));
+    }
   });
 });
 

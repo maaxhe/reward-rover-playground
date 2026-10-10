@@ -17,9 +17,22 @@ export interface LeaderboardRow {
   rank: number | null;
 }
 
+export interface RoomSettings {
+  trainingMinutes: number;
+  episodeBudget: number;
+  size: number;
+  obstacles: number;
+  rewards: number;
+  punishments: number;
+  minDistance: number;
+}
+
 export interface RoomState {
   code: string;
   phase: Phase;
+  settings: RoomSettings;
+  round: number;
+  seed: number;
   serverNow: number;
   trainingEndsAt: number;
   trainingMs: number;
@@ -65,11 +78,15 @@ async function call<T>(path: string, options?: RequestInit & { hostKey?: string 
 }
 
 export const competitionApi = {
-  createRoom: (trainingMinutes: number, episodeBudget: number) =>
-    call<{ code: string; hostKey: string }>("/rooms", {
-      method: "POST",
-      body: JSON.stringify({ trainingMinutes, episodeBudget }),
-    }),
+  createRoom: (settings: Partial<RoomSettings> = {}) =>
+    call<{ code: string; hostKey: string }>("/rooms", { method: "POST", body: JSON.stringify(settings) }),
+
+  /** Lobby only. `reroll` builds a new world; `seed` pins a specific one. */
+  updateSettings: (code: string, hostKey: string, patch: Partial<RoomSettings> & { reroll?: boolean; seed?: number }) =>
+    call<{ ok: true }>(`/rooms/${code}/settings`, { method: "PATCH", hostKey, body: JSON.stringify(patch) }),
+
+  restart: (code: string, hostKey: string, newWorld: boolean) =>
+    call<{ ok: true; round: number }>(`/rooms/${code}/restart`, { method: "POST", hostKey, body: JSON.stringify({ newWorld }) }),
 
   join: (code: string, name: string) =>
     call<PlayerSession>(`/rooms/${code}/join`, { method: "POST", body: JSON.stringify({ name }) }),
@@ -116,6 +133,7 @@ export const sessionStore = {
   setPlayer: (code: string, s: PlayerSession) => write(`rr-class-player-${code}`, s),
   getHostKey: (code: string) => read<string>(`rr-class-host-${code}`),
   setHostKey: (code: string, key: string) => write(`rr-class-host-${code}`, key),
-  getUsedEpisodes: (code: string) => read<number>(`rr-class-used-${code}`) ?? 0,
-  setUsedEpisodes: (code: string, n: number) => write(`rr-class-used-${code}`, n),
+  // Budget is per round, so a restarted round starts with a full budget again.
+  getUsedEpisodes: (code: string, round: number) => read<number>(`rr-class-used-${code}-${round}`) ?? 0,
+  setUsedEpisodes: (code: string, round: number, n: number) => write(`rr-class-used-${code}-${round}`, n),
 };

@@ -1,6 +1,13 @@
 import { Router } from "express";
 import crypto from "crypto";
-import { buildWorld, evaluateGreedy, isValidQTable, compareResults, WORLD_SIZE } from "../lib/competition.js";
+import {
+  buildWorld,
+  evaluateGreedy,
+  isValidQTable,
+  compareResults,
+  normalizeWorldSettings,
+  DEFAULT_WORLD_SETTINGS,
+} from "../lib/competition.js";
 
 // Classroom competition rooms. Deliberately in-memory and anonymous (nickname only):
 // rooms vanish after 24 h or on server restart, and no personal data is stored.
@@ -33,6 +40,26 @@ const clampInt = (value, min, max, fallback) => {
   const n = Number(value);
   return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : fallback;
 };
+
+const newSeed = () => crypto.randomInt(1, 2 ** 31);
+
+/** Round settings = training time + budget + the world recipe. */
+const normalizeSettings = (input = {}, base = null) => {
+  const prev = base ?? { trainingMinutes: 5, episodeBudget: 60, ...DEFAULT_WORLD_SETTINGS };
+  return {
+    trainingMinutes: clampInt(input.trainingMinutes, 1, 30, prev.trainingMinutes),
+    episodeBudget: clampInt(input.episodeBudget, 10, 500, prev.episodeBudget),
+    ...normalizeWorldSettings(input, prev),
+  };
+};
+
+const worldSettingsOf = (settings) => ({
+  size: settings.size,
+  obstacles: settings.obstacles,
+  rewards: settings.rewards,
+  punishments: settings.punishments,
+  minDistance: settings.minDistance,
+});
 
 /** Phase is derived lazily so a room finishes even if nobody calls /finish. */
 const currentPhase = (room, now = Date.now()) => {
@@ -99,15 +126,22 @@ router.post("/rooms", (req, res) => {
   const code = newRoomCode();
   if (!code) return res.status(503).json({ error: "No free room code" });
 
-  const seed = crypto.randomInt(1, 2 ** 31);
+  const settings = normalizeSettings(req.body);
+  const seed = newSeed();
+  let world;
+  try {
+    world = buildWorld(seed, worldSettingsOf(settings));
+  } catch {
+    return res.status(400).json({ error: "These world settings cannot be built, try fewer walls" });
+  }
   const room = {
     code,
     hostKey: randomToken(),
     createdAt: now,
     seed,
-    world: buildWorld(seed),
-    trainingMs: clampInt(req.body?.trainingMinutes, 1, 30, 5) * 60 * 1000,
-    episodeBudget: clampInt(req.body?.episodeBudget, 10, 500, 60),
+    round: 1,
+    settings,
+    world,
     phase: "lobby",
     trainingEndsAt: 0,
     players: new Map(),
@@ -154,8 +188,11 @@ router.get("/rooms/:code", (req, res) => {
     phase: room.phase,
     serverNow: Date.now(),
     trainingEndsAt: room.trainingEndsAt,
-    trainingMs: room.trainingMs,
-    episodeBudget: room.episodeBudget,
+    trainingMs: room.settings.trainingMinutes * 60 * 1000,
+    episodeBudget: room.settings.episodeBudget,
+    settings: room.settings,
+    round: room.round,
+    seed: room.seed,
     world: room.world,
     playerCount: room.players.size,
     leaderboard,
@@ -168,7 +205,7 @@ router.post("/rooms/:code/start", (req, res) => {
   if (!room || !requireHost(req, res, room)) return;
   if (room.phase !== "lobby") return res.status(409).json({ error: "Already started" });
   room.phase = "training";
-  room.trainingEndsAt = Date.now() + room.trainingMs;
+  room.trainingEndsAt = Date.now() + room.settings.trainingMinutes * 60 * 1000;
   return res.json({ ok: true, trainingEndsAt: room.trainingEndsAt });
 });
 
@@ -180,6 +217,54 @@ router.post("/rooms/:code/finish", (req, res) => {
     room.phase = "finished";
   }
   return res.json({ ok: true });
+});
+
+/** Lobby only: change time, budget and the world recipe; `reroll` (or an explicit `seed`) builds a new world. */
+router.patch("/rooms/:code/settings", (req, res) => {
+  const room = loadRoom(req, res);
+  if (!room || !requireHost(req, res, room)) return;
+  if (room.phase !== "lobby") return res.status(409).json({ error: "Settings can only change in the lobby" });
+
+  const settings = normalizeSettings(req.body, room.settings);
+  const requestedSeed = Number(req.body?.seed);
+  const seed = Number.isInteger(requestedSeed) && requestedSeed > 0 && requestedSeed < 2 ** 31
+    ? requestedSeed
+    : req.body?.reroll
+      ? newSeed()
+      : room.seed;
+  try {
+    room.world = buildWorld(seed, worldSettingsOf(settings));
+  } catch {
+    return res.status(400).json({ error: "These world settings cannot be built, try fewer walls" });
+  }
+  room.settings = settings;
+  room.seed = seed;
+  return res.json({ ok: true });
+});
+
+/** After a finished round: same room and players, results cleared, back to the lobby (optionally a new world). */
+router.post("/rooms/:code/restart", (req, res) => {
+  const room = loadRoom(req, res);
+  if (!room || !requireHost(req, res, room)) return;
+  if (room.phase !== "finished") return res.status(409).json({ error: "Round is still running" });
+
+  if (req.body?.newWorld) {
+    room.seed = newSeed();
+    try {
+      room.world = buildWorld(room.seed, worldSettingsOf(room.settings));
+    } catch {
+      return res.status(400).json({ error: "Could not build a new world" });
+    }
+  }
+  for (const player of room.players.values()) {
+    player.best = null;
+    player.episodes = 0;
+    player.lastSubmitAt = 0;
+  }
+  room.round += 1;
+  room.phase = "lobby";
+  room.trainingEndsAt = 0;
+  return res.json({ ok: true, round: room.round });
 });
 
 router.delete("/rooms/:code/players/:playerId", (req, res) => {
@@ -203,11 +288,11 @@ router.post("/rooms/:code/submit", (req, res) => {
   if (now - player.lastSubmitAt < SUBMIT_MIN_INTERVAL_MS) {
     return res.status(429).json({ error: "Too fast" });
   }
-  if (!isValidQTable(qTable, WORLD_SIZE)) {
+  if (!isValidQTable(qTable, room.world.size)) {
     return res.status(400).json({ error: "Invalid Q-table" });
   }
   player.lastSubmitAt = now;
-  player.episodes = Math.max(player.episodes, clampInt(episodes, 0, room.episodeBudget, 0));
+  player.episodes = Math.max(player.episodes, clampInt(episodes, 0, room.settings.episodeBudget, 0));
 
   // The server runs the test itself, so a client cannot claim a score it did not earn.
   const result = evaluateGreedy(room.world, qTable);

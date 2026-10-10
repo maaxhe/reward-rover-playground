@@ -4,8 +4,31 @@
 // (chooseAction with ε = 0 + stepPlayground with consumeRewards on).
 // src/lib/competition/evaluate.test.ts checks both implementations against each other.
 
-export const WORLD_SIZE = 8;
-export const MAX_TEST_STEPS = 120;
+export const DEFAULT_WORLD_SETTINGS = {
+  size: 8,
+  obstacles: 11,
+  rewards: 6,
+  punishments: 5,
+  minDistance: 8,
+};
+
+const clampInt = (value, min, max, fallback) => {
+  const n = Number(value);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.round(n))) : fallback;
+};
+
+/** Clamps world settings to values that can always be built (falls back to `base` for missing fields). */
+export const normalizeWorldSettings = (input = {}, base = DEFAULT_WORLD_SETTINGS) => {
+  const size = clampInt(input.size, 5, 12, base.size);
+  const obstacles = clampInt(input.obstacles, 0, Math.floor(size * size * 0.3), Math.min(base.obstacles, Math.floor(size * size * 0.3)));
+  const rewards = clampInt(input.rewards, 0, 12, base.rewards);
+  const punishments = clampInt(input.punishments, 0, 12, base.punishments);
+  const minDistance = clampInt(input.minDistance, 2, 2 * size - 4, Math.min(base.minDistance, 2 * size - 4));
+  return { size, obstacles, rewards, punishments, minDistance };
+};
+
+/** Test-run length scales with the board so bigger worlds get enough steps. */
+export const maxStepsFor = (size) => size * size * 2;
 
 const STEP_PENALTY = -1;
 const REWARD_VALUE = 12;
@@ -52,10 +75,11 @@ const isReachable = (size, blocked, from, to) => {
   return false;
 };
 
-/** Seeded 8×8 world without portals (portal teleports are random, which would make the test run unfair). */
-export const buildWorld = (seed) => {
+/** Seeded world without portals (portal teleports are random, which would make the test run unfair). */
+export const buildWorld = (seed, settings = DEFAULT_WORLD_SETTINGS) => {
+  const { size, obstacles: obstacleCount, rewards: rewardCount, punishments: punishmentCount, minDistance } =
+    normalizeWorldSettings(settings, DEFAULT_WORLD_SETTINGS);
   const rng = mulberry32(seed);
-  const size = WORLD_SIZE;
   const randomInt = (max) => Math.floor(rng() * max);
 
   for (let attempt = 0; attempt < 200; attempt += 1) {
@@ -72,12 +96,12 @@ export const buildWorld = (seed) => {
     };
 
     const agent = pick();
-    const goal = pick((p) => Math.abs(p.x - agent.x) + Math.abs(p.y - agent.y) >= 8);
+    const goal = pick((p) => Math.abs(p.x - agent.x) + Math.abs(p.y - agent.y) >= minDistance);
     if (!agent || !goal) continue;
 
     const tiles = [];
     const obstacles = new Set();
-    for (let i = 0; i < 11; i += 1) {
+    for (let i = 0; i < obstacleCount; i += 1) {
       const pos = pick();
       if (!pos) break;
       obstacles.add(key(pos.x, pos.y));
@@ -85,15 +109,15 @@ export const buildWorld = (seed) => {
     }
     if (!isReachable(size, obstacles, agent, goal)) continue;
 
-    for (let i = 0; i < 6; i += 1) {
+    for (let i = 0; i < rewardCount; i += 1) {
       const pos = pick();
       if (pos) tiles.push({ ...pos, type: "reward" });
     }
-    for (let i = 0; i < 5; i += 1) {
+    for (let i = 0; i < punishmentCount; i += 1) {
       const pos = pick();
       if (pos) tiles.push({ ...pos, type: "punishment" });
     }
-    return { size, agent, goal, tiles };
+    return { size, agent, goal, tiles, maxSteps: maxStepsFor(size) };
   }
   throw new Error("Could not build a solvable world");
 };
@@ -105,7 +129,7 @@ const tileMap = (world) => {
 };
 
 /** A valid Q-table: at most size×size entries "x,y" → 4 finite numbers. */
-export const isValidQTable = (qTable, size = WORLD_SIZE) => {
+export const isValidQTable = (qTable, size = DEFAULT_WORLD_SETTINGS.size) => {
   if (!qTable || typeof qTable !== "object" || Array.isArray(qTable)) return false;
   const keys = Object.keys(qTable);
   if (keys.length > size * size) return false;
@@ -125,7 +149,8 @@ export const evaluateGreedy = (world, qTable) => {
   let reachedGoal = false;
   const path = [{ ...pos }];
 
-  for (let step = 0; step < MAX_TEST_STEPS; step += 1) {
+  const maxSteps = world.maxSteps ?? maxStepsFor(world.size);
+  for (let step = 0; step < maxSteps; step += 1) {
     const possible = [];
     DIRS.forEach((d, idx) => {
       const nx = pos.x + d.x;

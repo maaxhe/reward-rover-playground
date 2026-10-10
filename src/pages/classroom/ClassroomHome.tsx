@@ -48,7 +48,7 @@ const ClassroomHome = () => {
 
   const create = () =>
     run(async () => {
-      const room = await competitionApi.createRoom(minutes, budget);
+      const room = await competitionApi.createRoom({ trainingMinutes: minutes, episodeBudget: budget });
       sessionStore.setHostKey(room.code, room.hostKey);
       navigate(`/klasse/host/${room.code}`);
     });
@@ -85,7 +85,7 @@ const ClassroomHome = () => {
         <Card className="space-y-4 rounded-lg border-border/40 bg-card/60 p-5">
           <h2 className="text-xl font-bold">🧑‍🏫 Raum erstellen (Lehrkraft)</h2>
           <p className="text-sm text-muted-foreground">
-            Alle trainieren ihren Rover auf derselben Welt. Am Ende zählt ein fairer Test-Lauf, den der Server nachrechnet.
+            Alle trainieren ihren Rover auf derselben Welt. Am Ende zählt ein fairer Test-Lauf, den der Server nachrechnet. Die Welt stellst du danach in der Lobby ein.
           </p>
           <div className="space-y-2">
             <Label htmlFor="minutes">Trainingszeit (Minuten)</Label>
