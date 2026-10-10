@@ -1627,66 +1627,6 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
     () => new Intl.NumberFormat(isEnglish ? "en-US" : "de-DE", { maximumFractionDigits: 2 }),
     [isEnglish],
   );
-  const legendItems = useMemo(
-    () => [
-      {
-        label: translate("Agent", "Agent"),
-        className: "bg-tile-agent",
-        emoji: "🤖",
-        description: translate(
-          "Der lernende Rover – beobachte seine Entscheidungen!",
-          "The learning rover – watch its decisions unfold!",
-        ),
-      },
-      {
-        label: translate("Ziel", "Goal"),
-        className: "bg-tile-goal",
-        emoji: "🎯",
-        description: translate(
-          "Das Ziel – hier gibt's die größte Belohnung",
-          "The target tile – maximum reward lives here",
-        ),
-      },
-      {
-        label: translate("Belohnung", "Reward"),
-        className: "bg-tile-reward",
-        emoji: "🍬",
-        description: translate(
-          "Positive Rewards – der Rover mag diese Felder",
-          "Positive rewards – the rover loves these tiles",
-        ),
-      },
-      {
-        label: translate("Strafe", "Penalty"),
-        className: "bg-tile-punishment",
-        emoji: "⚡",
-        description: translate(
-          "Negative Rewards – besser vermeiden",
-          "Negative rewards – better avoid them",
-        ),
-      },
-      {
-        label: translate("Hindernis", "Wall"),
-        className: "bg-tile-obstacle",
-        emoji: "🧱",
-        description: translate(
-          "Unpassierbare Wände – hier kommt keiner durch",
-          "Solid walls – nobody passes through here",
-        ),
-      },
-      {
-        label: translate("Portal", "Portal"),
-        className: "bg-tile-portal",
-        emoji: "🌀",
-        description: translate(
-          "Magisches Portal – teleportiert zu einem anderen Portal!",
-          "Magic portal – teleports you to another portal!",
-        ),
-      },
-    ],
-    [translate, tileLabels],
-  );
-
   const baseFieldSize = TILE_SIZE_MAP[tileSize];
   const levelConfig = LEVELS[levelKey];
   const levelName = isEnglish ? levelConfig.nameEn : levelConfig.name;
@@ -5348,23 +5288,6 @@ const handleActiveBonusClick = useCallback(() => {
                 🤖
               </div>
             </div>
-            </div>
-
-            <div
-              className="mx-auto mt-4 w-full rounded-xl border border-border/50 bg-secondary/20 p-3"
-              style={{ maxWidth: gridPixelDimension + 40 }}
-              aria-label={translate("Legende", "Legend")}
-            >
-              <ul className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm">
-                {legendItems.map((item) => (
-                  <li key={item.label} className="flex items-center gap-2" title={item.description}>
-                    <span className={cn("legend-dot", item.className)} aria-hidden />
-                    <span className="font-semibold text-foreground">
-                      {item.emoji} {item.label}
-                    </span>
-                  </li>
-                ))}
-              </ul>
             </div>
 
             {mode === "playground" && (

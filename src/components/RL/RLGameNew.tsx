@@ -1,8 +1,10 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { RLGame } from "./RLGame";
 import { ParametersPanel } from "./ParametersPanel";
 import { LevelProgressBar } from "./LevelProgressBar";
 import { LevelUnlocksCard } from "./LevelUnlocksCard";
+import { GameLegend } from "./GameLegend";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LevelProvider } from "@/contexts/LevelContext";
 import { Button } from "@/components/ui/button";
@@ -165,6 +167,9 @@ export function RLGameNew() {
             {translate("Free Mode", "Free Mode")}
             {!canAccessFreeMode && <span className="ml-2 text-xs">🔒</span>}
           </Button>
+          <Button asChild variant="outline" className="ml-auto font-semibold">
+            <Link to="/klasse">🏫 {translate("Klassen-Modus", "Classroom")}</Link>
+          </Button>
         </div>
       </div>
 
@@ -248,6 +253,7 @@ export function RLGameNew() {
             canAdjustGamma={unlockedFeatures.canAdjustGamma}
             translate={translate}
           />
+          <GameLegend translate={translate} showPortal={!isLevelMode || unlockedFeatures.canPlacePortals} />
         </div>
 
         {/* Right Content - Game */}
