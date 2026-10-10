@@ -1241,6 +1241,14 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   const unlockedFeatures = levelMode ? getUnlockedFeatures(currentLevel as LevelNumber) : null;
 
   const placementModeRef = useRef<PlaceableTile>("obstacle");
+  // Free Mode: "set goal" armed → the next tile click moves the goal there.
+  const settingGoalRef = useRef(false);
+  const [settingGoal, setSettingGoalState] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const setSettingGoal = useCallback((value: boolean) => {
+    settingGoalRef.current = value;
+    setSettingGoalState(value);
+  }, []);
   const challengeModeRef = useRef<ChallengeTile | null>(null);
   const consoleScrollRef = useRef<HTMLDivElement>(null);
   const settingsScrollRef = useRef<HTMLDivElement>(null);
@@ -1939,6 +1947,8 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   const changePlacementMode = useCallback((nextMode: PlaceableTile) => {
     placementModeRef.current = nextMode;
     setPlacementModeState(nextMode);
+    settingGoalRef.current = false;
+    setSettingGoalState(false);
   }, []);
 
   useEffect(() => {
@@ -2272,6 +2282,39 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
 
   const handleTilePlacement = useCallback(
     (x: number, y: number) => {
+      if (mode === "playground" && settingGoalRef.current) {
+        settingGoalRef.current = false;
+        setSettingGoalState(false);
+        setCelebration(null);
+        lastCelebratedEpisodeRef.current.playground = 0;
+        setPlaygroundState((prev) => {
+          if ((x === prev.spawn.x && y === prev.spawn.y) || (x === prev.goal.x && y === prev.goal.y)) {
+            return prev;
+          }
+          const grid = cloneGrid(prev.grid);
+          grid[prev.goal.y][prev.goal.x] = { type: "empty", qValue: 0, visits: 0, value: 0 };
+          grid[y][x] = { type: "goal", qValue: GOAL_REWARD, visits: 0, value: levelValue("goal") };
+          setUndoStack([cloneGrid(grid)]);
+          // The old Q-values pointed at the old goal, so learning starts over.
+          return {
+            ...prev,
+            goal: { x, y },
+            grid,
+            agent: { ...prev.spawn },
+            isRunning: false,
+            episode: 0,
+            totalReward: 0,
+            currentSteps: 0,
+            episodeHistory: [],
+            portalCooldowns: {},
+            pendingPortalTeleport: null,
+            qTable: {},
+            consumedTiles: [],
+            tileVisits: {},
+          };
+        });
+        return;
+      }
       if (mode === "playground") {
         const selectedType = placementModeRef.current;
         setPlaygroundState((prev) => {
@@ -2715,6 +2758,17 @@ const handleActiveBonusClick = useCallback(() => {
   const handleLoadPreset = useCallback((preset: PresetLevel) => {
     applyGridConfig(preset);
   }, [applyGridConfig]);
+
+  const handleClearEnvironment = useCallback(() => {
+    setSettingGoal(false);
+    setConfirmClear(false);
+    applyGridConfig({
+      size: playgroundState.grid.length,
+      tiles: [],
+      agent: playgroundState.spawn,
+      goal: playgroundState.goal,
+    });
+  }, [applyGridConfig, playgroundState.grid.length, playgroundState.spawn, playgroundState.goal, setSettingGoal]);
 
   const applyComparisonConfig = useCallback((config: GridConfig) => {
     const sizeOptionEntry = (Object.entries(TILE_SIZE_MAP) as Array<[TileSizeOption, number]>).find(
@@ -5646,6 +5700,47 @@ const handleActiveBonusClick = useCallback(() => {
                 </div>
               )}
             </Card>
+
+            {mode === "playground" && !levelMode && (
+              <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-3">
+                <h3 className="text-lg font-bold text-foreground">
+                  {translate("Welt bearbeiten", "Edit world")}
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant={settingGoal ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSettingGoal(!settingGoal)}
+                    className="text-xs font-semibold h-auto py-2"
+                  >
+                    {settingGoal ? translate("Abbrechen", "Cancel") : translate("🎯 Ziel versetzen", "🎯 Move goal")}
+                  </Button>
+                  <Button
+                    variant={confirmClear ? "destructive" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      if (confirmClear) {
+                        handleClearEnvironment();
+                      } else {
+                        setConfirmClear(true);
+                        window.setTimeout(() => setConfirmClear(false), 3000);
+                      }
+                    }}
+                    className="text-xs font-semibold h-auto py-2"
+                  >
+                    {confirmClear ? translate("Wirklich leeren?", "Really clear?") : translate("🗑 Umgebung leeren", "🗑 Clear world")}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {settingGoal
+                    ? translate("Klicke jetzt auf ein Feld im Spielfeld, dort steht dann das Ziel.", "Now click a tile on the board to put the goal there.")
+                    : translate(
+                        "Ziel versetzen oder alles leeren. Beides setzt das Gelernte zurück.",
+                        "Move the goal or wipe the board. Both reset what the rover has learned.",
+                      )}
+                </p>
+              </Card>
+            )}
 
             {mode === "playground" && !levelMode && (
               <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-3">
