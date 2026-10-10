@@ -1,0 +1,114 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { competitionApi, sessionStore } from "@/lib/competition/api";
+import { ClassroomShell } from "./shared";
+
+const ClassroomHome = () => {
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const [code, setCode] = useState(params.get("code") ?? "");
+  const [name, setName] = useState("");
+  const [minutes, setMinutes] = useState(5);
+  const [budget, setBudget] = useState(60);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    document.title = "Klassen-Challenge · Reward Rover";
+  }, []);
+
+  const run = async (fn: () => Promise<void>) => {
+    setBusy(true);
+    setError(null);
+    try {
+      await fn();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Fehler");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const join = () =>
+    run(async () => {
+      const clean = code.trim();
+      const existing = sessionStore.getPlayer(clean);
+      if (existing) {
+        navigate(`/klasse/play/${clean}`);
+        return;
+      }
+      const session = await competitionApi.join(clean, name);
+      sessionStore.setPlayer(clean, session);
+      navigate(`/klasse/play/${clean}`);
+    });
+
+  const create = () =>
+    run(async () => {
+      const room = await competitionApi.createRoom({ trainingMinutes: minutes, episodeBudget: budget });
+      sessionStore.setHostKey(room.code, room.hostKey);
+      navigate(`/klasse/host/${room.code}`);
+    });
+
+  return (
+    <ClassroomShell>
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="space-y-4 rounded-lg border-border/40 bg-card/60 p-5">
+          <h2 className="text-xl font-bold">🎮 Mitspielen</h2>
+          <p className="text-sm text-muted-foreground">
+            Gib den Raum-Code deiner Lehrkraft ein und wähle einen Spielernamen. Dafür brauchst du keinen Account.
+          </p>
+          <div className="space-y-2">
+            <Label htmlFor="code">Raum-Code</Label>
+            <Input
+              id="code"
+              inputMode="numeric"
+              maxLength={4}
+              placeholder="1234"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              className="text-center text-2xl tracking-widest"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="nick">Spielername</Label>
+            <Input id="nick" maxLength={20} value={name} onChange={(e) => setName(e.target.value)} placeholder="z. B. Rover-Fan" />
+          </div>
+          <Button className="w-full" disabled={busy || code.length !== 4 || (name.trim().length < 2 && !sessionStore.getPlayer(code))} onClick={join}>
+            Beitreten
+          </Button>
+        </Card>
+
+        <Card className="space-y-4 rounded-lg border-border/40 bg-card/60 p-5">
+          <h2 className="text-xl font-bold">🧑‍🏫 Raum erstellen (Lehrkraft)</h2>
+          <p className="text-sm text-muted-foreground">
+            Alle trainieren ihren Rover auf derselben Welt. Am Ende zählt ein fairer Test-Lauf, den der Server nachrechnet. Die Welt stellst du danach in der Lobby ein.
+          </p>
+          <div className="space-y-2">
+            <Label htmlFor="minutes">Trainingszeit (Minuten)</Label>
+            <Input id="minutes" type="number" min={1} max={30} value={minutes} onChange={(e) => setMinutes(Number(e.target.value))} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="budget">Episoden-Budget pro Person</Label>
+            <Input id="budget" type="number" min={10} max={500} step={10} value={budget} onChange={(e) => setBudget(Number(e.target.value))} />
+            <p className="text-xs text-muted-foreground">
+              Weniger Episoden heißt: Die Wahl von ε, α und γ entscheidet stärker über das Ergebnis.
+            </p>
+          </div>
+          <Button className="w-full" variant="secondary" disabled={busy} onClick={create}>
+            Raum erstellen
+          </Button>
+        </Card>
+      </div>
+      {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
+      <p className="mt-6 text-xs text-muted-foreground">
+        Es werden nur Spielernamen gespeichert, keine E-Mail-Adressen. Räume werden nach 24 Stunden automatisch gelöscht.
+      </p>
+    </ClassroomShell>
+  );
+};
+
+export default ClassroomHome;

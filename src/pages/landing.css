@@ -1,0 +1,102 @@
+/* Landing page: sea-chart night with oilskin yellow. Dark on purpose; the whole game is dark. */
+.landing {
+  --ink: #0d2530;
+  --ink-raised: #12313f;
+  --line: #2a4a57;
+  --chalk: #e9f1ef;
+  --muted: #a3b9b8;
+  --oil: #f5c518;
+  --buoy: #e5604d;
+  --glass: #8fc1bd;
+  font-family: "Bricolage Grotesque Variable", system-ui, sans-serif;
+  font-optical-sizing: auto;
+  background: var(--ink);
+  color: var(--chalk);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+.landing a { color: inherit; }
+.landing :focus-visible { outline: 3px solid var(--oil); outline-offset: 3px; border-radius: 4px; }
+
+.landing .wrap { max-width: 68rem; margin: 0 auto; padding: 0 1.25rem; }
+
+.landing .topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem 0; }
+.landing .wordmark { font-weight: 800; font-size: 1.25rem; letter-spacing: -0.02em; text-decoration: none; }
+.landing .topbar nav { display: flex; align-items: center; gap: 1.25rem; font-size: 0.95rem; }
+.landing .topbar nav a { text-decoration: none; color: var(--muted); }
+.landing .topbar nav a:hover { color: var(--chalk); }
+.landing .lang { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 999px; padding: 0.15rem 0.7rem; font: inherit; font-size: 0.85rem; cursor: pointer; }
+.landing .lang:hover { color: var(--chalk); border-color: var(--muted); }
+
+/* hero */
+.landing .hero { display: grid; gap: 2.5rem; padding: 2.5rem 0 4.5rem; align-items: center; }
+@media (min-width: 56rem) { .landing .hero { grid-template-columns: 1.1fr 0.9fr; gap: 4rem; padding-top: 4rem; } }
+.landing h1 { font-size: clamp(2.5rem, 6.2vw, 4.6rem); line-height: 1.02; font-weight: 800; letter-spacing: -0.035em; margin: 0 0 1.25rem; max-width: 14ch; text-wrap: balance; }
+.landing .lede { font-size: 1.15rem; color: var(--muted); max-width: 34rem; margin: 0 0 1.75rem; }
+.landing .lede b { color: var(--chalk); font-weight: 600; }
+
+.landing .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.8rem 1.35rem; border-radius: 0.7rem; font: inherit; font-weight: 700; text-decoration: none; cursor: pointer; border: 2px solid transparent; transition: transform 0.12s ease, background 0.12s ease; }
+.landing .btn-primary { background: var(--oil); color: #1b1600; }
+.landing .btn-primary:hover { transform: translateY(-2px); background: #ffd23a; }
+.landing .btn-ghost { border-color: var(--line); color: var(--chalk); background: transparent; }
+.landing .btn-ghost:hover { border-color: var(--muted); }
+.landing .cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+
+/* live rover */
+.lr-figure { margin: 0; justify-self: center; }
+.lr-board { display: grid; gap: 3px; padding: 10px; background: var(--ink-raised); border: 1px solid var(--line); border-radius: 1rem; width: max-content; max-width: 100%; box-shadow: 0 1.5rem 3rem -1.5rem rgba(0,0,0,0.6); }
+.lr-cell { position: relative; background: rgba(143,193,189,0.07); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+.lr-cell.is-wall { background: repeating-linear-gradient(135deg, #1f4a58 0 6px, #173b48 6px 12px); }
+.lr-goal { width: 70%; height: 70%; border-radius: 50%; border: 3px solid var(--glass); box-shadow: inset 0 0 0 5px var(--ink-raised), inset 0 0 0 9px var(--glass); }
+.lr-candy { width: 38%; height: 38%; background: var(--oil); transform: rotate(45deg); border-radius: 4px; transition: opacity 0.2s; }
+.lr-trap { width: 42%; height: 42%; background: var(--buoy); clip-path: polygon(20% 0, 50% 30%, 80% 0, 100% 20%, 70% 50%, 100% 80%, 80% 100%, 50% 70%, 20% 100%, 0 80%, 30% 50%, 0 20%); transition: opacity 0.2s; }
+.lr-candy.is-eaten, .lr-trap.is-eaten { opacity: 0.18; }
+.lr-arrow { position: absolute; font-size: 1.35rem; font-weight: 700; color: var(--glass); pointer-events: none; }
+.lr-rover { position: absolute; width: 62%; height: 62%; background: var(--oil); border-radius: 30% 30% 22% 22%; z-index: 2; box-shadow: 0 3px 0 #b8920a; }
+.lr-rover::before, .lr-rover::after { content: ""; position: absolute; top: 30%; width: 14%; height: 14%; background: #1b1600; border-radius: 50%; }
+.lr-rover::before { left: 27%; } .lr-rover::after { right: 27%; }
+.lr-caption { margin-top: 1rem; max-width: 22rem; color: var(--muted); font-size: 0.95rem; }
+.lr-caption p { margin: 0 0 0.6rem; min-height: 3.2em; }
+.lr-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.lr-controls button { background: none; border: 1px solid var(--line); color: var(--chalk); border-radius: 999px; padding: 0.2rem 0.8rem; font: inherit; font-size: 0.85rem; cursor: pointer; }
+.lr-controls button:hover { border-color: var(--muted); }
+.lr-best { margin-left: auto; font-size: 0.85rem; }
+
+/* three ways in */
+.landing .section { padding: 3.5rem 0; border-top: 1px solid var(--line); }
+.landing h2 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); line-height: 1.1; font-weight: 800; letter-spacing: -0.03em; margin: 0 0 2rem; max-width: 22ch; text-wrap: balance; }
+.landing .ways { list-style: none; margin: 0; padding: 0; }
+.landing .way { display: grid; gap: 0.75rem 2rem; padding: 1.75rem 0; border-top: 1px solid var(--line); }
+.landing .way:first-child { border-top: 0; padding-top: 0; }
+@media (min-width: 52rem) { .landing .way { grid-template-columns: 15rem 1fr auto; align-items: start; } }
+.landing .way h3 { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; margin: 0; }
+.landing .way p { margin: 0; color: var(--muted); max-width: 36rem; }
+.landing .way p b { color: var(--chalk); font-weight: 600; }
+.landing .way-action { display: flex; flex-direction: column; gap: 0.6rem; min-width: 14rem; }
+.landing .join-form { display: flex; gap: 0.5rem; }
+.landing .join-form input { width: 6.5rem; background: var(--ink-raised); border: 2px solid var(--line); border-radius: 0.7rem; color: var(--chalk); padding: 0.7rem 0.8rem; font: inherit; font-weight: 700; font-size: 1.2rem; letter-spacing: 0.25em; text-align: center; }
+.landing .join-form input::placeholder { letter-spacing: 0.25em; color: #5b7b87; }
+.landing .join-form input:focus { border-color: var(--oil); outline: none; }
+.landing .way-note { font-size: 0.85rem; color: var(--muted); margin: 0; }
+.landing .way.is-class { background: var(--ink-raised); border: 1px solid var(--line); border-radius: 1rem; padding: 1.75rem; margin-top: 1rem; }
+
+/* note from the maker */
+.landing .note { display: grid; gap: 1.25rem 3rem; }
+@media (min-width: 52rem) { .landing .note { grid-template-columns: 15rem 1fr; } }
+.landing .note-body { max-width: 38rem; font-size: 1.1rem; }
+.landing .note-body p { margin: 0 0 1rem; }
+.landing .sign { color: var(--muted); font-size: 0.95rem; }
+
+.landing footer { border-top: 1px solid var(--line); padding: 2rem 0 3rem; color: var(--muted); font-size: 0.9rem; }
+.landing footer .wrap { display: flex; flex-wrap: wrap; gap: 0.75rem 2rem; justify-content: space-between; }
+.landing footer a { text-decoration: underline; text-underline-offset: 3px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .landing .btn { transition: none; }
+  .landing .btn-primary:hover { transform: none; }
+}
+
+/* legal pages */
+.landing .legal-h { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; margin: 2rem 0 0.5rem; max-width: none; }
+.landing main p { max-width: 40rem; }
+.landing main a { text-decoration: underline; text-underline-offset: 3px; }

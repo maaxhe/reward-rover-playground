@@ -15,39 +15,52 @@ export function LevelObjectivePanel({ level, status, translate }: Props) {
   const hint = LEVEL_OBJECTIVES[level].hint;
 
   return (
-    <Card className="p-4 border-border/40 bg-card/60 space-y-3">
+    <Card
+      className={cn(
+        "space-y-3 border-2 p-4 shadow-md",
+        status.solved
+          ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/15"
+          : "border-amber-400 bg-amber-50 dark:border-amber-500/70 dark:bg-amber-500/10",
+      )}
+    >
       <div className="flex items-center justify-between gap-3">
-        <h3 className="font-semibold">
+        <h3 className="font-bold text-amber-900 dark:text-amber-300">
           {translate(`Aufgabe für Level ${level}`, `Task for level ${level}`)}
-          <span className="ml-2 text-sm font-normal text-muted-foreground">
+          <span className="ml-2 text-sm font-medium text-foreground/70">
             {translate(config.name, config.nameEn)}
           </span>
         </h3>
         {status.solved && (
-          <span className="text-sm font-semibold text-primary">
+          <span className="rounded-full bg-emerald-600 px-3 py-0.5 text-sm font-bold text-white">
             {translate("Geschafft!", "Solved!")}
           </span>
         )}
       </div>
-      <ul className="space-y-1.5">
+      <ul className="grid gap-2 sm:grid-cols-2">
         {status.requirements.map((req) => (
-          <li key={req.id} className="flex items-start gap-2 text-sm">
+          <li
+            key={req.id}
+            className={cn(
+              "flex items-start gap-3 rounded-lg border-2 px-3 py-2.5 text-sm font-medium shadow-sm transition-colors",
+              req.done
+                ? "border-emerald-500 bg-emerald-100 text-emerald-950 dark:bg-emerald-500/20 dark:text-emerald-50"
+                : "border-amber-400 bg-amber-100 text-amber-950 dark:border-amber-500/60 dark:bg-amber-500/15 dark:text-amber-50",
+            )}
+          >
             <span
               aria-hidden
               className={cn(
-                "mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border text-[10px]",
-                req.done ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/50",
+                "mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold",
+                req.done ? "border-emerald-600 bg-emerald-600 text-white" : "border-amber-500",
               )}
             >
               {req.done ? "✓" : ""}
             </span>
-            <span className={cn(req.done && "text-muted-foreground line-through")}>
-              {translate(req.de, req.en)}
-            </span>
+            <span>{translate(req.de, req.en)}</span>
           </li>
         ))}
       </ul>
-      <p className="text-xs text-muted-foreground leading-relaxed">{translate(hint.de, hint.en)}</p>
+      <p className="text-xs leading-relaxed text-amber-900/80 dark:text-amber-100/80">💡 {translate(hint.de, hint.en)}</p>
     </Card>
   );
 }

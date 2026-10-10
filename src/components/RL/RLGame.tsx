@@ -9,6 +9,7 @@ import { CELEBRATION_FACTS } from "@/lib/rl/celebrationFacts";
 import { PRESET_LEVELS, type GridConfig, type PresetLevel } from "@/lib/rl/presets";
 import { evaluateObjective } from "@/lib/levelObjectives";
 import { LevelObjectivePanel } from "./LevelObjectivePanel";
+import { RLGuideDialog } from "./RLGuideDialog";
 import { ControlBar, PlaygroundControls, RandomControls, ScrollIndicator } from "./RLGameControls";
 import type { LevelNumber, UnlockedFeatures } from "@/lib/levelProgression";
 import { Card } from "@/components/ui/card";
@@ -580,8 +581,9 @@ const runPlaygroundStep = (
   alpha = 0.1,
   gamma = 0.85,
   autoRestart = false,
+  rewardDecay = false,
 ): PlaygroundState =>
-  stepPlayground(state, { explorationRate, alpha, gamma, consumeRewards, autoRestart, directionBias: bias ?? null }).nextState;
+  stepPlayground(state, { explorationRate, alpha, gamma, consumeRewards, rewardDecay, autoRestart, directionBias: bias ?? null }).nextState;
 
 const runRandomModeStep = (
   state: RandomModeState,
@@ -1240,6 +1242,14 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   const unlockedFeatures = levelMode ? getUnlockedFeatures(currentLevel as LevelNumber) : null;
 
   const placementModeRef = useRef<PlaceableTile>("obstacle");
+  // Free Mode: "set goal" armed → the next tile click moves the goal there.
+  const settingGoalRef = useRef(false);
+  const [settingGoal, setSettingGoalState] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const setSettingGoal = useCallback((value: boolean) => {
+    settingGoalRef.current = value;
+    setSettingGoalState(value);
+  }, []);
   const challengeModeRef = useRef<ChallengeTile | null>(null);
   const consoleScrollRef = useRef<HTMLDivElement>(null);
   const settingsScrollRef = useRef<HTMLDivElement>(null);
@@ -1267,15 +1277,13 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(true);
   const [showStatistics, setShowStatistics] = useState(true);
-  const [showActions, setShowActions] = useState(false);
-  // Level Mode starts with consumption on (the rover can't farm a reward forever); eaten tiles come back each episode, and the player can still switch it off.
-  const [consumeRewards, setConsumeRewards] = useState(levelMode);
-  useEffect(() => {
-    if (levelMode) setConsumeRewards(true);
-  }, [levelMode]);
+  const [showActions, setShowActions] = useState(true);
+  // Level Mode has fixed rules: rewards stay on the board and pay less on every repeat hit (see rewardDecay).
+  // Only Free Mode lets the player choose whether eaten tiles disappear.
+  const [consumeRewardsSetting, setConsumeRewards] = useState(false);
+  const consumeRewards = levelMode ? false : consumeRewardsSetting;
   const [isAutoRestartEnabled, setIsAutoRestartEnabled] = useState(false);
   const [showRewardHistory, setShowRewardHistory] = useState(true);
-  const [showLegend, setShowLegend] = useState(false);
   const [showQValuesInfo, setShowQValuesInfo] = useState(false);
   const [showHeatmapInfo, setShowHeatmapInfo] = useState(false);
   const [showConsumeRewardsInfo, setShowConsumeRewardsInfo] = useState(false);
@@ -1620,66 +1628,6 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
     () => new Intl.NumberFormat(isEnglish ? "en-US" : "de-DE", { maximumFractionDigits: 2 }),
     [isEnglish],
   );
-  const legendItems = useMemo(
-    () => [
-      {
-        label: translate("Agent", "Agent"),
-        className: "bg-tile-agent",
-        emoji: "🤖",
-        description: translate(
-          "Der lernende Rover – beobachte seine Entscheidungen!",
-          "The learning rover – watch its decisions unfold!",
-        ),
-      },
-      {
-        label: translate("Ziel", "Goal"),
-        className: "bg-tile-goal",
-        emoji: "🎯",
-        description: translate(
-          "Das Ziel – hier gibt's die größte Belohnung",
-          "The target tile – maximum reward lives here",
-        ),
-      },
-      {
-        label: translate("Belohnung", "Reward"),
-        className: "bg-tile-reward",
-        emoji: "🍬",
-        description: translate(
-          "Positive Rewards – der Rover mag diese Felder",
-          "Positive rewards – the rover loves these tiles",
-        ),
-      },
-      {
-        label: translate("Strafe", "Penalty"),
-        className: "bg-tile-punishment",
-        emoji: "⚡",
-        description: translate(
-          "Negative Rewards – besser vermeiden",
-          "Negative rewards – better avoid them",
-        ),
-      },
-      {
-        label: translate("Hindernis", "Wall"),
-        className: "bg-tile-obstacle",
-        emoji: "🧱",
-        description: translate(
-          "Unpassierbare Wände – hier kommt keiner durch",
-          "Solid walls – nobody passes through here",
-        ),
-      },
-      {
-        label: translate("Portal", "Portal"),
-        className: "bg-tile-portal",
-        emoji: "🌀",
-        description: translate(
-          "Magisches Portal – teleportiert zu einem anderen Portal!",
-          "Magic portal – teleports you to another portal!",
-        ),
-      },
-    ],
-    [translate, tileLabels],
-  );
-
   const baseFieldSize = TILE_SIZE_MAP[tileSize];
   const levelConfig = LEVELS[levelKey];
   const levelName = isEnglish ? levelConfig.nameEn : levelConfig.name;
@@ -1939,6 +1887,8 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   const changePlacementMode = useCallback((nextMode: PlaceableTile) => {
     placementModeRef.current = nextMode;
     setPlacementModeState(nextMode);
+    settingGoalRef.current = false;
+    setSettingGoalState(false);
   }, []);
 
   useEffect(() => {
@@ -2075,12 +2025,13 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
         alpha,
         gamma,
         consumeRewards,
+        rewardDecay: levelMode,
         autoRestart: isAutoRestartEnabled && !isReplaying,
         directionBias,
       },
     };
     worker.postMessage(msg);
-  }, [explorationRate, alpha, gamma, consumeRewards, isAutoRestartEnabled, directionBias, isReplaying]);
+  }, [explorationRate, alpha, gamma, consumeRewards, levelMode, isAutoRestartEnabled, directionBias, isReplaying]);
 
   // ── Web Worker: sync speed ────────────────────────────────────────────────
   useEffect(() => {
@@ -2121,6 +2072,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
           alpha,
           gamma,
           consumeRewards,
+          rewardDecay: levelMode,
           autoRestart: isAutoRestartEnabled && !isReplaying,
           directionBias,
         },
@@ -2270,6 +2222,39 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
 
   const handleTilePlacement = useCallback(
     (x: number, y: number) => {
+      if (mode === "playground" && settingGoalRef.current) {
+        settingGoalRef.current = false;
+        setSettingGoalState(false);
+        setCelebration(null);
+        lastCelebratedEpisodeRef.current.playground = 0;
+        setPlaygroundState((prev) => {
+          if ((x === prev.spawn.x && y === prev.spawn.y) || (x === prev.goal.x && y === prev.goal.y)) {
+            return prev;
+          }
+          const grid = cloneGrid(prev.grid);
+          grid[prev.goal.y][prev.goal.x] = { type: "empty", qValue: 0, visits: 0, value: 0 };
+          grid[y][x] = { type: "goal", qValue: GOAL_REWARD, visits: 0, value: levelValue("goal") };
+          setUndoStack([cloneGrid(grid)]);
+          // The old Q-values pointed at the old goal, so learning starts over.
+          return {
+            ...prev,
+            goal: { x, y },
+            grid,
+            agent: { ...prev.spawn },
+            isRunning: false,
+            episode: 0,
+            totalReward: 0,
+            currentSteps: 0,
+            episodeHistory: [],
+            portalCooldowns: {},
+            pendingPortalTeleport: null,
+            qTable: {},
+            consumedTiles: [],
+            tileVisits: {},
+          };
+        });
+        return;
+      }
       if (mode === "playground") {
         const selectedType = placementModeRef.current;
         setPlaygroundState((prev) => {
@@ -2550,7 +2535,7 @@ const handleActiveBonusClick = useCallback(() => {
       const initMsg: ToWorkerMsg = {
         type: "INIT",
         state: { ...playgroundState, isRunning: false },
-        params: { explorationRate, alpha, gamma, consumeRewards, autoRestart: false, directionBias },
+        params: { explorationRate, alpha, gamma, consumeRewards, rewardDecay: levelMode, autoRestart: false, directionBias },
         delayMs: simulationDelayMs,
       };
       worker.postMessage(initMsg);
@@ -2558,7 +2543,7 @@ const handleActiveBonusClick = useCallback(() => {
     } else {
       // Fallback: run on main thread
       setPlaygroundState((prev) => {
-        const next = runPlaygroundStep({ ...prev, isRunning: true }, explorationRate, directionBias, consumeRewards, alpha, gamma);
+        const next = runPlaygroundStep({ ...prev, isRunning: true }, explorationRate, directionBias, consumeRewards, alpha, gamma, false, levelMode);
         return { ...next, isRunning: prev.isRunning };
       });
     }
@@ -2713,6 +2698,17 @@ const handleActiveBonusClick = useCallback(() => {
   const handleLoadPreset = useCallback((preset: PresetLevel) => {
     applyGridConfig(preset);
   }, [applyGridConfig]);
+
+  const handleClearEnvironment = useCallback(() => {
+    setSettingGoal(false);
+    setConfirmClear(false);
+    applyGridConfig({
+      size: playgroundState.grid.length,
+      tiles: [],
+      agent: playgroundState.spawn,
+      goal: playgroundState.goal,
+    });
+  }, [applyGridConfig, playgroundState.grid.length, playgroundState.spawn, playgroundState.goal, setSettingGoal]);
 
   const applyComparisonConfig = useCallback((config: GridConfig) => {
     const sizeOptionEntry = (Object.entries(TILE_SIZE_MAP) as Array<[TileSizeOption, number]>).find(
@@ -2886,6 +2882,7 @@ const handleActiveBonusClick = useCallback(() => {
 
   const handleLoadSavedEnvironment = useCallback(
     (env: { name: string; gridConfig: GridConfig; progressData: unknown }) => {
+      if (levelMode) return;
       handleLoadEnvironment(env.gridConfig, env.progressData);
       toast({
         title: translate("Umgebung geladen", "Environment loaded"),
@@ -2895,7 +2892,7 @@ const handleActiveBonusClick = useCallback(() => {
         ),
       });
     },
-    [handleLoadEnvironment, translate],
+    [handleLoadEnvironment, translate, levelMode],
   );
 
   useEffect(() => {
@@ -3180,7 +3177,8 @@ const handleActiveBonusClick = useCallback(() => {
   const activeQTable = mode === "playground" ? playgroundState.qTable : randomState.qTable;
   const gridSize = activeGrid.length;
   const tileSizePx = Math.max(24, Math.floor(GRID_PIXEL_TARGET[tileSize] / Math.max(gridSize, 1)));
-  const gridPixelDimension = tileSizePx * gridSize;
+  const TILE_GAP = 3;
+  const gridPixelDimension = tileSizePx * gridSize + TILE_GAP * (gridSize - 1);
 
   // Zusätzlicher Platz basierend auf Feldgröße: s=320px, m=200px, l=150px
   // Bei l: genug für Header + Grid + padding ohne scrollen
@@ -3270,22 +3268,6 @@ const handleActiveBonusClick = useCallback(() => {
         "Spiele eine Episode, um deinen ersten Eintrag freizuschalten.",
         "Complete an episode to unlock your first entry.",
       );
-  const legend = (
-    <div className="mt-3 grid gap-3 text-sm">
-      {legendItems.map((item) => (
-        <div key={item.label} className="flex items-center gap-3 group">
-          <span className={cn("legend-dot transition-transform group-hover:scale-110", item.className)} aria-hidden />
-          <div className="flex flex-col">
-            <span className="font-bold text-foreground">
-              {item.emoji} {item.label}
-            </span>
-            <span className="text-sm text-muted-foreground leading-relaxed">{item.description}</span>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-
   const gridStyle: React.CSSProperties = {
     gridTemplateColumns: `repeat(${gridSize}, ${tileSizePx}px)`,
     gridTemplateRows: `repeat(${gridSize}, ${tileSizePx}px)`,
@@ -3479,14 +3461,14 @@ const handleActiveBonusClick = useCallback(() => {
           }
         }}
       >
-        <DialogContent className="max-w-md bg-slate-900 border border-slate-800 shadow-2xl p-8 text-slate-100">
+        <DialogContent className="max-w-md bg-card border border-border shadow-2xl p-8 text-foreground">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-white">
               {authIsRegistering
                 ? translate("Account erstellen", "Create account")
                 : translate("Login", "Login")}
             </DialogTitle>
-            <DialogDescription className="text-sm text-slate-400">
+            <DialogDescription className="text-sm text-muted-foreground">
               {translate(
                 "Nur Nutzername und Passwort. Dein Level-Fortschritt wird gespeichert und folgt dir auf jedes Gerät.",
                 "Just a username and password. Your level progress is saved and follows you to any device.",
@@ -3497,7 +3479,7 @@ const handleActiveBonusClick = useCallback(() => {
             <div className="space-y-2">
               <Label
                 htmlFor="auth-username"
-                className="text-xs font-semibold text-slate-400 uppercase tracking-wider"
+                className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
               >
                 {translate("Nutzername", "Username")}
               </Label>
@@ -3507,13 +3489,13 @@ const handleActiveBonusClick = useCallback(() => {
                 value={authUsername}
                 onChange={(event) => setAuthUsername(event.target.value)}
                 placeholder="max"
-                className="h-12 rounded-lg bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:border-transparent"
+                className="h-12 rounded-lg bg-muted border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:border-transparent"
               />
             </div>
             <div className="space-y-2">
               <Label
                 htmlFor="auth-password"
-                className="text-xs font-semibold text-slate-400 uppercase tracking-wider"
+                className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
               >
                 {translate("Passwort", "Password")}
               </Label>
@@ -3523,7 +3505,7 @@ const handleActiveBonusClick = useCallback(() => {
                 type="password"
                 value={authPassword}
                 onChange={(event) => setAuthPassword(event.target.value)}
-                className="h-12 rounded-lg bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:border-transparent"
+                className="h-12 rounded-lg bg-muted border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:border-transparent"
               />
             </div>
             {authIsRegistering && (
@@ -3544,7 +3526,7 @@ const handleActiveBonusClick = useCallback(() => {
                 onCheckedChange={(checked) => setRememberMe(checked === true)}
                 className="border-slate-600 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
               />
-              <Label htmlFor="remember-me" className="text-sm text-slate-300">
+              <Label htmlFor="remember-me" className="text-sm text-foreground/80">
                 {translate("Eingeloggt bleiben", "Stay signed in")}
               </Label>
             </div>
@@ -3559,7 +3541,7 @@ const handleActiveBonusClick = useCallback(() => {
               <button
                 type="button"
                 onClick={() => setAuthIsRegistering((prev) => !prev)}
-                className="mx-auto text-sm text-slate-400 hover:text-white transition-colors"
+                className="mx-auto text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {authIsRegistering
                   ? translate("Schon registriert? ", "Already registered? ")
@@ -3661,416 +3643,7 @@ const handleActiveBonusClick = useCallback(() => {
             </div>
           </div>
 
-          <Dialog open={rlDialogOpen} onOpenChange={setRlDialogOpen}>
-            <DialogContent className="max-w-4xl max-h-[85vh]">
-              <DialogHeader>
-                <DialogTitle className="text-2xl">
-                  {translate("Reinforcement Learning auf einen Blick", "Reinforcement learning at a glance")}
-                </DialogTitle>
-                <DialogDescription className="text-base">
-                  {translate(
-                    "Wie der Rover lernt und warum Q-Werte so wichtig sind.",
-                    "How the rover learns and why Q-values matter.",
-                  )}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 overflow-y-auto max-h-[calc(85vh-120px)] pr-2">
-
-                {/* Grundlagen */}
-                <Collapsible open={showRLBasics} onOpenChange={setShowRLBasics} className="space-y-3">
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-between rounded-xl border border-border/40 bg-background/60 font-semibold text-base hover:bg-background/80"
-                    >
-                      <span>{translate("🧠 Grundlagen", "🧠 Basics")}</span>
-                      <ChevronDown
-                        className={cn("h-4 w-4 transition-transform duration-200", showRLBasics ? "rotate-180" : "")}
-                      />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-                    <div className="space-y-6 text-base leading-relaxed text-muted-foreground pt-3">
-                      <p>
-                        {translate(
-                          "🤖 Der Rover ist ein Agent, der durch Belohnungen und Strafen lernt. Jede seiner Aktionen verändert die Welt – und er versucht herauszufinden, welche Folgen langfristig die meisten Punkte bringen.",
-                          "🤖 Our rover is an agent that learns through rewards and penalties. Every action changes the world, and it experiments to discover which outcomes yield the most points long-term.",
-                        )}
-                      </p>
-
-                      <p>
-                        {translate(
-                          "🍽️ Stell dir ein Restaurant vor: Dein Lieblingsgericht zu bestellen ist Ausbeuten (Exploitation) – sicher und vertraut. Neues probieren ist Entdecken (Exploration) – vielleicht findest du deinen neuen Favoriten. RL hilft dabei, genau diese Balance zu finden.",
-                          "🍽️ Picture a restaurant: ordering your favourite dish is exploitation – safe and familiar. Trying something new is exploration – and you might discover a new favourite. RL helps agents strike that balance.",
-                        )}
-                      </p>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                {/* Q-Learning Formel */}
-                <Collapsible open={showRLFormula} onOpenChange={setShowRLFormula} className="space-y-3">
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-between rounded-xl border border-border/40 bg-background/60 font-semibold text-base hover:bg-background/80"
-                    >
-                      <span>{translate("📐 Q-Learning Formel", "📐 Q-Learning Formula")}</span>
-                      <ChevronDown
-                        className={cn("h-4 w-4 transition-transform duration-200", showRLFormula ? "rotate-180" : "")}
-                      />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-                    <div className="pt-3">
-                      <div className="rounded-xl border border-border/60 bg-secondary/40 p-5 text-foreground space-y-4">
-                        <h4 className="text-lg font-semibold">
-                          {translate("Q-Learning Update-Regel", "Q-Learning Update Rule")}
-                        </h4>
-                        <pre className="whitespace-pre-wrap text-base sm:text-lg font-mono">
-                          Q(s, a) ← Q(s, a) + α · [ r + γ · maxₐ′ Q(s′, a′) − Q(s, a) ]
-                        </pre>
-                        <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                          {translate(
-                            "α (Alpha) ist die Lernrate, γ (Gamma) der Optimismus in die Zukunft, r der direkte Reward. Q(s, a) speichert, wie gut eine Aktion in einem Zustand bisher funktioniert hat.",
-                            "α (alpha) is the learning rate, γ (gamma) the optimism for the future, and r the immediate reward. Q(s, a) stores how good an action has proven in a given state.",
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                {/* Anwendungsbeispiele */}
-                <Collapsible open={showRLExamples} onOpenChange={setShowRLExamples} className="space-y-3">
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-between rounded-xl border border-border/40 bg-background/60 font-semibold text-base hover:bg-background/80"
-                    >
-                      <span>{translate("🌍 Anwendungsbeispiele", "🌍 Real-World Examples")}</span>
-                      <ChevronDown
-                        className={cn("h-4 w-4 transition-transform duration-200", showRLExamples ? "rotate-180" : "")}
-                      />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-                    <div className="space-y-4 text-base leading-relaxed text-muted-foreground pt-3">
-                      <p className="font-medium text-foreground">
-                        {translate(
-                          "Wo begegnet dir RL im Alltag?",
-                          "Where does RL appear in everyday life?",
-                        )}
-                      </p>
-                      <ul className="space-y-3">
-                        <li>
-                          {translate("🚗 Autonomes Fahren: Fahrzeuge planen sichere Routen und passen Fahrstil an.", "🚗 Autonomous driving: cars plan safe routes and adapt driving styles.")}
-                        </li>
-                        <li>
-                          {translate("🎮 Game-Bots: KI-Gegner lernen, menschliche Spieler:innen auszutricksen.", "🎮 Game bots: AI opponents learn to outsmart human players.")}
-                        </li>
-                        <li>
-                          {translate("🏥 Medizin: Dosierungsempfehlungen oder Therapiepläne werden adaptiv optimiert.", "🏥 Medicine: dosing recommendations or treatment plans get adaptively optimised.")}
-                        </li>
-                        <li>
-                          {translate("⚡ Energienetze: Stromanbieter balancieren Angebot und Nachfrage in Echtzeit.", "⚡ Energy grids: providers balance supply and demand in real time.")}
-                        </li>
-                        <li>
-                          {translate("🛒 Empfehlungen: Shops schlagen Produkte vor, die dir mit hoher Wahrscheinlichkeit gefallen.", "🛒 Recommendations: shops suggest products you're likely to enjoy.")}
-                        </li>
-                      </ul>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                {/* Lernparameter im Detail */}
-                <Collapsible open={showRLParameters} onOpenChange={setShowRLParameters} className="space-y-3">
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-between rounded-xl border border-border/40 bg-background/60 font-semibold text-base hover:bg-background/80"
-                    >
-                      <span>{translate("🎛️ Lernparameter im Detail", "🎛️ Learning Parameters Explained")}</span>
-                      <ChevronDown
-                        className={cn("h-4 w-4 transition-transform duration-200", showRLParameters ? "rotate-180" : "")}
-                      />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-                    <div className="space-y-6 text-base leading-relaxed text-muted-foreground pt-3">
-
-                      {/* Exploration Rate (Entdeckungsrate) */}
-                      <div className="rounded-xl border border-border/60 bg-secondary/30 p-5 space-y-3">
-                        <h4 className="text-lg font-semibold text-foreground">
-                          {translate("🎲 Exploration Rate (Entdeckungsrate)", "🎲 Exploration Rate")}
-                        </h4>
-                        <p className="text-foreground font-medium">
-                          {translate(
-                            "Was macht dieser Parameter?",
-                            "What does this parameter do?"
-                          )}
-                        </p>
-                        <p>
-                          {translate(
-                            "Die Exploration Rate bestimmt, wie oft der Rover zufällige Aktionen ausprobiert, anstatt dem zu folgen, was er bereits gelernt hat. Bei 20% Exploration wird der Rover in 20% der Fälle etwas Neues versuchen und in 80% der Fälle seine beste bekannte Strategie nutzen.",
-                            "The exploration rate determines how often the rover tries random actions instead of following what it has already learned. At 20% exploration, the rover will try something new 20% of the time and use its best known strategy 80% of the time."
-                          )}
-                        </p>
-                        <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
-                          <p className="font-semibold text-foreground mb-2">
-                            {translate("Real-Life Analogy: Restaurant Choice", "💡 Real-Life Analogy: Restaurant Choice")}
-                          </p>
-                          <p>
-                            {translate(
-                              "Stell dir vor, du gehst jede Woche essen. Mit niedriger Exploration gehst du fast immer zu deinem Lieblingsrestaurant – sicher, aber du verpasst vielleicht tolle neue Orte. Mit hoher Exploration probierst du ständig neue Restaurants – spannend, aber manchmal enttäuschend. Die goldene Mitte: Du gehst meistens zu bewährten Orten, probierst aber ab und zu etwas Neues.",
-                              "Imagine you go out to eat every week. With low exploration, you almost always go to your favorite restaurant – safe, but you might miss great new places. With high exploration, you constantly try new restaurants – exciting, but sometimes disappointing. The sweet spot: You mostly go to proven places, but occasionally try something new."
-                            )}
-                          </p>
-                        </div>
-                        <p>
-                          <span className="font-semibold text-foreground">{translate("Praktischer Tipp:", "Practical Tip:")}</span>{" "}
-                          {translate(
-                            "Zu Beginn sollte die Exploration hoch sein (30-50%), damit der Rover viele verschiedene Strategien kennenlernt. Später kann sie niedriger sein (5-10%), damit er seine beste Strategie verfeinert.",
-                            "At the beginning, exploration should be high (30-50%) so the rover learns many different strategies. Later it can be lower (5-10%) so it refines its best strategy."
-                          )}
-                        </p>
-                      </div>
-
-                      {/* Learning Rate (Alpha) */}
-                      <div className="rounded-xl border border-border/60 bg-secondary/30 p-5 space-y-3">
-                        <h4 className="text-lg font-semibold text-foreground">
-                          {translate("📚 Learning Rate – Alpha (α)", "📚 Learning Rate – Alpha (α)")}
-                        </h4>
-                        <p className="text-foreground font-medium">
-                          {translate(
-                            "Was macht dieser Parameter?",
-                            "What does this parameter do?"
-                          )}
-                        </p>
-                        <p>
-                          {translate(
-                            "Die Lernrate bestimmt, wie stark neue Erfahrungen die bisherigen Überzeugungen des Rovers überschreiben. Bei Alpha = 0.1 werden neue Erkenntnisse zu 10% berücksichtigt und zu 90% bleibt das alte Wissen erhalten. Bei Alpha = 0.5 haben neue Erfahrungen ein viel größeres Gewicht.",
-                            "The learning rate determines how much new experiences override the rover's previous beliefs. At alpha = 0.1, new insights count for 10% and 90% of the old knowledge is retained. At alpha = 0.5, new experiences have much more weight."
-                          )}
-                        </p>
-                        <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
-                          <p className="font-semibold text-foreground mb-2">
-                            {translate("Real-Life Analogy: Opinion Formation", "💡 Real-Life Analogy: Opinion Formation")}
-                          </p>
-                          <p>
-                            {translate(
-                              "Stell dir vor, du liest Produktbewertungen. Mit niedriger Lernrate bist du wie jemand, der sehr skeptisch ist: Eine einzelne negative Bewertung ändert deine Meinung über ein Produkt kaum, das du schon 10x gut erlebt hast. Mit hoher Lernrate bist du wie jemand, der sehr beeinflussbar ist: Eine einzige schlechte Erfahrung macht deine ganze vorherige positive Einstellung zunichte.",
-                              "Imagine you're reading product reviews. With a low learning rate, you're like someone who's very skeptical: A single negative review barely changes your opinion about a product you've had good experiences with 10 times. With a high learning rate, you're like someone who's easily influenced: A single bad experience negates all your previous positive attitude."
-                            )}
-                          </p>
-                        </div>
-                        <p>
-                          <span className="font-semibold text-foreground">{translate("Praktischer Tipp:", "Practical Tip:")}</span>{" "}
-                          {translate(
-                            "Hohe Lernraten (0.3-0.5) sind gut für sich schnell ändernde Umgebungen. Niedrige Lernraten (0.05-0.15) sind besser für stabile Umgebungen, wo der Rover Zeit hat, präzise zu lernen. Ein typischer Wert ist 0.1.",
-                            "High learning rates (0.3-0.5) are good for rapidly changing environments. Low learning rates (0.05-0.15) are better for stable environments where the rover has time to learn precisely. A typical value is 0.1."
-                          )}
-                        </p>
-                      </div>
-
-                      {/* Discount Factor (Gamma) */}
-                      <div className="rounded-xl border border-border/60 bg-secondary/30 p-5 space-y-3">
-                        <h4 className="text-lg font-semibold text-foreground">
-                          {translate("🔮 Discount Factor – Gamma (γ)", "🔮 Discount Factor – Gamma (γ)")}
-                        </h4>
-                        <p className="text-foreground font-medium">
-                          {translate(
-                            "Was macht dieser Parameter?",
-                            "What does this parameter do?"
-                          )}
-                        </p>
-                        <p>
-                          {translate(
-                            "Der Discount-Faktor bestimmt, wie wichtig zukünftige Belohnungen im Vergleich zu sofortigen Belohnungen sind. Bei Gamma = 0.9 ist eine Belohnung in 5 Schritten noch 59% so wertvoll wie eine sofortige Belohnung. Bei Gamma = 0.5 wäre sie nur noch 3% wert – der Rover denkt also sehr kurzfristig.",
-                            "The discount factor determines how important future rewards are compared to immediate rewards. At gamma = 0.9, a reward in 5 steps is still worth 59% of an immediate reward. At gamma = 0.5, it would only be worth 3% – so the rover thinks very short-term."
-                          )}
-                        </p>
-                        <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
-                          <p className="font-semibold text-foreground mb-2">
-                            {translate("Real-Life Analogy: Saving vs. Spending", "💡 Real-Life Analogy: Saving vs. Spending")}
-                          </p>
-                          <p>
-                            {translate(
-                              "Niedriges Gamma ist wie jemand, der sein Geld sofort ausgibt: 'Ich will jetzt Spaß haben, die Zukunft ist mir egal!' Hohes Gamma ist wie jemand, der für die Rente spart: 'Ich verzichte heute auf etwas, weil ich weiß, dass es mir später viel bringen wird.' Im Rover-Kontext: Niedriges Gamma → sammle schnell die nächste Belohnung ein. Hohes Gamma → plane eine langfristige Route zum größten Schatz, auch wenn du dafür erstmal an kleineren Belohnungen vorbei musst.",
-                              "Low gamma is like someone who spends their money immediately: 'I want fun now, I don't care about the future!' High gamma is like someone saving for retirement: 'I'm giving up something today because I know it will benefit me greatly later.' In the rover context: Low gamma → quickly collect the next reward. High gamma → plan a long-term route to the biggest treasure, even if you have to pass smaller rewards first."
-                            )}
-                          </p>
-                        </div>
-                        <p>
-                          <span className="font-semibold text-foreground">{translate("Praktischer Tipp:", "Practical Tip:")}</span>{" "}
-                          {translate(
-                            "Für Aufgaben mit klarem Endziel (wie unser Rover-Spiel) ist ein hohes Gamma (0.9-0.99) ideal. Für Aufgaben ohne Ende oder wo sofortige Belohnungen wichtig sind, kann ein niedrigeres Gamma (0.7-0.85) besser sein.",
-                            "For tasks with a clear end goal (like our rover game), a high gamma (0.9-0.99) is ideal. For endless tasks or where immediate rewards are important, a lower gamma (0.7-0.85) may be better."
-                          )}
-                        </p>
-                      </div>
-
-                      {/* Zusammenspiel der Parameter */}
-                      <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-3">
-                        <h4 className="text-lg font-semibold text-foreground">
-                          {translate("How They Work Together", "🎯 How They Work Together")}
-                        </h4>
-                        <p>
-                          {translate(
-                            "Diese drei Parameter arbeiten zusammen wie ein Team:",
-                            "These three parameters work together like a team:"
-                          )}
-                        </p>
-                        <ul className="space-y-2 list-disc pl-5">
-                          <li>
-                            <span className="font-semibold text-foreground">{translate("Exploration Rate", "Exploration Rate")}</span>
-                            {translate(
-                              " entscheidet, ob der Rover überhaupt etwas Neues lernen kann",
-                              " decides whether the rover can learn something new at all"
-                            )}
-                          </li>
-                          <li>
-                            <span className="font-semibold text-foreground">{translate("Learning Rate", "Learning Rate")}</span>
-                            {translate(
-                              " bestimmt, wie schnell das Gelernte ins Gedächtnis eingebrannt wird",
-                              " determines how quickly what is learned is burned into memory"
-                            )}
-                          </li>
-                          <li>
-                            <span className="font-semibold text-foreground">{translate("Discount Factor", "Discount Factor")}</span>
-                            {translate(
-                              " legt fest, ob der Rover in die Zukunft oder nur an 'jetzt' denkt",
-                              " determines whether the rover thinks about the future or only about 'now'"
-                            )}
-                          </li>
-                        </ul>
-                        <p className="text-foreground font-medium mt-4">
-                          {translate(
-                            "Experiment with the values und beobachte, wie sich das Verhalten des Rovers ändert!",
-                            "Experiment with the values and observe how the rover's behavior changes!"
-                          )}
-                        </p>
-                      </div>
-
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                {/* Der Lernprozess */}
-                <Collapsible open={showRLLoop} onOpenChange={setShowRLLoop} className="space-y-3">
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-between rounded-xl border border-border/40 bg-background/60 font-semibold text-base hover:bg-background/80"
-                    >
-                      <span>{translate("Learning Process", "🔁 The Learning Process")}</span>
-                      <ChevronDown
-                        className={cn("h-4 w-4 transition-transform duration-200", showRLLoop ? "rotate-180" : "")}
-                      />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-                    <div className="pt-3 space-y-4">
-                      <div className="rounded-xl border border-border/60 bg-secondary/30 p-5 text-foreground space-y-4">
-                        <h4 className="text-lg font-semibold">
-                          {translate("So lernt der Rover Schritt für Schritt", "The learning loop step by step")}
-                        </h4>
-                        <ol className="list-decimal pl-5 space-y-3 text-sm sm:text-base leading-relaxed">
-                          <li>
-                            {translate(
-                              "Zustand beobachten – der Rover schaut sich an, wo er steht und welche Optionen es gibt.",
-                              "Observe the state – the rover inspects where it stands and what actions are possible.",
-                            )}
-                          </li>
-                          <li>
-                            {translate(
-                              "Aktion wählen – per Zufall oder anhand der höchsten Q-Werte (Exploration vs. Exploitation).",
-                              "Pick an action – either explore randomly or exploit the highest Q-values.",
-                            )}
-                          </li>
-                          <li>
-                            {translate(
-                              "Belohnung erhalten – sofortige Punkte (positiv oder negativ) geben Feedback.",
-                              "Collect the reward – immediate positive or negative feedback is received.",
-                            )}
-                          </li>
-                          <li>
-                            {translate(
-                              "Q-Wert aktualisieren – mit der Formel oben wird der Wert der gewählten Aktion angepasst.",
-                              "Update the Q-value – apply the formula above to adjust the value of the chosen action.",
-                            )}
-                          </li>
-                        </ol>
-                      </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {translate(
-                          "The step button in the console shows each decision individually – ideal, um den Lernprozess live zu beobachten.",
-                          "The step button lets you inspect every single decision – perfect for watching the learning process live.",
-                        )}
-                      </p>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                {/* Einstellungen */}
-                <Collapsible open={showRLSettings} onOpenChange={setShowRLSettings} className="space-y-3">
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-between rounded-xl border border-border/40 bg-background/60 font-semibold text-base hover:bg-background/80"
-                    >
-                      <span>{translate("⚙️ Die Einstellungen", "⚙️ The Settings")}</span>
-                      <ChevronDown
-                        className={cn("h-4 w-4 transition-transform duration-200", showRLSettings ? "rotate-180" : "")}
-                      />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-                    <div className="pt-3">
-                      <div className="rounded-xl border border-border/60 bg-secondary/20 p-5 space-y-4 text-sm sm:text-base text-muted-foreground">
-                        <p className="text-foreground font-semibold text-base">
-                          {translate("Was bewirken die Einstellungen?", "What do the settings do?")}
-                        </p>
-                        <div className="space-y-3 leading-relaxed">
-                          <p>
-                            {translate(
-                              "• Lernrate (α) bestimmt, wie stark neue Erfahrungen alte Werte überschreiben.",
-                              "• Learning rate (α) controls how strongly fresh experiences overwrite existing values.",
-                            )}
-                          </p>
-                          <p>
-                            {translate(
-                              "• Discount (γ) legt fest, wie wichtig zukünftige Belohnungen im Vergleich zu sofortigen sind.",
-                              "• Discount (γ) decides how much future rewards matter compared to immediate ones.",
-                            )}
-                          </p>
-                          <p>
-                            {translate(
-                              "• Exploration beeinflusst, wie oft der Rover bewusst neue Aktionen ausprobiert.",
-                              "• Exploration influences how often the rover purposefully tries new actions.",
-                            )}
-                          </p>
-                        </div>
-                        <p className="text-foreground font-medium pt-2">
-                          {translate(
-                            "Nutze die Slider, um zu sehen, wie sich das Verhalten des Agents verändert – im Vergleichsmodus kannst du sogar zwei Konfigurationen gegeneinander antreten lassen.",
-                            "Use the sliders to see how the agent's behaviour shifts – and in comparison mode you can let two configurations compete head to head.",
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-
-              </div>
-            </DialogContent>
-          </Dialog>
+          <RLGuideDialog open={rlDialogOpen} onOpenChange={setRlDialogOpen} translate={translate} />
 
           <Collapsible open={showIntro} onOpenChange={setShowIntro}>
             <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
@@ -4525,7 +4098,7 @@ const handleActiveBonusClick = useCallback(() => {
                   }}
                   aria-hidden
                 >
-                  🤖
+                  <span className="rr-rover" />
                 </div>
               </div>
             </Card>
@@ -4782,7 +4355,7 @@ const handleActiveBonusClick = useCallback(() => {
                   }}
                   aria-hidden
                 >
-                  🤖
+                  <span className="rr-rover" />
                 </div>
               </div>
             </Card>
@@ -4962,7 +4535,6 @@ const handleActiveBonusClick = useCallback(() => {
                 onReplay={handleReplayBest}
                 isReplaying={isReplaying}
                 onStopReplay={handleStopReplay}
-                onLoadPreset={handleLoadPreset}
                 placementMode={placementMode}
                 onPlacementModeChange={changePlacementMode}
                 simulationSpeed={simulationSpeed}
@@ -5200,22 +4772,6 @@ const handleActiveBonusClick = useCallback(() => {
                 </div>
               ))}
             </Card>
-
-            <Collapsible open={showLegend} onOpenChange={setShowLegend}>
-              <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4">
-                <CollapsibleTrigger className="w-full">
-                  <div className="flex items-center justify-between cursor-pointer mb-3">
-                    <h3 className="text-base font-bold text-foreground">
-                      {translate("📚 Legende", "📚 Legend")}
-                    </h3>
-                    {showLegend ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-                  {legend}
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
               </>
               )}
 
@@ -5250,7 +4806,7 @@ const handleActiveBonusClick = useCallback(() => {
               onMouseDown={() => gridRef.current?.focus()}
             >
               <div className="relative">
-                <div className="grid gap-0" style={gridStyle}>
+                <div className="grid" style={{ ...gridStyle, gap: TILE_GAP }}>
                 {(() => {
                   // Berechne maxVisits für Heatmap
                   const maxVisits = showHeatmap
@@ -5310,8 +4866,8 @@ const handleActiveBonusClick = useCallback(() => {
               <div
                 className="absolute pointer-events-none"
                 style={{
-                  left: (mode === "playground" ? playgroundState.agent.x : randomState.agent.x) * tileSizePx,
-                  top: (mode === "playground" ? playgroundState.agent.y : randomState.agent.y) * tileSizePx,
+                  left: (mode === "playground" ? playgroundState.agent.x : randomState.agent.x) * (tileSizePx + TILE_GAP),
+                  top: (mode === "playground" ? playgroundState.agent.y : randomState.agent.y) * (tileSizePx + TILE_GAP),
                   width: tileSizePx,
                   height: tileSizePx,
                   transition: "left 0.3s ease-out, top 0.3s ease-out",
@@ -5323,12 +4879,12 @@ const handleActiveBonusClick = useCallback(() => {
                 }}
                 aria-hidden
               >
-                🤖
+                <span className="rr-rover" />
               </div>
             </div>
             </div>
 
-            {mode === "playground" && (
+            {mode === "playground" && !levelMode && (
               <div className="mt-4 space-y-4 hidden lg:block">
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold text-foreground">
@@ -5525,16 +5081,22 @@ const handleActiveBonusClick = useCallback(() => {
                       <Switch
                         id="consume-rewards-settings"
                         checked={consumeRewards}
+                        disabled={levelMode}
                         onCheckedChange={setConsumeRewards}
                         aria-label={translate("Belohnungen/Strafen verschwinden umschalten", "Toggle consume rewards")}
                       />
                     </div>
                     {showConsumeRewardsInfo && (
                       <p className="text-xs text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
-                        {translate(
-                          "Belohnungen und Strafen verschwinden nach dem Einsammeln.",
-                          "Rewards and penalties disappear after collection.",
-                        )}
+                        {levelMode
+                          ? translate(
+                              "In Levels bleiben Belohnungen und Strafen liegen. Jeder weitere Treffer im selben Durchlauf zählt nur halb so viel – so kann der Rover sie nicht endlos abgrasen.",
+                              "In levels rewards and penalties stay on the board. Every repeat hit in the same episode pays half as much, so the rover can't farm them forever.",
+                            )
+                          : translate(
+                              "Belohnungen und Strafen verschwinden nach dem Einsammeln.",
+                              "Rewards and penalties disappear after collection.",
+                            )}
                       </p>
                     )}
                   </div>
@@ -5571,7 +5133,10 @@ const handleActiveBonusClick = useCallback(() => {
                     key={sizeKey}
                     variant={tileSize === sizeKey ? "default" : "outline"}
                     onClick={() => handleTileSizeChange(sizeKey)}
-                    disabled={levelMode && !unlockedFeatures?.canChangeGridSize}
+                    disabled={
+                      levelMode &&
+                      (!unlockedFeatures?.canChangeGridSize || (sizeKey === "l" && !unlockedFeatures?.canUseLargeGrid))
+                    }
                     className="rounded-lg text-base font-semibold w-full justify-between px-4"
                   >
                     <span>{sizeLabels[sizeKey]}</span>
@@ -5583,62 +5148,146 @@ const handleActiveBonusClick = useCallback(() => {
               </div>
               {levelMode && !unlockedFeatures?.canChangeGridSize && (
                 <p className="text-xs text-muted-foreground italic mt-3">
-                  🔒 {translate("Schalte Level 7 frei, um die Gittergröße anzupassen.", "Reach level 7 to change grid size.")}
+                  🔒 {translate("Schalte Level 5 frei, um das Feld auf Mittel zu stellen.", "Reach level 5 to switch to the medium board.")}
+                </p>
+              )}
+              {levelMode && unlockedFeatures?.canChangeGridSize && !unlockedFeatures?.canUseLargeGrid && (
+                <p className="text-xs text-muted-foreground italic mt-3">
+                  🔒 {translate("Schalte Level 7 frei, um das große Feld zu nutzen.", "Reach level 7 to use the large board.")}
                 </p>
               )}
             </Card>
 
-            <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-3 hidden lg:block">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-foreground">
-                  {translate("Meine Umgebungen", "My environments")}
-                </h3>
-                {authUser && (
-                  <Badge variant="secondary" className="bg-foreground/10 text-foreground border-foreground/15">
-                    {savedEnvironments.length}
-                  </Badge>
-                )}
-              </div>
-              {isLoadingEnvs ? (
-                <p className="text-xs text-muted-foreground">
-                  {translate("Umgebungen werden geladen…", "Loading environments…")}
-                </p>
-              ) : !authUser ? (
-                <p className="text-xs text-muted-foreground">
-                  {translate(
-                    "Zum Anzeigen deiner Umgebungen bitte einloggen.",
-                    "Log in to see your environments.",
+            {/* Saved environments are Free Mode only: loading one in a level would replace the level world. */}
+            {!levelMode && (
+              <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-3 hidden lg:block">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-foreground">
+                    {translate("Meine Umgebungen", "My environments")}
+                  </h3>
+                  {authUser && (
+                    <Badge variant="secondary" className="bg-foreground/10 text-foreground border-foreground/15">
+                      {savedEnvironments.length}
+                    </Badge>
                   )}
-                </p>
-              ) : savedEnvironments.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  {translate(
-                    "Noch keine gespeicherten Umgebungen.",
-                    "No saved environments yet.",
-                  )}
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {savedEnvironments.map((env) => (
-                    <div
-                      key={env.id}
-                      className="flex items-center gap-3 rounded-xl border border-border/40 bg-background/60 p-3"
-                    >
-                      {renderEnvironmentPreview(env.gridConfig)}
-                      <div className="flex-1">
-                        <div className="text-sm font-semibold text-foreground">{env.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {env.gridConfig.size} × {env.gridConfig.size}
+                </div>
+                {isLoadingEnvs ? (
+                  <p className="text-xs text-muted-foreground">
+                    {translate("Umgebungen werden geladen…", "Loading environments…")}
+                  </p>
+                ) : !authUser ? (
+                  <p className="text-xs text-muted-foreground">
+                    {translate(
+                      "Zum Anzeigen deiner Umgebungen bitte einloggen.",
+                      "Log in to see your environments.",
+                    )}
+                  </p>
+                ) : savedEnvironments.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    {translate(
+                      "Noch keine gespeicherten Umgebungen.",
+                      "No saved environments yet.",
+                    )}
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {savedEnvironments.map((env) => (
+                      <div
+                        key={env.id}
+                        className="flex items-center gap-3 rounded-xl border border-border/40 bg-background/60 p-3"
+                      >
+                        {renderEnvironmentPreview(env.gridConfig)}
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-foreground">{env.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {env.gridConfig.size} × {env.gridConfig.size}
+                          </div>
                         </div>
+                        <Button variant="outline" size="sm" onClick={() => handleLoadSavedEnvironment(env)}>
+                          {translate("Laden", "Load")}
+                        </Button>
                       </div>
-                      <Button variant="outline" size="sm" onClick={() => handleLoadSavedEnvironment(env)}>
-                        {translate("Laden", "Load")}
-                      </Button>
-                    </div>
+                    ))}
+                  </div>
+                )}
+              </Card>
+            )}
+
+            {mode === "playground" && !levelMode && (
+              <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-3">
+                <h3 className="text-lg font-bold text-foreground">
+                  {translate("Welt bearbeiten", "Edit world")}
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant={settingGoal ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSettingGoal(!settingGoal)}
+                    className="text-xs font-semibold h-auto py-2"
+                  >
+                    {settingGoal ? translate("Abbrechen", "Cancel") : translate("🎯 Ziel versetzen", "🎯 Move goal")}
+                  </Button>
+                  <Button
+                    variant={confirmClear ? "destructive" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      if (confirmClear) {
+                        handleClearEnvironment();
+                      } else {
+                        setConfirmClear(true);
+                        window.setTimeout(() => setConfirmClear(false), 3000);
+                      }
+                    }}
+                    className="text-xs font-semibold h-auto py-2"
+                  >
+                    {confirmClear ? translate("Wirklich leeren?", "Really clear?") : translate("🗑 Umgebung leeren", "🗑 Clear world")}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {settingGoal
+                    ? translate("Klicke jetzt auf ein Feld im Spielfeld, dort steht dann das Ziel.", "Now click a tile on the board to put the goal there.")
+                    : translate(
+                        "Ziel versetzen oder alles leeren. Beides setzt das Gelernte zurück.",
+                        "Move the goal or wipe the board. Both reset what the rover has learned.",
+                      )}
+                </p>
+              </Card>
+            )}
+
+            {mode === "playground" && !levelMode && (
+              <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-3">
+                <h3 className="text-lg font-bold text-foreground">
+                  {translate("Preset-Levels", "Preset levels")}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {translate(
+                    "Fertige Welten zum Ausprobieren – ersetzt das aktuelle Feld.",
+                    "Ready-made worlds to try out – replaces the current grid.",
+                  )}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {PRESET_LEVELS.map((preset) => (
+                    <TooltipProvider key={preset.key}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleLoadPreset(preset)}
+                            className="text-xs font-semibold h-auto py-2"
+                          >
+                            {preset.name[language]}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">{preset.description[language]}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   ))}
                 </div>
-              )}
-            </Card>
+              </Card>
+            )}
 
             {mode === "random" && (
               <>

@@ -10,10 +10,13 @@ import { statements } from "./db.js";
 import { authenticate, getJwtSecret } from "./middleware/auth.js";
 import { isAdmin } from "./middleware/isAdmin.js";
 import dailyRoutes from "./routes/daily.js";
+import roomRoutes from "./routes/rooms.js";
 
 dotenv.config();
 
 const app = express();
+// Behind nginx: needed so per-IP limits (room creation) see the real client address.
+app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3001;
 const API_PREFIX = "/api";
 const GLOBAL_ENV_KEY = "global_env";
@@ -283,6 +286,7 @@ app.delete(`${API_PREFIX}/admin/templates/:id`, authenticate, isAdmin, (req, res
 });
 
 app.use(API_PREFIX, dailyRoutes);
+app.use(API_PREFIX, roomRoutes);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

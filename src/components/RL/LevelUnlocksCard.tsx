@@ -13,7 +13,8 @@ const FEATURE_LABELS = {
     canPlaceRewards: "Belohnungen platzieren",
     canPlacePunishments: "Strafen platzieren",
     canPlacePortals: "Portale nutzen",
-    canChangeGridSize: "Gittergröße ändern",
+    canChangeGridSize: "Gittergröße (mittel)",
+    canUseLargeGrid: "Großes Feld",
     canAdjustAlpha: "Lernrate (α)",
     canAdjustGamma: "Diskontfaktor (γ)",
   },
@@ -22,7 +23,8 @@ const FEATURE_LABELS = {
     canPlaceRewards: "Place rewards",
     canPlacePunishments: "Place penalties",
     canPlacePortals: "Use portals",
-    canChangeGridSize: "Change grid size",
+    canChangeGridSize: "Grid size (medium)",
+    canUseLargeGrid: "Large board",
     canAdjustAlpha: "Learning rate (α)",
     canAdjustGamma: "Discount factor (γ)",
   },
@@ -30,7 +32,8 @@ const FEATURE_LABELS = {
 
 export function LevelUnlocksCard({ currentLevel, translate }: LevelUnlocksCardProps) {
   const unlocked = getUnlockedFeatures(currentLevel);
-  const isEnglish = translate("test", "test") === "test";
+  // translate(de, en) returns the English text only in English mode.
+  const isEnglish = translate("de", "en") === "en";
   const labels = isEnglish ? FEATURE_LABELS.en : FEATURE_LABELS.de;
 
   const features: Array<[keyof typeof unlocked, string]> = [
@@ -40,6 +43,7 @@ export function LevelUnlocksCard({ currentLevel, translate }: LevelUnlocksCardPr
     ["canPlacePunishments", labels.canPlacePunishments],
     ["canPlaceWalls", labels.canPlaceWalls],
     ["canChangeGridSize", labels.canChangeGridSize],
+    ["canUseLargeGrid", labels.canUseLargeGrid],
     ["canPlacePortals", labels.canPlacePortals],
   ];
 

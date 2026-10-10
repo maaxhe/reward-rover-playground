@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { stepPlayground, type PlaygroundParams } from "./playgroundStep";
+import { stepPlayground, REWARD_DECAY_FACTOR, type PlaygroundParams } from "./playgroundStep";
+import { REWARD_VALUE } from "./constants";
 import { createEmptyGrid } from "./gridUtils";
 import type { PlaygroundState, TileState } from "./types";
 
@@ -55,9 +56,10 @@ describe("stepPlayground", () => {
   it("really consumes tiles during an episode", () => {
     let state = makeState();
     let sawGone = false;
-    for (let i = 0; i < 5000 && state.episode < 1; i++) {
+    // A single random episode may never touch a reward tile, so give it several tries.
+    for (let i = 0; i < 20000 && !sawGone; i++) {
       state = stepPlayground(state, params()).nextState;
-      if (state.episode === 0 && state.consumedTiles!.length > 0) {
+      if (state.consumedTiles!.length > 0) {
         sawGone = true;
         expect(count(state, "reward") + count(state, "punishment")).toBeLessThan(2);
       }
@@ -117,5 +119,47 @@ describe("stepPlayground", () => {
       JSON.stringify({ x: 1, y: 1, tileType: "reward" }),
       JSON.stringify({ x: 2, y: 2, tileType: "punishment" }),
     ]));
+  });
+
+  describe("rewardDecay (Level Mode)", () => {
+    const decayParams = () => params({ consumeRewards: false, rewardDecay: true, explorationRate: 0, autoRestart: false });
+
+    // Rover steps right/left across the reward at (1,1) by seeding Q-values, so the path is deterministic.
+    const stepOnto = (state: PlaygroundState, from: { x: number; y: number }, action: number) => {
+      const key = `${from.x},${from.y}`;
+      const q: [number, number, number, number] = [0, 0, 0, 0];
+      q[action] = 100;
+      return stepPlayground({ ...state, agent: from, qTable: { ...state.qTable, [key]: q } }, decayParams());
+    };
+
+    it("keeps the reward on the board and pays half as much on every repeat hit", () => {
+      let state = makeState();
+      const hits: number[] = [];
+      for (let i = 0; i < 4; i++) {
+        const before = state.totalReward;
+        // from (0,1) go right (3) onto the reward at (1,1)
+        const res = stepOnto({ ...state, totalReward: 0 }, { x: 0, y: 1 }, 3);
+        hits.push(res.nextState.totalReward);
+        expect(res.nextState.grid[1][1].type).toBe("reward");
+        state = { ...res.nextState, totalReward: before };
+      }
+      expect(hits).toEqual([0, 1, 2, 3].map((k) => REWARD_VALUE * REWARD_DECAY_FACTOR ** k));
+    });
+
+    it("starts fresh in the next episode", () => {
+      const state = makeState();
+      // two hits, then reach the goal from (2,0) going right
+      let s = stepOnto(state, { x: 0, y: 1 }, 3).nextState;
+      s = stepOnto(s, { x: 0, y: 1 }, 3).nextState;
+      expect(Object.values(s.tileVisits ?? {})).toEqual([2]);
+      const done = stepOnto({ ...s, goal: { x: 3, y: 0 } }, { x: 2, y: 0 }, 3).nextState;
+      expect(done.episode).toBe(1);
+      expect(done.tileVisits).toEqual({});
+    });
+
+    it("does not touch tiles when consumeRewards is on", () => {
+      const res = stepPlayground(makeState(), params({ consumeRewards: true, rewardDecay: true }));
+      expect(res.nextState.tileVisits ?? {}).toEqual({});
+    });
   });
 });

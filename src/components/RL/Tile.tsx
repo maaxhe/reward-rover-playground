@@ -7,15 +7,6 @@ const formatter = new Intl.NumberFormat("de-DE", {
   maximumFractionDigits: 2,
 });
 
-const TILE_STYLE: Record<TileType, { background: string; text: string }> = {
-  empty: { background: "var(--tile-bg)", text: "var(--tile-text-on-light)" },
-  obstacle: { background: "var(--tile-obstacle)", text: "var(--tile-text-on-dark)" },
-  reward: { background: "var(--tile-reward)", text: "var(--tile-text-on-dark)" },
-  punishment: { background: "var(--tile-punishment)", text: "var(--tile-text-on-dark)" },
-  goal: { background: "var(--tile-goal)", text: "var(--tile-text-on-dark)" },
-  portal: { background: "var(--tile-portal)", text: "var(--tile-text-on-dark)" },
-};
-
 export interface TileProps {
   x: number;
   y: number;
@@ -29,7 +20,10 @@ export interface TileProps {
   onClick?: (x: number, y: number) => void;
   onMouseDown?: () => void;
   onMouseEnter?: () => void;
+  /** Kept for callers that still pass emoji; the board now draws shapes (see .rr-* in index.css). */
   icon?: ReactNode;
+  /** Draw the rover inside this tile (boards without a separate animated rover overlay). */
+  showAgent?: boolean;
   visits?: number;
   showHeatmap?: boolean;
   maxVisits?: number;
@@ -51,7 +45,7 @@ const TileComponent = ({
   onClick,
   onMouseDown,
   onMouseEnter,
-  icon,
+  showAgent = false,
   visits = 0,
   showHeatmap = false,
   maxVisits = 1,
@@ -59,8 +53,6 @@ const TileComponent = ({
   showActions = false,
   rewardAnimation,
 }: TileProps) => {
-  const style = TILE_STYLE[type];
-
   // Pfeil-Symbol basierend auf bester Aktion
   const getArrowIcon = (action?: string) => {
     if (!action) return null;
@@ -117,24 +109,14 @@ const TileComponent = ({
       aria-label={ariaLabel}
       className={cn(
         "tile-focus relative flex select-none items-center justify-center transition-all duration-200",
-        "tile-outline",
-        !isAgent && !isGoal && type === "empty" && "bg-tile-empty",
-        !isAgent && type === "reward" && "bg-tile-reward",
-        !isAgent && type === "punishment" && "bg-tile-punishment",
-        !isAgent && type === "obstacle" && "bg-tile-obstacle",
-        !isAgent && type === "portal" && "bg-tile-portal",
-        !isAgent && isGoal && "bg-tile-goal",
-        isAgent && "bg-tile-agent text-white shadow-lg",
-        isGoal && "shadow-md",
-        onClick && "hover:scale-105 hover:brightness-110 cursor-pointer",
+        type === "obstacle" ? "rr-wall" : "rr-cell",
+        onClick && "hover:brightness-125 cursor-pointer",
         "focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-primary"
       )}
       style={{
         width: tileSize,
         height: tileSize,
         borderRadius: tileSize > 32 ? "6px" : "4px",
-        backgroundColor: isAgent ? "var(--tile-agent)" : isGoal ? "var(--tile-goal)" : style.background,
-        color: isAgent ? "var(--tile-text-on-dark)" : style.text,
       }}
       onClick={handleClick}
       onMouseDown={handleMouseDown}
@@ -153,12 +135,13 @@ const TileComponent = ({
       )}
       {showValues && <span className={badgeClass}>{displayValue}</span>}
       {/* Aktions-Pfeil */}
-      {showActions && bestAction && !isAgent && type !== "obstacle" && type !== "portal" && type !== "goal" && (
+      {showActions && bestAction && visits > 0 && !isAgent && type !== "obstacle" && type !== "portal" && type !== "goal" && (
         <div
           className="absolute inset-0 flex items-center justify-center pointer-events-none"
           style={{
             fontSize: tileSize > 40 ? "2rem" : tileSize > 32 ? "1.5rem" : "1.25rem",
-            color: "rgba(59, 130, 246, 0.8)",
+            color: "var(--rr-glass)",
+            opacity: 0.6,
             fontWeight: "bold",
             textShadow: "0 0 4px rgba(0,0,0,0.5)",
           }}
@@ -177,16 +160,22 @@ const TileComponent = ({
             fontSize: tileSize > 40 ? "2.5rem" : tileSize > 32 ? "2rem" : "1.5rem",
           }}
         >
-          {rewardAnimation === "reward" ? "❤️" : "💔"}
+          <svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden>
+              <path
+                d="M12 21 3.6 12.6A5.3 5.3 0 0 1 12 6a5.3 5.3 0 0 1 8.4 6.6Z"
+                fill={rewardAnimation === "reward" ? "var(--rr-oil)" : "var(--rr-buoy)"}
+              />
+              {rewardAnimation === "punishment" && (
+                <path d="m12 6.5-2 4 3 2-2.5 4.5" fill="none" stroke="var(--tile-outline)" strokeWidth={1.6} strokeLinejoin="round" />
+              )}
+            </svg>
         </div>
       )}
-      <span
-        className="pointer-events-none select-none transition-transform duration-200"
-        style={{ fontSize: tileSize > 40 ? "1.5rem" : tileSize > 32 ? "1.25rem" : "1rem" }}
-        aria-hidden
-      >
-        {icon}
-      </span>
+      {isGoal || type === "goal" ? <span className="rr-goal" aria-hidden /> : null}
+      {!isGoal && type === "reward" ? <span className="rr-candy" aria-hidden /> : null}
+      {!isGoal && type === "punishment" ? <span className="rr-trap" aria-hidden /> : null}
+      {!isGoal && type === "portal" ? <span className="rr-portal" aria-hidden /> : null}
+      {showAgent && isAgent ? <span className="rr-rover" aria-hidden /> : null}
     </div>
   );
 };
@@ -203,7 +192,7 @@ const areEqual = (prev: TileProps, next: TileProps) => {
   if (prev.maxVisits !== next.maxVisits) return false;
   if (prev.tileSize !== next.tileSize) return false;
   if (Math.round(prev.value * 100) !== Math.round(next.value * 100)) return false;
-  if (prev.icon !== next.icon) return false;
+  if (prev.showAgent !== next.showAgent) return false;
   if (prev.rewardAnimation !== next.rewardAnimation) return false;
   if (!!prev.onMouseEnter !== !!next.onMouseEnter) return false;
   if (!!prev.onMouseDown !== !!next.onMouseDown) return false;

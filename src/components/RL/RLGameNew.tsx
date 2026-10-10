@@ -1,8 +1,10 @@
 import { useState, useCallback, useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { RLGame } from "./RLGame";
 import { ParametersPanel } from "./ParametersPanel";
 import { LevelProgressBar } from "./LevelProgressBar";
 import { LevelUnlocksCard } from "./LevelUnlocksCard";
+import { GameLegend } from "./GameLegend";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LevelProvider } from "@/contexts/LevelContext";
 import { Button } from "@/components/ui/button";
@@ -148,7 +150,10 @@ export function RLGameNew() {
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Mode Selector */}
       <div className="border-b border-border/40 bg-card/30 px-4 md:px-8 py-4 sticky top-0 z-30">
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Link to="/" className="mr-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
+            ← {translate("Startseite", "Home")}
+          </Link>
           <Button
             variant={mode === "levels" ? "default" : "outline"}
             onClick={() => setMode("levels")}
@@ -164,6 +169,9 @@ export function RLGameNew() {
           >
             {translate("Free Mode", "Free Mode")}
             {!canAccessFreeMode && <span className="ml-2 text-xs">🔒</span>}
+          </Button>
+          <Button asChild variant="outline" className="ml-auto font-semibold">
+            <Link to="/klasse">🏫 {translate("Klassen-Modus", "Classroom")}</Link>
           </Button>
         </div>
       </div>
@@ -248,6 +256,7 @@ export function RLGameNew() {
             canAdjustGamma={unlockedFeatures.canAdjustGamma}
             translate={translate}
           />
+          <GameLegend translate={translate} showPortal={!isLevelMode || unlockedFeatures.canPlacePortals} />
         </div>
 
         {/* Right Content - Game */}
@@ -257,6 +266,15 @@ export function RLGameNew() {
           </LevelProvider>
         </div>
       </div>
+      <footer className="border-t border-border/40 px-4 py-2 text-xs text-muted-foreground md:px-8">
+        <Link to="/impressum" className="underline underline-offset-2 hover:text-foreground">
+          {translate("Impressum", "Imprint")}
+        </Link>
+        {" · "}
+        <Link to="/datenschutz" className="underline underline-offset-2 hover:text-foreground">
+          {translate("Datenschutz", "Privacy")}
+        </Link>
+      </footer>
     </div>
   );
 }
