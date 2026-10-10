@@ -17,7 +17,9 @@ import { shortestPathLength } from "@/lib/levelObjectives";
 import { useRoom, useTick } from "./useRoom";
 
 const FAST_STEPS_PER_TICK = 300;
-const TICK_MS = 60;
+/** Normal speed is one step per 280 ms so students can follow the rover; "Schnell" does many steps per 60 ms tick. */
+const SLOW_TICK_MS = 280;
+const FAST_TICK_MS = 60;
 const SUBMIT_EVERY_MS = 3000;
 /** How often (in episodes) the greedy test score is sampled for the statistics chart. */
 const TEST_SNAPSHOT_EVERY = 2;
@@ -140,7 +142,7 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
       setView(s);
       if (logged) setStats({ episodes: [...episodeLog.current], tests: [...testLog.current] });
       if (usedBase.current + s.episode >= episodeBudget) setRunning(false);
-    }, TICK_MS);
+    }, fast ? FAST_TICK_MS : SLOW_TICK_MS);
     return () => clearInterval(id);
   }, [running, canTrain, fast, episodeBudget, world]);
 

@@ -99,7 +99,7 @@ export function LiveRover({ translate }: Props) {
             const tile = DEMO_WORLD.tiles.find((t) => t.x === x && t.y === y);
             const eaten = tile && (tile.type === "reward" || tile.type === "punishment") && c.type === "empty";
             const q = view.qTable[`${x},${y}`];
-            const learned = q && q.some((v) => Math.abs(v) > 0.5);
+            const learned = q && c.visits > 0;
             const dir = learned && !isGoal && c.type !== "obstacle" ? getBestActionDirection(view.grid, { x, y }, view.qTable) : undefined;
             return (
               <div key={`${x}-${y}`} className={`lr-cell ${tile?.type === "obstacle" ? "is-wall" : ""}`}>

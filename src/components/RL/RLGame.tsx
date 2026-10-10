@@ -4850,7 +4850,7 @@ const handleActiveBonusClick = useCallback(() => {
                         visits={cell.visits}
                         showHeatmap={showHeatmap}
                         maxVisits={maxVisits}
-                        bestAction={showActions && activeQTable[`${x},${y}`]?.some((v) => Math.abs(v) > 0.5) ? getBestActionDirection(activeGrid, { x, y }, activeQTable) : undefined}
+                        bestAction={showActions ? getBestActionDirection(activeGrid, { x, y }, activeQTable) : undefined}
                         showActions={showActions}
                         onClick={mode === "playground" || (mode === "random" && challengeMode) ? handleTilePlacement : undefined}
                         onMouseDown={mode === "playground" || (mode === "random" && challengeMode) ? handleMouseDown : undefined}

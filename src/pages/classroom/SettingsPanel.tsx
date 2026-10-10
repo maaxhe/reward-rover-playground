@@ -25,9 +25,9 @@ interface Row {
   unit?: string;
 }
 
-/** Rough time a full budget takes at normal (not "Schnell") speed: ~16 steps/s, episodes of ≈ 0.9 × tiles steps. */
+/** Rough time a full budget takes at normal (not "Schnell") speed: ~3.5 steps/s, episodes of ≈ 0.9 × tiles steps. */
 const estimateMinutes = (s: RoomSettings) => {
-  const minutes = (s.episodeBudget * s.size * s.size * 0.9) / 16 / 60;
+  const minutes = (s.episodeBudget * s.size * s.size * 0.9) / 3.5 / 60;
   return `Im normalen Tempo dauert das etwa ${minutes < 1 ? "unter 1" : Math.round(minutes * 2) / 2} Min (grobe Schätzung).`;
 };
 

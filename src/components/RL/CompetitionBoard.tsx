@@ -52,6 +52,7 @@ export const CompetitionBoard = ({ grid, agent, goal, tileSize, showArrows = fal
             tileSize={tileSize}
             ariaLabel={`${x + 1},${y + 1}`}
             showAgent
+            visits={cell.visits}
             showActions={showArrows}
             bestAction={showArrows && qTable ? getBestActionDirection(grid, { x, y }, qTable) : undefined}
           />
