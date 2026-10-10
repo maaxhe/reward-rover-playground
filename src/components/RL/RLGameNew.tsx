@@ -266,6 +266,11 @@ export function RLGameNew() {
           </LevelProvider>
         </div>
       </div>
+      <footer className="border-t border-border/40 px-4 py-2 text-xs text-muted-foreground md:px-8">
+        <Link to="/impressum" className="underline underline-offset-2 hover:text-foreground">
+          {translate("Impressum", "Imprint")}
+        </Link>
+      </footer>
     </div>
   );
 }

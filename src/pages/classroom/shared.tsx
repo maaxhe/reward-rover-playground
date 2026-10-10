@@ -13,12 +13,16 @@ export const ClassroomShell = ({ children, wide = false }: { children: ReactNode
           <Link to="/klasse" className="text-xl font-bold gradient-text">
             Reward Rover · Klassen-Challenge
           </Link>
-          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground">
-            ← Zum Spiel
-          </Link>
+          <nav className="flex gap-4 text-sm text-muted-foreground">
+            <Link to="/" className="hover:text-foreground">Startseite</Link>
+            <Link to="/spiel" className="hover:text-foreground">Zum Spiel</Link>
+          </nav>
         </div>
       </header>
       <main className={cn("mx-auto px-4 py-6", wide ? "max-w-6xl" : "max-w-3xl")}>{children}</main>
+      <footer className="mx-auto max-w-6xl px-4 pb-8 text-xs text-muted-foreground">
+        <Link to="/impressum" className="underline underline-offset-2 hover:text-foreground">Impressum</Link>
+      </footer>
     </div>
   </LanguageProvider>
 );

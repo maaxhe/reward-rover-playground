@@ -4,8 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
 // The admin dashboard is rarely opened — keep it (and its deps) out of the main bundle.
+const Landing = lazy(() => import("./pages/Landing"));
+const Index = lazy(() => import("./pages/Index"));
+const Impressum = lazy(() => import("./pages/Impressum"));
 const Admin = lazy(() => import("./pages/Admin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const ClassroomHome = lazy(() => import("./pages/classroom/ClassroomHome"));
@@ -22,7 +24,9 @@ const App = () => (
       <BrowserRouter>
         <Suspense fallback={null}>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<Landing />} />
+          <Route path="/spiel" element={<Index />} />
+          <Route path="/impressum" element={<Impressum />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/klasse" element={<ClassroomHome />} />
           <Route path="/klasse/host/:code" element={<ClassroomHost />} />
