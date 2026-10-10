@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Tile } from "@/components/RL/Tile";
-import { TILE_ICONS } from "@/lib/rl/constants";
 import { getBestActionDirection, type QTable } from "@/lib/rl/qLearning";
 import type { Position, TileState } from "@/lib/rl/types";
 
@@ -45,14 +44,14 @@ export const CompetitionBoard = ({ grid, agent, goal, tileSize, showArrows = fal
             key={`${x}-${y}`}
             x={x}
             y={y}
-            type={isGoal ? "goal" : isAgent ? "empty" : cell.type}
+            type={isGoal ? "goal" : cell.type}
             value={0}
             showValues={false}
             isAgent={isAgent}
             isGoal={isGoal}
             tileSize={tileSize}
             ariaLabel={`${x + 1},${y + 1}`}
-            icon={isAgent ? "🤖" : isGoal ? TILE_ICONS.goal : TILE_ICONS[cell.type]}
+            showAgent
             showActions={showArrows}
             bestAction={showArrows && qTable ? getBestActionDirection(grid, { x, y }, qTable) : undefined}
           />

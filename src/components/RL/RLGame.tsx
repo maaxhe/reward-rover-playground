@@ -3459,14 +3459,14 @@ const handleActiveBonusClick = useCallback(() => {
           }
         }}
       >
-        <DialogContent className="max-w-md bg-slate-900 border border-slate-800 shadow-2xl p-8 text-slate-100">
+        <DialogContent className="max-w-md bg-card border border-border shadow-2xl p-8 text-foreground">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-white">
               {authIsRegistering
                 ? translate("Account erstellen", "Create account")
                 : translate("Login", "Login")}
             </DialogTitle>
-            <DialogDescription className="text-sm text-slate-400">
+            <DialogDescription className="text-sm text-muted-foreground">
               {translate(
                 "Nur Nutzername und Passwort. Dein Level-Fortschritt wird gespeichert und folgt dir auf jedes Gerät.",
                 "Just a username and password. Your level progress is saved and follows you to any device.",
@@ -3477,7 +3477,7 @@ const handleActiveBonusClick = useCallback(() => {
             <div className="space-y-2">
               <Label
                 htmlFor="auth-username"
-                className="text-xs font-semibold text-slate-400 uppercase tracking-wider"
+                className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
               >
                 {translate("Nutzername", "Username")}
               </Label>
@@ -3487,13 +3487,13 @@ const handleActiveBonusClick = useCallback(() => {
                 value={authUsername}
                 onChange={(event) => setAuthUsername(event.target.value)}
                 placeholder="max"
-                className="h-12 rounded-lg bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:border-transparent"
+                className="h-12 rounded-lg bg-muted border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:border-transparent"
               />
             </div>
             <div className="space-y-2">
               <Label
                 htmlFor="auth-password"
-                className="text-xs font-semibold text-slate-400 uppercase tracking-wider"
+                className="text-xs font-semibold text-muted-foreground uppercase tracking-wider"
               >
                 {translate("Passwort", "Password")}
               </Label>
@@ -3503,7 +3503,7 @@ const handleActiveBonusClick = useCallback(() => {
                 type="password"
                 value={authPassword}
                 onChange={(event) => setAuthPassword(event.target.value)}
-                className="h-12 rounded-lg bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:border-transparent"
+                className="h-12 rounded-lg bg-muted border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/80 focus-visible:border-transparent"
               />
             </div>
             {authIsRegistering && (
@@ -3524,7 +3524,7 @@ const handleActiveBonusClick = useCallback(() => {
                 onCheckedChange={(checked) => setRememberMe(checked === true)}
                 className="border-slate-600 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
               />
-              <Label htmlFor="remember-me" className="text-sm text-slate-300">
+              <Label htmlFor="remember-me" className="text-sm text-foreground/80">
                 {translate("Eingeloggt bleiben", "Stay signed in")}
               </Label>
             </div>
@@ -3539,7 +3539,7 @@ const handleActiveBonusClick = useCallback(() => {
               <button
                 type="button"
                 onClick={() => setAuthIsRegistering((prev) => !prev)}
-                className="mx-auto text-sm text-slate-400 hover:text-white transition-colors"
+                className="mx-auto text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 {authIsRegistering
                   ? translate("Schon registriert? ", "Already registered? ")
@@ -4505,7 +4505,7 @@ const handleActiveBonusClick = useCallback(() => {
                   }}
                   aria-hidden
                 >
-                  🤖
+                  <span className="rr-rover" />
                 </div>
               </div>
             </Card>
@@ -4762,7 +4762,7 @@ const handleActiveBonusClick = useCallback(() => {
                   }}
                   aria-hidden
                 >
-                  🤖
+                  <span className="rr-rover" />
                 </div>
               </div>
             </Card>
@@ -5286,7 +5286,7 @@ const handleActiveBonusClick = useCallback(() => {
                 }}
                 aria-hidden
               >
-                🤖
+                <span className="rr-rover" />
               </div>
             </div>
             </div>

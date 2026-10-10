@@ -7,139 +7,76 @@ All colors MUST be HSL.
 */
 
 @layer base {
-  :root {
-    /* Light Mode - Professional and clean */
-    --background: 0 0% 100%;
-    --foreground: 217 32% 17%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 217 32% 17%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 217 32% 17%;
-
-    --primary: 217 32% 35%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 220 13% 91%;
-    --secondary-foreground: 220 14% 20%;
-
-    --muted: 220 13% 91%;
-    --muted-foreground: 220 9% 46%;
-
-    --accent: 217 32% 40%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 217 32% 45%;
-
-    /* Reward Rover tile palette - Light Mode */
-    --tile-bg: #f8f9fa;
-    --tile-reward: #059669;
-    --tile-punishment: #d97706;
-    --tile-obstacle: #475569;
-    --tile-agent: #4f46e5;
-    --tile-goal: #2563eb;
-    --tile-portal: #7c3aed;
-    --tile-outline: rgba(79, 70, 229, 0.15);
-    --tile-text-on-light: #f8fafc;
-    --tile-text-on-dark: #0f172a;
-    --grid-line: 220 13% 91%;
-    --visited: 217 32% 45%;
-
-    /* Gradients - Light Mode */
-    --gradient-main: radial-gradient(circle at top, rgba(34, 211, 238, 0.08), rgba(248, 250, 252, 0.95));
-    --gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.98));
-    --gradient-agent: linear-gradient(135deg, rgba(8, 145, 178, 0.9), rgba(6, 182, 212, 0.9));
-
-    /* Animations & Shadows - Light Mode */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --glow-agent: 0 0 20px rgba(8, 145, 178, 0.3);
-    --glow-primary: 0 0 15px rgba(8, 145, 178, 0.2);
-    --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.08);
-    --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.1);
-    --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.12);
-
-    --radius: 0.75rem;
-
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
+  /* Sea-chart night with oilskin yellow (same palette as the landing page). The whole app is dark on purpose. */
+  :root,
   .dark {
-    /* Dark Mode - Professional and clean */
-    --background: 222 47% 4%;
-    --foreground: 217 32% 94%;
+    --background: 199 57% 12%;
+    --foreground: 165 22% 93%;
 
-    --card: 222 47% 6%;
-    --card-foreground: 217 32% 94%;
+    --card: 199 56% 16%;
+    --card-foreground: 165 22% 93%;
 
-    --popover: 222 47% 6%;
-    --popover-foreground: 217 32% 94%;
+    --popover: 199 56% 16%;
+    --popover-foreground: 165 22% 93%;
 
-    --primary: 217 32% 55%;
-    --primary-foreground: 222 47% 4%;
+    --primary: 47 92% 53%;
+    --primary-foreground: 50 100% 5%;
 
-    --secondary: 222 47% 11%;
-    --secondary-foreground: 217 32% 92%;
+    --secondary: 199 49% 21%;
+    --secondary-foreground: 165 22% 93%;
 
-    --muted: 222 47% 11%;
-    --muted-foreground: 220 9% 64%;
+    --muted: 199 45% 17%;
+    --muted-foreground: 177 14% 68%;
 
-    --accent: 217 32% 60%;
-    --accent-foreground: 222 47% 4%;
+    --accent: 175 29% 66%;
+    --accent-foreground: 199 57% 12%;
 
-    --destructive: 0 62.8% 50%;
-    --destructive-foreground: 217 32% 94%;
+    --destructive: 8 75% 60%;
+    --destructive-foreground: 50 100% 5%;
 
-    --border: 222 47% 15%;
-    --input: 222 47% 15%;
-    --ring: 217 32% 65%;
+    --border: 197 35% 25%;
+    --input: 197 35% 25%;
+    --ring: 47 92% 53%;
 
-    /* Reward Rover tile palette - Dark Mode */
-    --tile-bg: #0f172a;
-    --tile-reward: #10b981;
-    --tile-punishment: #f97316;
-    --tile-obstacle: #64748b;
-    --tile-agent: #818cf8;
-    --tile-goal: #60a5fa;
-    --tile-portal: #a78bfa;
-    --tile-outline: rgba(129, 140, 248, 0.2);
-    --tile-text-on-light: #f8fafc;
-    --tile-text-on-dark: #0f172a;
-    --grid-line: 222 47% 15%;
-    --visited: 217 32% 65%;
+    /* Reward Rover board palette (see .rr-* shapes below) */
+    --rr-oil: #f5c518;
+    --rr-buoy: #e5604d;
+    --rr-glass: #8fc1bd;
+    --rr-violet: #9b8cf5;
+    --tile-bg: rgba(143, 193, 189, 0.07);
+    --tile-reward: #f5c518;
+    --tile-punishment: #e5604d;
+    --tile-obstacle: #1f4a58;
+    --tile-agent: #f5c518;
+    --tile-goal: #8fc1bd;
+    --tile-portal: #9b8cf5;
+    --tile-outline: #0f2b38;
+    --tile-text-on-light: #e9f1ef;
+    --tile-text-on-dark: #0d2530;
+    --grid-line: 197 35% 25%;
+    --visited: 47 92% 53%;
 
-    /* Gradients - Dark Mode */
-    --gradient-main: radial-gradient(circle at top, rgba(34, 211, 238, 0.12), rgba(15, 23, 42, 0.98));
-    --gradient-card: linear-gradient(135deg, rgba(17, 24, 39, 0.95), rgba(30, 41, 59, 0.95));
-    --gradient-agent: linear-gradient(135deg, rgba(34, 211, 238, 0.9), rgba(96, 165, 250, 0.9));
+    --gradient-main: radial-gradient(circle at top, rgba(143, 193, 189, 0.08), rgba(13, 37, 48, 0.98));
+    --gradient-card: linear-gradient(135deg, rgba(18, 49, 63, 0.95), rgba(18, 49, 63, 0.95));
+    --gradient-agent: linear-gradient(135deg, rgba(245, 197, 24, 0.9), rgba(245, 197, 24, 0.9));
 
-    /* Animations & Shadows - Dark Mode */
-    --glow-agent: 0 0 20px rgba(34, 211, 238, 0.5);
-    --glow-primary: 0 0 15px rgba(34, 211, 238, 0.3);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --glow-agent: 0 0 20px rgba(245, 197, 24, 0.35);
+    --glow-primary: 0 0 15px rgba(245, 197, 24, 0.25);
     --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.3);
     --shadow-medium: 0 8px 25px rgba(0, 0, 0, 0.4);
     --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.5);
 
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --radius: 0.75rem;
+
+    --sidebar-background: 199 57% 12%;
+    --sidebar-foreground: 165 22% 93%;
+    --sidebar-primary: 47 92% 53%;
+    --sidebar-primary-foreground: 50 100% 5%;
+    --sidebar-accent: 199 49% 21%;
+    --sidebar-accent-foreground: 165 22% 93%;
+    --sidebar-border: 197 35% 25%;
+    --sidebar-ring: 47 92% 53%;
   }
 }
 
@@ -150,6 +87,8 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: "Bricolage Grotesque Variable", system-ui, sans-serif;
+    font-optical-sizing: auto;
   }
 }
 
@@ -157,23 +96,24 @@ All colors MUST be HSL.
   .bg-tile-empty { background-color: var(--tile-bg); }
   .bg-tile-reward { background-color: var(--tile-reward); }
   .bg-tile-punishment { background-color: var(--tile-punishment); }
-  .bg-tile-obstacle {
-    background: linear-gradient(135deg, #5a657d 0%, #475569 50%, #5a657d 100%);
-    border: 1px solid #3a4556;
-  }
+  .bg-tile-obstacle { background: repeating-linear-gradient(135deg, #1f4a58 0 6px, #173b48 6px 12px); }
   .bg-tile-agent { background-color: var(--tile-agent); }
   .bg-tile-goal { background-color: var(--tile-goal); }
   .bg-tile-portal { background-color: var(--tile-portal); }
-  .tile-outline { box-shadow: inset 0 0 0 1px var(--tile-outline); }
+  /* A 2px frame in the board colour separates the cells, like the gaps on the landing page. */
+  .tile-outline { box-shadow: inset 0 0 0 2px var(--tile-outline); }
   .tile-focus:focus-visible {
     outline: 2px solid var(--tile-agent);
     outline-offset: 2px;
   }
   .legend-dot {
-    border-radius: 9999px;
-    width: 16px;
-    height: 16px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
   }
 
   /* Professional text styling */
@@ -355,6 +295,51 @@ All colors MUST be HSL.
     @apply max-w-full;
   }
 }
+
+/* Board shapes, shared by the playground, the classroom board and the legend.
+   They size themselves relative to their tile, so they work from 24px to 60px. */
+.rr-cell { background: var(--tile-bg); }
+.rr-wall { background: repeating-linear-gradient(135deg, #1f4a58 0 6px, #173b48 6px 12px); }
+.rr-goal {
+  width: 70%;
+  height: 70%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--rr-glass) 0 16%, transparent 17% 36%, var(--rr-glass) 37% 54%, transparent 55% 68%, var(--rr-glass) 69% 100%);
+}
+.rr-candy { width: 38%; height: 38%; background: var(--rr-oil); transform: rotate(45deg); border-radius: 12%; }
+.rr-trap {
+  width: 44%;
+  height: 44%;
+  background: var(--rr-buoy);
+  clip-path: polygon(20% 0, 50% 30%, 80% 0, 100% 20%, 70% 50%, 100% 80%, 80% 100%, 50% 70%, 20% 100%, 0 80%, 30% 50%, 0 20%);
+}
+.rr-portal {
+  width: 66%;
+  height: 66%;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--rr-violet) 0 14%, transparent 15% 32%, var(--rr-violet) 33% 48%, transparent 49% 62%, var(--rr-violet) 63% 80%, transparent 81%);
+}
+.rr-rover {
+  position: absolute;
+  width: 62%;
+  height: 62%;
+  background: var(--rr-oil);
+  border-radius: 30% 30% 22% 22%;
+  z-index: 2;
+  box-shadow: 0 3px 0 #b8920a;
+}
+.rr-rover::before,
+.rr-rover::after {
+  content: "";
+  position: absolute;
+  top: 30%;
+  width: 14%;
+  height: 14%;
+  background: #1b1600;
+  border-radius: 50%;
+}
+.rr-rover::before { left: 27%; }
+.rr-rover::after { right: 27%; }
 
 .tile-value-badge {
   position: absolute;

@@ -32,7 +32,8 @@ const FEATURE_LABELS = {
 
 export function LevelUnlocksCard({ currentLevel, translate }: LevelUnlocksCardProps) {
   const unlocked = getUnlockedFeatures(currentLevel);
-  const isEnglish = translate("test", "test") === "test";
+  // translate(de, en) returns the English text only in English mode.
+  const isEnglish = translate("de", "en") === "en";
   const labels = isEnglish ? FEATURE_LABELS.en : FEATURE_LABELS.de;
 
   const features: Array<[keyof typeof unlocked, string]> = [
