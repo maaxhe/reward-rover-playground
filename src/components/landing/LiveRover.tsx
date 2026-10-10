@@ -24,7 +24,7 @@ export const DEMO_WORLD: CompetitionWorld = {
 
 const PARAMS = { explorationRate: 0.25, alpha: 0.4, gamma: 0.95, consumeRewards: true, autoRestart: true, directionBias: null } as const;
 const ARROW: Record<string, string> = { up: "↑", down: "↓", left: "←", right: "→" };
-const TICK_MS = 85;
+const TICK_MS = 170;
 
 interface Props {
   translate: (de: string, en: string) => string;
