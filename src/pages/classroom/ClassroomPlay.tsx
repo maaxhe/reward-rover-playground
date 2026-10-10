@@ -12,11 +12,15 @@ import { competitionApi, sessionStore, type LeaderboardRow, type Replay, type Su
 import { runTest, worldToState, type CompetitionWorld } from "@/lib/competition/world";
 import { ClassroomShell, Leaderboard, formatCountdown } from "./shared";
 import { ReplayBoard } from "./ReplayBoard";
+import { TrainingStats, type EpisodeRecord, type TestRecord } from "./TrainingStats";
+import { shortestPathLength } from "@/lib/levelObjectives";
 import { useRoom, useTick } from "./useRoom";
 
 const FAST_STEPS_PER_TICK = 300;
 const TICK_MS = 60;
 const SUBMIT_EVERY_MS = 3000;
+/** How often (in episodes) the greedy test score is sampled for the statistics chart. */
+const TEST_SNAPSHOT_EVERY = 2;
 
 const ClassroomPlay = () => {
   const { code = "" } = useParams();
@@ -99,6 +103,11 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
   const [selected, setSelected] = useState<LeaderboardRow | null>(null);
   const [replay, setReplay] = useState<Replay | null>(null);
   const [replayError, setReplayError] = useState<string | null>(null);
+  // Per-attempt training log for the statistics card (the engine itself only keeps the last 20 runs).
+  const episodeLog = useRef<EpisodeRecord[]>([]);
+  const testLog = useRef<TestRecord[]>([]);
+  const [stats, setStats] = useState<{ episodes: EpisodeRecord[]; tests: TestRecord[] }>({ episodes: [], tests: [] });
+  const shortest = useMemo(() => shortestPathLength(worldToState(world).grid, world.agent, world.goal), [world]);
 
   const used = usedBase.current + view.episode;
   const budgetLeft = Math.max(0, episodeBudget - used);
@@ -112,16 +121,28 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
     const id = setInterval(() => {
       let s = stateRef.current;
       const n = fast ? FAST_STEPS_PER_TICK : 1;
+      let logged = false;
       for (let i = 0; i < n; i += 1) {
         if (usedBase.current + s.episode >= episodeBudget) break;
+        const before = s.episode;
         s = stepPlayground({ ...s, isRunning: true }, { ...paramsRef.current, consumeRewards: true, autoRestart: true, directionBias: null }).nextState;
+        if (s.episode > before) {
+          const run = s.episodeHistory[s.episodeHistory.length - 1];
+          episodeLog.current.push({ episode: s.episode, steps: run.steps, reward: Math.round(run.reward) });
+          if (s.episode % TEST_SNAPSHOT_EVERY === 0) {
+            const t = runTest(world, s.qTable);
+            testLog.current.push({ episode: s.episode, reward: t.totalReward, reachedGoal: t.reachedGoal });
+          }
+          logged = true;
+        }
       }
       stateRef.current = s;
       setView(s);
+      if (logged) setStats({ episodes: [...episodeLog.current], tests: [...testLog.current] });
       if (usedBase.current + s.episode >= episodeBudget) setRunning(false);
     }, TICK_MS);
     return () => clearInterval(id);
-  }, [running, canTrain, fast, episodeBudget]);
+  }, [running, canTrain, fast, episodeBudget, world]);
 
   useEffect(() => {
     if (!canTrain && running) setRunning(false);
@@ -188,6 +209,9 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
 
   const reset = () => {
     usedBase.current += stateRef.current.episode;
+    episodeLog.current = [];
+    testLog.current = [];
+    setStats({ episodes: [], tests: [] });
     stateRef.current = worldToState(world);
     setView(stateRef.current);
     lastSubmittedEpisode.current = -1;
@@ -282,6 +306,15 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
             )}
             {submitError && <p className="text-destructive">{submitError}</p>}
           </Card>
+        )}
+
+        {phase !== "lobby" && (
+          <TrainingStats
+            episodes={stats.episodes}
+            tests={stats.tests}
+            shortest={shortest}
+            bestServerReward={serverResult?.bestReward ?? null}
+          />
         )}
 
         <Leaderboard rows={leaderboard} meId={meId} onSelect={phase === "finished" ? showReplay : undefined} selectedId={selected?.id} />

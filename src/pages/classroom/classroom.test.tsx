@@ -59,6 +59,9 @@ describe("classroom pages", () => {
     fireEvent.click(fastSwitch); // normal speed is too slow for a unit test
     fireEvent.click(screen.getByText("▶ Trainieren"));
     await waitFor(() => expect(screen.getByText(/Episoden:/).textContent).toMatch(/Episoden:\s*[1-9]/), { timeout: 3000 });
+    // the statistics card fills with the learning curve once episodes are done
+    expect(screen.getByText("Deine Statistik")).toBeTruthy();
+    await waitFor(() => expect(screen.getByRole("img", { name: /Schritte pro Episode\. Letzte Episode: \d+ Schritte/ })).toBeTruthy(), { timeout: 3000 });
     fireEvent.click(screen.getByText("✓ Jetzt werten"));
     await waitFor(() => expect(submits.length).toBeGreaterThan(0));
     expect(Object.keys((submits[0] as { qTable: object }).qTable).length).toBeGreaterThan(0);
