@@ -1276,7 +1276,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(true);
   const [showStatistics, setShowStatistics] = useState(true);
-  const [showActions, setShowActions] = useState(false);
+  const [showActions, setShowActions] = useState(true);
   // Level Mode has fixed rules: rewards stay on the board and pay less on every repeat hit (see rewardDecay).
   // Only Free Mode lets the player choose whether eaten tiles disappear.
   const [consumeRewardsSetting, setConsumeRewards] = useState(false);
@@ -3176,7 +3176,8 @@ const handleActiveBonusClick = useCallback(() => {
   const activeQTable = mode === "playground" ? playgroundState.qTable : randomState.qTable;
   const gridSize = activeGrid.length;
   const tileSizePx = Math.max(24, Math.floor(GRID_PIXEL_TARGET[tileSize] / Math.max(gridSize, 1)));
-  const gridPixelDimension = tileSizePx * gridSize;
+  const TILE_GAP = 3;
+  const gridPixelDimension = tileSizePx * gridSize + TILE_GAP * (gridSize - 1);
 
   // Zusätzlicher Platz basierend auf Feldgröße: s=320px, m=200px, l=150px
   // Bei l: genug für Header + Grid + padding ohne scrollen
@@ -3709,7 +3710,7 @@ const handleActiveBonusClick = useCallback(() => {
                         <h4 className="text-lg font-semibold">
                           {translate("Q-Learning Update-Regel", "Q-Learning Update Rule")}
                         </h4>
-                        <pre className="whitespace-pre-wrap text-base sm:text-lg font-mono">
+                        <pre className="whitespace-pre-wrap text-base sm:text-lg">
                           Q(s, a) ← Q(s, a) + α · [ r + γ · maxₐ′ Q(s′, a′) − Q(s, a) ]
                         </pre>
                         <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
@@ -5213,7 +5214,7 @@ const handleActiveBonusClick = useCallback(() => {
               onMouseDown={() => gridRef.current?.focus()}
             >
               <div className="relative">
-                <div className="grid gap-0" style={gridStyle}>
+                <div className="grid" style={{ ...gridStyle, gap: TILE_GAP }}>
                 {(() => {
                   // Berechne maxVisits für Heatmap
                   const maxVisits = showHeatmap
@@ -5257,7 +5258,7 @@ const handleActiveBonusClick = useCallback(() => {
                         visits={cell.visits}
                         showHeatmap={showHeatmap}
                         maxVisits={maxVisits}
-                        bestAction={showActions ? getBestActionDirection(activeGrid, { x, y }, activeQTable) : undefined}
+                        bestAction={showActions && activeQTable[`${x},${y}`]?.some((v) => Math.abs(v) > 0.5) ? getBestActionDirection(activeGrid, { x, y }, activeQTable) : undefined}
                         showActions={showActions}
                         onClick={mode === "playground" || (mode === "random" && challengeMode) ? handleTilePlacement : undefined}
                         onMouseDown={mode === "playground" || (mode === "random" && challengeMode) ? handleMouseDown : undefined}
@@ -5273,8 +5274,8 @@ const handleActiveBonusClick = useCallback(() => {
               <div
                 className="absolute pointer-events-none"
                 style={{
-                  left: (mode === "playground" ? playgroundState.agent.x : randomState.agent.x) * tileSizePx,
-                  top: (mode === "playground" ? playgroundState.agent.y : randomState.agent.y) * tileSizePx,
+                  left: (mode === "playground" ? playgroundState.agent.x : randomState.agent.x) * (tileSizePx + TILE_GAP),
+                  top: (mode === "playground" ? playgroundState.agent.y : randomState.agent.y) * (tileSizePx + TILE_GAP),
                   width: tileSizePx,
                   height: tileSizePx,
                   transition: "left 0.3s ease-out, top 0.3s ease-out",

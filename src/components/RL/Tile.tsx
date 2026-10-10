@@ -140,7 +140,8 @@ const TileComponent = ({
           className="absolute inset-0 flex items-center justify-center pointer-events-none"
           style={{
             fontSize: tileSize > 40 ? "2rem" : tileSize > 32 ? "1.5rem" : "1.25rem",
-            color: "rgba(143, 193, 189, 0.9)",
+            color: "var(--rr-glass)",
+            opacity: 0.6,
             fontWeight: "bold",
             textShadow: "0 0 4px rgba(0,0,0,0.5)",
           }}
@@ -159,7 +160,15 @@ const TileComponent = ({
             fontSize: tileSize > 40 ? "2.5rem" : tileSize > 32 ? "2rem" : "1.5rem",
           }}
         >
-          {rewardAnimation === "reward" ? "❤️" : "💔"}
+          <svg viewBox="0 0 24 24" width="1em" height="1em" aria-hidden>
+              <path
+                d="M12 21 3.6 12.6A5.3 5.3 0 0 1 12 6a5.3 5.3 0 0 1 8.4 6.6Z"
+                fill={rewardAnimation === "reward" ? "var(--rr-oil)" : "var(--rr-buoy)"}
+              />
+              {rewardAnimation === "punishment" && (
+                <path d="m12 6.5-2 4 3 2-2.5 4.5" fill="none" stroke="var(--tile-outline)" strokeWidth={1.6} strokeLinejoin="round" />
+              )}
+            </svg>
         </div>
       )}
       {isGoal || type === "goal" ? <span className="rr-goal" aria-hidden /> : null}
