@@ -85,6 +85,16 @@ function Video({ id, title }: { id: string; title: string }) {
   );
 }
 
+const PUZZLE_BASE = "https://jobs.coxilab.de/puzzle";
+
+/** Professions in the KI-Berufs-Puzzle where robots and autonomous machines are a real topic. */
+const JOBS: Array<{ slug: string; title: [string, string]; hint: [string, string] }> = [
+  { slug: "industriemechaniker", title: ["Industriemechaniker:in", "Industrial mechanic"], hint: ["Roboter an Produktionslinien", "Robots on production lines"] },
+  { slug: "berufskraftfahrer", title: ["Berufskraftfahrer:in", "Truck driver"], hint: ["Autonome Lkw", "Autonomous trucks"] },
+  { slug: "pflegefachkraft", title: ["Pflegefachkraft", "Nurse"], hint: ["Roboter im Pflegealltag?", "Robots in care?"] },
+  { slug: "landwirt", title: ["Landwirt:in", "Farmer"], hint: ["Autonome Landmaschinen", "Autonomous farm machines"] },
+];
+
 export function RealRobots({ className }: { className?: string }) {
   const { translate: t } = useLanguage();
   const [showMore, setShowMore] = useState(false);
@@ -120,6 +130,34 @@ export function RealRobots({ className }: { className?: string }) {
             ))}
           </div>
         )}
+      </div>
+
+
+      <div className="mt-6 rounded-lg border border-border/40 bg-muted/30 p-4">
+        <p className="font-semibold">{t("Was heißt das für deinen Beruf?", "What does this mean for your job?")}</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {t(
+            "Im KI-Berufs-Puzzle sortierst du selbst: Welche Aufgaben übernimmt eine Maschine, welche bleiben menschlich?",
+            "In the AI jobs puzzle you sort it out yourself: which tasks will a machine take over, which stay human?",
+          )}
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {JOBS.map((j) => (
+            <a
+              key={j.slug}
+              href={`${PUZZLE_BASE}/${j.slug}`}
+              target="_blank"
+              rel="noopener"
+              className="rounded-md border border-border/60 bg-card px-3 py-2 text-sm hover:bg-accent"
+            >
+              <span className="font-medium">{t(...j.title)}</span>
+              <span className="block text-xs text-muted-foreground">{t(...j.hint)}</span>
+            </a>
+          ))}
+        </div>
+        <a href="https://jobs.coxilab.de" target="_blank" rel="noopener" className="mt-3 inline-block text-sm underline underline-offset-2">
+          {t("Alle Berufe ansehen", "See all jobs")} →
+        </a>
       </div>
 
       <p className="mt-4 text-xs text-muted-foreground">
