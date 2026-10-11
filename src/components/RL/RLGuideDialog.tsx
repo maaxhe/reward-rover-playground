@@ -1,5 +1,34 @@
-import type { ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { GuideDemo } from "@/components/RL/GuideDemo";
+import { DEMO_WORLD } from "@/components/landing/LiveRover";
+import { useLanguage } from "@/contexts/LanguageContext";
+import type { CompetitionWorld } from "@/lib/competition/world";
+
+/** Candy right next to the start, the goal far away: how far ahead the rover looks decides where it ends up. */
+const FORESIGHT_WORLD: CompetitionWorld = {
+  size: 7,
+  agent: { x: 0, y: 3 },
+  goal: { x: 6, y: 3 },
+  tiles: [
+    { x: 1, y: 2, type: "reward" },
+    { x: 1, y: 4, type: "reward" },
+    { x: 3, y: 3, type: "obstacle" },
+    { x: 3, y: 2, type: "obstacle" },
+    { x: 3, y: 4, type: "obstacle" },
+  ],
+};
+
+const CHAPTERS = [
+  { id: "idee", de: "Grundidee", en: "Basic idea" },
+  { id: "restaurant", de: "Restaurant-Problem", en: "Restaurant problem" },
+  { id: "epsilon", de: "ε Neugier", en: "ε Curiosity" },
+  { id: "alpha", de: "α Lernrate", en: "α Learning rate" },
+  { id: "gamma", de: "γ Weitsicht", en: "γ Foresight" },
+  { id: "formel", de: "Die Formel", en: "The formula" },
+  { id: "alltag", de: "Im Alltag", en: "Real life" },
+] as const;
 
 interface Props {
   open: boolean;
@@ -13,10 +42,10 @@ const Shape = ({ kind }: { kind: "rr-rover" | "rr-candy" | "rr-trap" | "rr-goal"
   </span>
 );
 
-const Section = ({ title, children }: { title: string; children: ReactNode }) => (
-  <section className="space-y-3">
-    <h3 className="text-2xl font-extrabold tracking-tight text-foreground">{title}</h3>
-    <div className="space-y-4 text-lg leading-8 text-foreground/80">{children}</div>
+const Section = ({ id, title, children }: { id: string; title: string; children: ReactNode }) => (
+  <section id={`guide-${id}`} className="scroll-mt-6 space-y-5">
+    <h3 className="text-3xl font-extrabold tracking-tight text-foreground">{title}</h3>
+    <div className="space-y-5 text-lg leading-8 text-foreground/80">{children}</div>
   </section>
 );
 
@@ -33,23 +62,39 @@ const Dial = ({ symbol, name, line, tip }: { symbol: string; name: string; line:
 
 /** The long-form "what is reinforcement learning" guide, written as a short article rather than an accordion. */
 export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
+  const scroller = useRef<HTMLDivElement>(null);
+  const go = (id: string) => scroller.current?.querySelector(`#guide-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-3xl gap-0 overflow-hidden rounded-3xl p-0">
-        <div className="max-h-[90vh] space-y-10 overflow-y-auto px-6 py-8 sm:px-10 sm:py-10">
+      <DialogContent className="flex h-[94vh] w-[96vw] max-w-6xl gap-0 overflow-hidden rounded-3xl p-0">
+        <nav className="hidden w-52 flex-shrink-0 flex-col gap-1 border-r border-border bg-secondary/30 p-5 pt-10 lg:flex" aria-label={t("Kapitel", "Chapters")}>
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">{t("Kapitel", "Chapters")}</p>
+          {CHAPTERS.map((c, i) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => go(c.id)}
+              className="rounded-lg px-3 py-2 text-left text-sm font-semibold text-foreground/80 transition-colors hover:bg-primary/15 hover:text-foreground"
+            >
+              <span className="mr-2 text-muted-foreground">{i + 1}</span>
+              {t(c.de, c.en)}
+            </button>
+          ))}
+        </nav>
+        <div ref={scroller} className="min-w-0 flex-1 space-y-16 overflow-y-auto px-5 py-8 sm:px-10 sm:py-10">
           <header className="space-y-3">
             <DialogTitle className="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
               {t("Wie ein Rover lernt, ohne dass ihm jemand den Weg zeigt", "How a rover learns without anyone showing it the way")}
             </DialogTitle>
             <DialogDescription className="text-lg leading-8 text-muted-foreground">
               {t(
-                "Zehn Minuten Lesezeit, keine Vorkenntnisse nötig. Du kannst jederzeit zurück zum Spiel und ausprobieren, was hier steht.",
-                "Ten minutes of reading, no background needed. You can jump back to the game any time and try what you read.",
+                "Zehn Minuten Lesezeit, keine Vorkenntnisse nötig. Die Rover unten laufen wirklich: Du kannst an den Reglern drehen und sofort sehen, was passiert.",
+                "Ten minutes of reading, no background needed. The rovers below really run: turn the dials and see what happens right away.",
               )}
             </DialogDescription>
           </header>
 
-          <Section title={t("Die Grundidee: Ausprobieren und merken", "The basic idea: try things and remember")}>
+          <Section id="idee" title={t("Die Grundidee: Ausprobieren und merken", "The basic idea: try things and remember")}>
             <p>
               {t(
                 "Der Rover bekommt keine Landkarte und keine Anleitung. Er darf nur Schritte machen und merkt danach, ob es sich gelohnt hat. Eine Süßigkeit auf dem Feld gibt Punkte, eine Falle kostet Punkte, und jeder Schritt kostet ein bisschen Zeit.",
@@ -67,9 +112,22 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
                 "After many runs it has remembered which step on which tile pays off most in the long run. That list of memories is called the Q-table, and the arrows on the board show you what is in it right now.",
               )}
             </p>
+            <GuideDemo
+              world={DEMO_WORLD}
+              initial={{ epsilon: 0.25, alpha: 0.4, gamma: 0.95 }}
+              translate={t}
+              caption={({ episode, lastSteps, shortest }) =>
+                episode === 0
+                  ? t("Der Rover kennt die Welt noch nicht und probiert einfach los. Schau zu, wie nach und nach Pfeile erscheinen.", "The rover knows nothing yet and just tries things. Watch the arrows appear one by one.")
+                  : t(
+                      `Runde ${episode}: ${lastSteps} Schritte bis zum Ziel, der kürzeste Weg wären ${shortest}. Die Pfeile zeigen, was er bisher für den besten Schritt hält.`,
+                      `Run ${episode}: ${lastSteps} steps to the goal, the shortest path is ${shortest}. The arrows show what it currently thinks is the best step.`,
+                    )
+              }
+            />
           </Section>
 
-          <Section title={t("Das Restaurant-Problem", "The restaurant problem")}>
+          <Section id="restaurant" title={t("Das Restaurant-Problem", "The restaurant problem")}>
             <p>
               {t(
                 "Stell dir vor, du gehst jeden Tag in dasselbe Restaurant. Bestellst du immer dein Lieblingsgericht, bist du auf der sicheren Seite. Probierst du etwas Neues, ist es vielleicht enttäuschend, aber vielleicht ist es dein neues Lieblingsessen.",
@@ -84,7 +142,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             </p>
           </Section>
 
-          <Section title={t("Die drei Regler", "The three dials")}>
+          <Section id="epsilon" title={t("ε: Wie neugierig ist der Rover?", "ε: How curious is the rover?")}>
             <Dial
               symbol="ε"
               name={t("Neugier (Epsilon)", "Curiosity (epsilon)")}
@@ -97,6 +155,24 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
                 "Too low: it sticks to the first path it finds. Too high: it keeps wandering even though it already knows the way.",
               )}
             />
+            <GuideDemo
+              world={DEMO_WORLD}
+              initial={{ epsilon: 0.8, alpha: 0.5, gamma: 0.95 }}
+              dials={["epsilon"]}
+              translate={t}
+              caption={({ settings, episode }) =>
+                episode < 3
+                  ? t("Zieh ε hin und her und schau auf die Schritte pro Runde.", "Move ε back and forth and watch the steps per run.")
+                  : settings.epsilon > 0.6
+                    ? t("Sehr neugierig: Der Rover torkelt viel herum, auch wenn er den Weg schon ahnt. Die Rundenzeiten bleiben lang.", "Very curious: the rover stumbles around a lot even when it senses the way. Run times stay long.")
+                    : settings.epsilon < 0.05
+                      ? t("Fast gar nicht neugierig: Er hält an dem fest, was er zuerst gefunden hat. Das kann ein Umweg sein.", "Hardly curious at all: it clings to whatever it found first. That may be a detour.")
+                      : t("Eine Prise Neugier: meist dem Wissen folgen, ab und zu etwas Neues probieren.", "A pinch of curiosity: mostly follow what it knows, now and then try something new.")
+              }
+            />
+          </Section>
+
+          <Section id="alpha" title={t("α: Wie schnell lernt der Rover um?", "α: How fast does the rover change its mind?")}>
             <Dial
               symbol="α"
               name={t("Lernrate (Alpha)", "Learning rate (alpha)")}
@@ -109,6 +185,22 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
                 "In a world that never changes, α can be high. A small value smooths out unreliable experiences.",
               )}
             />
+            <GuideDemo
+              world={DEMO_WORLD}
+              initial={{ epsilon: 0.2, alpha: 0.05, gamma: 0.95 }}
+              dials={["alpha"]}
+              translate={t}
+              caption={({ settings }) =>
+                settings.alpha < 0.15
+                  ? t("Kleines α: Die Pfeile erscheinen langsam und vorsichtig. Es dauert, bis sich der Rover sicher ist.", "Small α: arrows appear slowly and cautiously. It takes a while until the rover is sure.")
+                  : settings.alpha > 0.8
+                    ? t("Großes α: Jede neue Erfahrung überschreibt fast alles. Schnell gelernt, aber die Pfeile springen leicht um.", "Large α: every new experience overwrites almost everything. Quick to learn, but arrows flip easily.")
+                    : t("Mittleres α: ein guter Mittelweg zwischen schnell und stabil. Drück „Von vorn“ und vergleiche die Anzahl Runden bis zum Bestwert.", "Medium α: a good balance of fast and steady. Press “Start over” and compare how many runs it takes to reach the best.")
+              }
+            />
+          </Section>
+
+          <Section id="gamma" title={t("γ: Wie weit denkt der Rover voraus?", "γ: How far ahead does the rover think?")}>
             <Dial
               symbol="γ"
               name={t("Weitsicht (Gamma)", "Foresight (gamma)")}
@@ -121,9 +213,23 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
                 "A small γ turns the rover into a sweet tooth: the nearby candy beats the distant goal.",
               )}
             />
+            <GuideDemo
+              world={FORESIGHT_WORLD}
+              initial={{ epsilon: 0.3, alpha: 0.5, gamma: 0.1 }}
+              dials={["gamma"]}
+              consumeRewards={false}
+              translate={t}
+              caption={({ settings }) =>
+                settings.gamma < 0.3
+                  ? t("Kleines γ: Die Pfeile reichen nur bis zu den Süßigkeiten neben dem Start. Das ferne Ziel ist für ihn unsichtbar.", "Small γ: the arrows only reach the candy next to the start. The distant goal is invisible to it.")
+                  : settings.gamma > 0.8
+                    ? t("Großes γ: Das Wissen über das Ziel wandert Feld für Feld rückwärts bis zum Start. Jetzt lohnt sich der Weg.", "Large γ: knowledge about the goal travels tile by tile back to the start. Now the trip is worth it.")
+                    : t("Dreh γ langsam hoch und beobachte, wie weit die Pfeile in Richtung Ziel wachsen. Mit „Von vorn“ startest du neu.", "Slowly raise γ and watch how far the arrows grow towards the goal. “Start over” resets.")
+              }
+            />
           </Section>
 
-          <Section title={t("Was bei jedem Schritt passiert", "What happens on every step")}>
+          <Section id="formel" title={t("Was bei jedem Schritt passiert", "What happens on every step")}>
             <p>
               {t(
                 "Nach jedem Schritt aktualisiert der Rover seine Merkliste mit einer einzigen Regel. In Worten: neuer Wert = alter Wert + Lernrate × (was ich bekommen habe + Weitsicht × das Beste, was von dort aus noch kommt − alter Wert).",
@@ -141,7 +247,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             </p>
           </Section>
 
-          <Section title={t("Wo du das im Alltag findest", "Where you meet this in real life")}>
+          <Section id="alltag" title={t("Wo du das im Alltag findest", "Where you meet this in real life")}>
             <ul className="list-disc space-y-2 pl-6 marker:text-primary">
               <li>{t("Spiele-KIs, die durch Millionen Partien gegen sich selbst besser werden.", "Game AIs that improve by playing millions of matches against themselves.")}</li>
               <li>{t("Roboter, die Greifen und Laufen durch Üben lernen, statt jede Bewegung einprogrammiert zu bekommen.", "Robots that learn grasping and walking by practising instead of having every move programmed.")}</li>
@@ -150,7 +256,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             </ul>
           </Section>
 
-          <Section title={t("Probier das aus", "Try this")}>
+          <Section id="probieren" title={t("Probier das aus", "Try this")}>
             <ol className="list-decimal space-y-2 pl-6 marker:font-bold marker:text-primary">
               <li>{t("Stelle ε auf 0 und starte. Bleibt der Rover auf einem schlechten Weg hängen?", "Set ε to 0 and start. Does the rover get stuck on a poor path?")}</li>
               <li>{t("Stelle ε auf 1. Lernt er überhaupt etwas?", "Set ε to 1. Does it learn anything at all?")}</li>
@@ -160,5 +266,20 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+
+/** Opens the explainer. Works anywhere inside a LanguageProvider (game sidebar and classroom header). */
+export function RLGuideButton({ className, variant = "outline", size = "sm", compact = false }: { className?: string; variant?: "outline" | "default" | "ghost"; size?: "sm" | "default"; compact?: boolean }) {
+  const { translate } = useLanguage();
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button type="button" variant={variant} size={size} className={className} onClick={() => setOpen(true)}>
+        📖 {compact ? translate("Erklärung", "Guide") : translate("Wie lernt der Rover? Erklärung", "How does the rover learn? Guide")}
+      </Button>
+      <RLGuideDialog open={open} onOpenChange={setOpen} translate={translate} />
+    </>
   );
 }

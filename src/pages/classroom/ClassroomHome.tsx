@@ -10,7 +10,10 @@ import { ClassroomShell } from "./shared";
 const ClassroomHome = () => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
+  const linkCode = /^\d{4}$/.test(params.get("code") ?? "") ? (params.get("code") as string) : null;
   const [code, setCode] = useState(params.get("code") ?? "");
+  // Opened from the teacher's QR code: only ask for a name. "Anderer Code" brings back the full page.
+  const [showFull, setShowFull] = useState(false);
   const [name, setName] = useState("");
   const [minutes, setMinutes] = useState(5);
   const [budget, setBudget] = useState(60);
@@ -53,6 +56,45 @@ const ClassroomHome = () => {
       sessionStore.setHostKey(room.code, room.hostKey);
       navigate(`/klasse/host/${room.code}`);
     });
+
+  if (linkCode && !showFull) {
+    const returning = Boolean(sessionStore.getPlayer(linkCode));
+    return (
+      <ClassroomShell>
+        <form
+          className="mx-auto mt-8 max-w-sm space-y-5 text-center"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!busy && (returning || name.trim().length >= 2)) void join();
+          }}
+        >
+          <p className="text-sm uppercase tracking-widest text-muted-foreground">Raum</p>
+          <p className="text-6xl font-extrabold tracking-widest text-primary">{linkCode}</p>
+          {!returning && (
+            <>
+              <Label htmlFor="nick" className="sr-only">Spielername</Label>
+              <Input
+                id="nick"
+                autoFocus
+                maxLength={20}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Dein Name"
+                className="h-14 text-center text-xl"
+              />
+            </>
+          )}
+          <Button type="submit" size="lg" className="w-full" disabled={busy || (!returning && name.trim().length < 2)}>
+            {returning ? "Weiter" : "Los geht’s"}
+          </Button>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <button type="button" onClick={() => setShowFull(true)} className="text-xs text-muted-foreground underline underline-offset-2">
+            Anderer Code oder Raum erstellen
+          </button>
+        </form>
+      </ClassroomShell>
+    );
+  }
 
   return (
     <ClassroomShell>

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { RLGuideButton } from "@/components/RL/RLGuideDialog";
 import { cn } from "@/lib/utils";
 import type { LeaderboardRow } from "@/lib/competition/api";
 
@@ -13,7 +14,8 @@ export const ClassroomShell = ({ children, wide = false }: { children: ReactNode
           <Link to="/klasse" className="text-xl font-bold gradient-text">
             Reward Rover · Klassen-Challenge
           </Link>
-          <nav className="flex gap-4 text-sm text-muted-foreground">
+          <nav className="flex items-center gap-4 text-sm text-muted-foreground">
+            <RLGuideButton compact />
             <Link to="/" className="hover:text-foreground">Startseite</Link>
             <Link to="/spiel" className="hover:text-foreground">Zum Spiel</Link>
           </nav>

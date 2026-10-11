@@ -44,6 +44,21 @@ describe("classroom pages", () => {
     expect(screen.getByText("Raum erstellen")).toBeTruthy();
   });
 
+  it("QR link shows only a name field, no room creation", () => {
+    render(<MemoryRouter initialEntries={["/klasse?code=4821"]}><Routes><Route path="/klasse" element={<ClassroomHome />} /></Routes></MemoryRouter>);
+    expect(screen.getByText("4821")).toBeTruthy();
+    expect(screen.getByPlaceholderText("Dein Name")).toBeTruthy();
+    expect(screen.queryByText("Raum erstellen")).toBeNull();
+    fireEvent.click(screen.getByText("Anderer Code oder Raum erstellen"));
+    expect(screen.getByText("Raum erstellen")).toBeTruthy();
+  });
+
+  it("guide opens from the classroom header and shows live demos", () => {
+    render(<MemoryRouter initialEntries={["/klasse"]}><Routes><Route path="/klasse" element={<ClassroomHome />} /></Routes></MemoryRouter>);
+    fireEvent.click(screen.getAllByText(/Erklärung/)[0]);
+    expect(screen.getAllByText(/Von vorn/).length).toBeGreaterThanOrEqual(4);
+  });
+
   it("player view trains, shows leaderboard and submits a Q-table", async () => {
     localStorage.setItem("rr-class-player-1234", JSON.stringify({ playerId: "a", token: "t" }));
     const submits: unknown[] = [];

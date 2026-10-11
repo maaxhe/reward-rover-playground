@@ -5,6 +5,7 @@ import { ParametersPanel } from "./ParametersPanel";
 import { LevelProgressBar } from "./LevelProgressBar";
 import { LevelUnlocksCard } from "./LevelUnlocksCard";
 import { GameLegend } from "./GameLegend";
+import { RLGuideButton } from "./RLGuideDialog";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LevelProvider } from "@/contexts/LevelContext";
 import { Button } from "@/components/ui/button";
@@ -258,6 +259,7 @@ export function RLGameNew() {
             disabled={comparisonActive}
             translate={translate}
           />
+          <RLGuideButton className="my-4 w-full font-semibold" />
           <GameLegend translate={translate} showPortal={!isLevelMode || unlockedFeatures.canPlacePortals} />
         </div>
 
