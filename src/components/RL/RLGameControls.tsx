@@ -74,7 +74,7 @@ export const PlaygroundControls = ({
 }: PlaygroundControlsProps) => {
   return (
     <div className="space-y-5">
-      <div>
+      <div className="hidden lg:block">
         <Button data-tutorial="start" className="w-full font-semibold" size="lg" onClick={state.isRunning ? onPause : onStart}>
           {state.isRunning ? <Pause className="mr-2 h-5 w-5" /> : <Play className="mr-2 h-5 w-5" />}
           {state.isRunning ? translate("Pause", "Pause") : translate("Start", "Start")}
@@ -259,7 +259,7 @@ export const RandomControls = ({
   isSpeedrun,
 }: RandomControlsProps) => (
   <div className="space-y-5">
-    <div>
+    <div className="hidden lg:block">
       <Button className="w-full font-semibold" size="lg" onClick={state.isRunning ? onPause : onStart}>
         {state.isRunning ? <Pause className="mr-2 h-5 w-5" /> : <Play className="mr-2 h-5 w-5" />}
         {state.isRunning ? translate("Pause", "Pause") : translate("Start", "Start")}

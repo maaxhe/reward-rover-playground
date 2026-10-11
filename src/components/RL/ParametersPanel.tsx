@@ -53,7 +53,7 @@ export function ParametersPanel({
         <div data-tutorial="explore" className="space-y-2">
           <div className="flex justify-between items-center">
             <Label className="text-xs font-medium">
-              {translate("Exploration (ε)", "Exploration (ε)")}
+              {translate("Neugier (ε)", "Curiosity (ε)")}
             </Label>
             <span className="text-xs font-semibold text-primary">
               {Math.round(explorationRate * 100)}%
@@ -71,7 +71,7 @@ export function ParametersPanel({
             style={{ "--slider-value": explorationRate } as React.CSSProperties}
           />
           <p className="text-xs text-muted-foreground">
-            {translate("Wie viel erkundet der Rover?", "How much does the rover explore?")}
+            {translate("Auch „Exploration“ genannt: Wie oft probiert der Rover etwas Neues aus? Wie im Restaurant: Lieblingsgericht oder mal was anderes?", "Also called “exploration”: how often does the rover try something new? Like in a restaurant: your favourite dish or something different?")}
           </p>
         </div>
 
@@ -119,7 +119,7 @@ export function ParametersPanel({
           <div className="flex justify-between items-center">
             <Label className="text-xs font-medium">
               {gammaLocked && <span className="mr-1">🔒</span>}
-              {translate("Diskontfaktor (γ)", "Discount Factor (γ)")}
+              {translate("Weitsicht (γ)", "Foresight (γ)")}
             </Label>
             <span className="text-xs font-semibold text-primary">{gamma.toFixed(2)}</span>
           </div>
@@ -138,8 +138,8 @@ export function ParametersPanel({
             {gammaLocked
               ? translate("🔒 Schalte Level 3 frei.", "🔒 Reach level 3 to unlock.")
               : translate(
-                  "Denkt der Rover kurz- oder langfristig?",
-                  "Does the rover think short or long term?"
+                  "Auch „Discount-Faktor“ genannt (dasselbe!): Denkt der Rover kurz- oder langfristig?",
+                  "Also called “discount factor” (the same thing!): does the rover think short or long term?"
                 )}
           </p>
         </div>

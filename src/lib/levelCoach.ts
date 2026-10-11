@@ -13,7 +13,9 @@ export type CoachTarget =
   | "tool-reward"
   | "tool-punishment"
   | "tool-portal"
-  | "gridsize";
+  | "gridsize"
+  | "policy"
+  | "autorestart";
 
 export interface CoachSlide {
   target: CoachTarget;
@@ -41,10 +43,37 @@ const start: CoachSlide = {
 
 const explore: CoachSlide = {
   target: "explore",
-  title: { de: "Erkundung (ε)", en: "Exploration (ε)" },
+  title: { de: "Neugier ε (Exploration)", en: "Curiosity ε (exploration)" },
   text: {
-    de: "Mit diesem Regler bestimmst du, wie oft der Rover etwas Neues ausprobiert. Zu niedrig: er bleibt bei seinem ersten Weg. Zu hoch: er läuft weiter zufällig. Probier etwas dazwischen.",
-    en: "This slider sets how often the rover tries something new. Too low: it sticks to its first path. Too high: it keeps wandering randomly. Try something in between.",
+    de: "Dieser Regler heißt in der Fachsprache „Exploration“, hier sagen wir Neugier. Stell dir ein Restaurant vor: Bestellst du immer dein Lieblingsgericht (wenig Neugier) oder probierst du mal etwas Neues (viel Neugier)? Zu niedrig: der Rover bleibt bei seinem ersten Weg. Zu hoch: er läuft weiter zufällig. Probier etwas dazwischen.",
+    en: "In technical terms this slider is called “exploration”, here we say curiosity. Think of a restaurant: do you always order your favourite (little curiosity) or try something new (lots of curiosity)? Too low: the rover sticks to its first path. Too high: it keeps wandering randomly. Try something in between.",
+  },
+};
+
+const policy: CoachSlide = {
+  target: "policy",
+  title: { de: "Policy-Pfeile ➡️", en: "Policy arrows ➡️" },
+  text: {
+    de: "Die Policy ist die Strategie des Rovers. Jeder Pfeil zeigt, in welche Richtung er auf diesem Feld nach seinem bisherigen Wissen gehen würde. Mit jeder Runde zeigen sie besser den Weg zum Ziel. Hier kannst du sie ein- und ausschalten.",
+    en: "The policy is the rover's strategy. Each arrow shows which way it would go from that tile based on what it has learned. With every run they trace the way to the goal better. Switch them on or off here.",
+  },
+};
+
+const autorestart: CoachSlide = {
+  target: "autorestart",
+  title: { de: "Auto-Restart 🔁", en: "Auto-restart 🔁" },
+  text: {
+    de: "Ist dieser Schalter an, startet der Rover nach jedem Ziel von selbst neu und lernt ohne Klicken weiter. Hier schaltest du es ein und aus.",
+    en: "When this switch is on, the rover restarts by itself after every goal and keeps learning without clicking. Turn it on or off here.",
+  },
+};
+
+const startAndGoal: CoachSlide = {
+  target: "board",
+  title: { de: "Start und Ziel", en: "Start and goal" },
+  text: {
+    de: "Der Rover startet unten links, das Ziel ist oben rechts. Dazwischen liegen Mauern, Belohnungen und Strafen. Du musst hier nichts mehr bauen: Stelle die Regler passend ein und schau, wie er seinen Weg findet.",
+    en: "The rover starts at the bottom left, the goal is at the top right. In between are walls, rewards and penalties. You do not have to build anything here: set the dials well and watch it find its way.",
   },
 };
 
@@ -67,7 +96,7 @@ const guide: CoachSlide = {
 };
 
 export const LEVEL_COACH: Record<LevelNumber, CoachSlide[]> = {
-  1: [guide, objective, start, explore],
+  1: [guide, objective, start, policy, autorestart, explore],
   2: [
     objective,
     {
@@ -84,10 +113,10 @@ export const LEVEL_COACH: Record<LevelNumber, CoachSlide[]> = {
     objective,
     {
       target: "gamma",
-      title: { de: "Diskontfaktor (γ)", en: "Discount factor (γ)" },
+      title: { de: "Weitsicht γ (Diskontfaktor)", en: "Foresight γ (discount factor)" },
       text: {
-        de: "Stelle γ auf mindestens 0,9. Dann denkt der Rover weit voraus und wählt den Weg zum Ziel statt der kleinen Belohnung am Rand.",
-        en: "Set γ to at least 0.9. The rover then thinks far ahead and picks the path to the goal over the small reward on the side.",
+        de: "Weitsicht und „Discount-Faktor“ sind dasselbe: Dieser Regler bestimmt, wie weit der Rover vorausdenkt. Stelle γ auf mindestens 0,9. Dann denkt der Rover weit voraus und wählt den Weg zum Ziel statt der kleinen Belohnung am Rand.",
+        en: "Foresight and “discount factor” are the same thing: this dial decides how far ahead the rover thinks. Set γ to at least 0.9. The rover then thinks far ahead and picks the path to the goal over the small reward on the side.",
       },
     },
     start,
@@ -111,8 +140,8 @@ export const LEVEL_COACH: Record<LevelNumber, CoachSlide[]> = {
       target: "tool-punishment",
       title: { de: "Werkzeug: Strafe", en: "Tool: Penalty" },
       text: {
-        de: "Wähle zuerst das Werkzeug „Strafe“ im Platzierungs-Modus.",
-        en: "First pick the “Penalty” tool in the placement mode.",
+        de: "Hier wählst du aus, was du setzt: Klicke im Platzierungs-Modus auf den Knopf „Strafe“. Danach tippst du aufs Spielfeld.",
+        en: "This is where you choose what to place: click the “Penalty” button in the placement mode. Then tap the board.",
       },
     },
     placeOnBoard("eine Strafe, am besten auf den kürzesten Weg,", "a penalty, ideally on the shortest path,"),
@@ -158,6 +187,7 @@ export const LEVEL_COACH: Record<LevelNumber, CoachSlide[]> = {
   ],
   9: [
     objective,
+    startAndGoal,
     explore,
     {
       target: "alpha",
@@ -169,7 +199,7 @@ export const LEVEL_COACH: Record<LevelNumber, CoachSlide[]> = {
     },
     {
       target: "gamma",
-      title: { de: "Diskontfaktor (γ)", en: "Discount factor (γ)" },
+      title: { de: "Weitsicht γ (Diskontfaktor)", en: "Foresight γ (discount factor)" },
       text: {
         de: "Ein hohes γ lässt ihn weit vorausplanen. Für kurze, direkte Wege reicht oft ein hoher Wert.",
         en: "A high γ makes it plan far ahead. For short, direct routes a high value usually works.",
@@ -179,13 +209,14 @@ export const LEVEL_COACH: Record<LevelNumber, CoachSlide[]> = {
   ],
   10: [
     objective,
+    startAndGoal,
     explore,
     {
       target: "alpha",
       title: { de: "Alle Regler gehören dir", en: "All the knobs are yours" },
       text: {
-        de: "Für die Meisterprüfung kombinierst du Erkundung, Lernrate und Diskontfaktor. Beobachte nach jedem Lauf, ob die Schritte weniger werden, und drehe dann gezielt nach.",
-        en: "For the master test you combine exploration, learning rate and discount factor. After each run check whether the steps shrink, then adjust deliberately.",
+        de: "Für die Meisterprüfung kombinierst du Neugier, Lernrate und Weitsicht. Beobachte nach jedem Lauf, ob die Schritte weniger werden, und drehe dann gezielt nach.",
+        en: "For the master test you combine curiosity, learning rate and foresight. After each run check whether the steps shrink, then adjust deliberately.",
       },
     },
     start,

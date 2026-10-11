@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tile, TileType } from "./Tile";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";
-import { ChevronDown, ChevronUp, Gamepad2, Info, Pause, Play, Target } from "lucide-react";
+import { ChevronDown, ChevronUp, Gamepad2, Info, Pause, Play, RotateCcw, Target } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { Position, PlaygroundState, ComparisonRoverState } from "@/lib/rl/types";
@@ -158,8 +158,10 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   const [showRLSettings, setShowRLSettings] = useState(false);
   const [showRandomStatsCard, setShowRandomStatsCard] = useState(false);
   const [showPlaygroundStatsCard, setShowPlaygroundStatsCard] = useState(false);
-  const [showConsolePanel, setShowConsolePanel] = useState(true);
-  const [showSettingsPanel, setShowSettingsPanel] = useState(true);
+  // On phones the console and settings start folded, so the board is not buried under a wall of controls.
+  const isDesktopAtStart = typeof window === "undefined" || window.innerWidth >= 1024;
+  const [showConsolePanel, setShowConsolePanel] = useState(isDesktopAtStart);
+  const [showSettingsPanel, setShowSettingsPanel] = useState(isDesktopAtStart);
   const [isReplaying, setIsReplaying] = useState(false);
   const [replayEpisode, setReplayEpisode] = useState<EpisodeStats | null>(null);
   const [replayStep, setReplayStep] = useState(0);
@@ -398,6 +400,30 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
         "Use the placement tools on the left to place obstacles, rewards, or penalties. Experiment and watch how the rover learns!"
       ),
     },
+    {
+      target: "settings",
+      title: translate("Die Einstellungen ⚙️", "The settings ⚙️"),
+      content: translate(
+        "Hier schaltest du Anzeigen und Verhalten ein und aus: Policy-Pfeile, Q-Werte, Heatmap, Auto-Restart und die Feldgröße. Auf dem Handy klappst du sie mit dem Pfeil oben auf.",
+        "Here you switch displays and behaviour on and off: policy arrows, Q-values, heatmap, auto-restart and the grid size. On a phone, unfold them with the arrow at the top."
+      ),
+    },
+    {
+      target: "policy",
+      title: translate("Policy-Pfeile ➡️", "Policy arrows ➡️"),
+      content: translate(
+        "Die Policy ist die Strategie des Rovers. Jeder Pfeil zeigt, in welche Richtung er auf diesem Feld nach seinem bisherigen Wissen gehen würde. Mit jeder Runde zeigen die Pfeile besser den Weg zum Ziel. Mit diesem Schalter blendest du sie ein oder aus.",
+        "The policy is the rover's strategy. Each arrow shows which way it would go from that tile based on what it has learned. With every run the arrows trace the way to the goal better. This switch shows or hides them."
+      ),
+    },
+    {
+      target: "autorestart",
+      title: translate("Auto-Restart 🔁", "Auto-restart 🔁"),
+      content: translate(
+        "Ist dieser Schalter an, startet der Rover nach jedem Ziel von selbst neu und lernt ohne Klicken weiter. Hier kannst du es ein- und ausschalten.",
+        "When this switch is on, the rover restarts by itself after every goal and keeps learning without clicking. Turn it on or off here."
+      ),
+    },
   ], [translate]);
 
   // Tutorial functions
@@ -494,10 +520,21 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   const highlightTarget = tutorialOpen ? tutorialSlides[tutorialStep]?.target : activeCoachSlide?.target;
   useEffect(() => {
     if (!highlightTarget) return;
-    const els = Array.from(document.querySelectorAll<HTMLElement>(`[data-tutorial="${highlightTarget}"]`));
-    els.forEach((el) => el.classList.add("tutorial-spotlight"));
-    (els.find((el) => el.offsetParent !== null) ?? els[0])?.scrollIntoView({ block: "center", behavior: "smooth" });
-    return () => els.forEach((el) => el.classList.remove("tutorial-spotlight"));
+    // Fold-out panels that contain the highlighted element (phones start folded).
+    if (["settings", "policy", "autorestart", "gridsize"].includes(highlightTarget)) setShowSettingsPanel(true);
+    if (highlightTarget.startsWith("tool-")) setShowConsolePanel(true);
+    const find = () => Array.from(document.querySelectorAll<HTMLElement>(`[data-tutorial="${highlightTarget}"]`));
+    find().forEach((el) => el.classList.add("tutorial-spotlight"));
+    // Wait a moment so just-unfolded panels are rendered before we mark and scroll to them.
+    const timer = window.setTimeout(() => {
+      const els = find();
+      els.forEach((el) => el.classList.add("tutorial-spotlight"));
+      (els.find((el) => el.offsetParent !== null) ?? els[0])?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 80);
+    return () => {
+      window.clearTimeout(timer);
+      find().forEach((el) => el.classList.remove("tutorial-spotlight"));
+    };
   }, [highlightTarget]);
 
   // Check if tutorial was already seen
@@ -2337,7 +2374,7 @@ const handleActiveBonusClick = useCallback(() => {
         <DialogContent
           hideOverlay
           onInteractOutside={(e) => e.preventDefault()}
-          className="max-w-2xl top-auto bottom-4 translate-y-0 data-[state=open]:slide-in-from-top-0 data-[state=closed]:slide-out-to-top-0 shadow-2xl border-primary/40"
+          className="max-w-2xl top-auto bottom-24 lg:bottom-4 translate-y-0 data-[state=open]:slide-in-from-top-0 data-[state=closed]:slide-out-to-top-0 shadow-2xl border-primary/40"
         >
           <DialogHeader>
             <div className="flex items-center justify-between">
@@ -2399,7 +2436,7 @@ const handleActiveBonusClick = useCallback(() => {
         <DialogContent
           hideOverlay
           onInteractOutside={(e) => e.preventDefault()}
-          className="max-w-xl top-auto bottom-4 translate-y-0 data-[state=open]:slide-in-from-top-0 data-[state=closed]:slide-out-to-top-0 shadow-2xl border-primary/40"
+          className="max-w-xl top-auto bottom-24 lg:bottom-4 translate-y-0 data-[state=open]:slide-in-from-top-0 data-[state=closed]:slide-out-to-top-0 shadow-2xl border-primary/40"
         >
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
@@ -2851,7 +2888,7 @@ const handleActiveBonusClick = useCallback(() => {
                 <div className="space-y-1">
                   <div className="flex justify-between">
                     <div className="flex items-center gap-1.5">
-                      <span>{translate("Exploration:", "Exploration:")}</span>
+                      <span>{translate("Neugier ε (Exploration):", "Curiosity ε (exploration):")}</span>
                       <button
                         onClick={() => setShowComparisonLeftExplorationInfo(!showComparisonLeftExplorationInfo)}
                         className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
@@ -2935,7 +2972,7 @@ const handleActiveBonusClick = useCallback(() => {
                 <div className="space-y-1">
                   <div className="flex justify-between">
                     <div className="flex items-center gap-1.5">
-                      <span>{translate("Discount (γ):", "Discount (γ):")}</span>
+                      <span>{translate("Weitsicht γ (Discount):", "Foresight γ (discount):")}</span>
                       <button
                         onClick={() => setShowComparisonLeftGammaInfo(!showComparisonLeftGammaInfo)}
                         className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
@@ -3108,7 +3145,7 @@ const handleActiveBonusClick = useCallback(() => {
                 <div className="space-y-1">
                   <div className="flex justify-between">
                     <div className="flex items-center gap-1.5">
-                      <span>{translate("Exploration:", "Exploration:")}</span>
+                      <span>{translate("Neugier ε (Exploration):", "Curiosity ε (exploration):")}</span>
                       <button
                         onClick={() => setShowComparisonRightExplorationInfo(!showComparisonRightExplorationInfo)}
                         className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
@@ -3192,7 +3229,7 @@ const handleActiveBonusClick = useCallback(() => {
                 <div className="space-y-1">
                   <div className="flex justify-between">
                     <div className="flex items-center gap-1.5">
-                      <span>{translate("Discount (γ):", "Discount (γ):")}</span>
+                      <span>{translate("Weitsicht γ (Discount):", "Foresight γ (discount):")}</span>
                       <button
                         onClick={() => setShowComparisonRightGammaInfo(!showComparisonRightGammaInfo)}
                         className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
@@ -3529,7 +3566,7 @@ const handleActiveBonusClick = useCallback(() => {
           </Card>
         )}
 
-        <div className="relative" ref={layoutRef}>
+        <div className="relative pb-24 lg:pb-0" ref={layoutRef}>
           <div
             className={cn("flex flex-col gap-6 lg:grid lg:items-stretch transition-opacity", gridCols)}
             aria-disabled={mode === "comparison"}
@@ -3918,34 +3955,42 @@ const handleActiveBonusClick = useCallback(() => {
             )}
           </Card>
 
-          {/* Mobile Play Button - Only visible on mobile devices */}
-          <div className="lg:hidden mt-4 mx-auto w-full max-w-md px-4">
-            {mode === "playground" ? (
-              <Button
-                data-tutorial="start"
-                className="w-full font-semibold shadow-lg"
-                size="lg"
-                onClick={playgroundState.isRunning ? handlePlaygroundPause : handlePlaygroundStart}
-              >
-                {playgroundState.isRunning ? <Pause className="mr-2 h-5 w-5" /> : <Play className="mr-2 h-5 w-5" />}
-                {playgroundState.isRunning ? translate("Pause", "Pause") : translate("Start", "Start")}
-              </Button>
-            ) : (
-              <Button
-                className="w-full font-semibold shadow-lg"
-                size="lg"
-                onClick={randomState.isRunning ? handleRandomPause : handleRandomStart}
-              >
-                {randomState.isRunning ? <Pause className="mr-2 h-5 w-5" /> : <Play className="mr-2 h-5 w-5" />}
-                {randomState.isRunning ? translate("Pause", "Pause") : translate("Start", "Start")}
-              </Button>
-            )}
+          {/* Mobile action bar: pinned to the bottom of the screen, so Start is always in reach (phones only) */}
+          <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-border bg-background/95 p-3 backdrop-blur lg:hidden">
+            {(() => {
+              const playground = mode === "playground";
+              const running = playground ? playgroundState.isRunning : randomState.isRunning;
+              return (
+                <>
+                  <Button
+                    data-tutorial="start"
+                    className="flex-1 font-semibold shadow-lg"
+                    size="lg"
+                    onClick={
+                      playground
+                        ? running ? handlePlaygroundPause : handlePlaygroundStart
+                        : running ? handleRandomPause : handleRandomStart
+                    }
+                  >
+                    {running ? <Pause className="mr-2 h-5 w-5" /> : <Play className="mr-2 h-5 w-5" />}
+                    {running ? translate("Pause", "Pause") : translate("Start", "Start")}
+                  </Button>
+                  <Button variant="secondary" size="lg" className="font-semibold" onClick={playground ? handlePlaygroundStep : handleRandomStep}>
+                    {translate("Step", "Step")}
+                  </Button>
+                  <Button variant="outline" size="lg" aria-label={translate("Zurück", "Reset")} onClick={playground ? handlePlaygroundReset : handleRandomReset}>
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                </>
+              );
+            })()}
           </div>
           </div>
 
           <div className="relative order-3 lg:order-3">
             <Card
               ref={settingsScrollRef}
+              data-tutorial="settings"
               className={cn(
                 "flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm overflow-y-auto transition-all duration-200 hover:border-primary/30",
                 "h-auto lg:min-h-[var(--settings-height)]"
@@ -3969,10 +4014,10 @@ const handleActiveBonusClick = useCallback(() => {
             <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-4">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <h3 className="text-lg font-bold text-foreground">
-                  {translate("Q-Werte & Exploration", "Q-Values & Exploration")}
+                  {translate("Anzeige & Auto-Restart", "Display & auto-restart")}
                 </h3>
                 <div className="flex flex-col items-end gap-3">
-                  <div className="space-y-1">
+                  <div data-tutorial="policy" className="space-y-1 rounded-md">
                     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
                       <div className="flex items-center gap-1.5">
                         <Label htmlFor="show-actions-settings" className="text-xs font-semibold leading-tight">
@@ -3996,8 +4041,8 @@ const handleActiveBonusClick = useCallback(() => {
                     {showActionsInfo && (
                       <p className="text-xs text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
                         {translate(
-                          "Zeigt Pfeile, die die bevorzugte Bewegungsrichtung des Rovers für jedes Feld anzeigen.",
-                          "Shows arrows indicating the rover's preferred direction for each tile.",
+                          "Die „Policy“ ist die Strategie des Rovers. Jeder Pfeil zeigt, in welche Richtung er auf diesem Feld nach seinem bisherigen Wissen gehen würde. Mit der Zeit zeigen die Pfeile den Weg zum Ziel.",
+                          "The “policy” is the rover's strategy. Each arrow shows which way it would go from that tile based on what it has learned so far. Over time the arrows trace the way to the goal.",
                         )}
                       </p>
                     )}
@@ -4098,7 +4143,7 @@ const handleActiveBonusClick = useCallback(() => {
                       </p>
                     )}
                   </div>
-                  <div className="space-y-1">
+                  <div data-tutorial="autorestart" className="space-y-1 rounded-md">
                     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
                       <Label htmlFor="auto-restart-settings" className="text-xs font-semibold leading-tight">
                         {translate("Auto-Restart bei Ziel", "Auto-restart at goal")}
@@ -4110,6 +4155,12 @@ const handleActiveBonusClick = useCallback(() => {
                         aria-label={translate("Auto-Restart umschalten", "Toggle auto-restart")}
                       />
                     </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed pl-1">
+                      {translate(
+                        "An: Der Rover startet nach jedem Ziel von selbst neu und lernt ohne Klicken weiter.",
+                        "On: the rover restarts by itself after every goal and keeps learning without clicking.",
+                      )}
+                    </p>
                   </div>
                 </div>
               </div>

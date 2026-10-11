@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { Button } from "@/components/ui/button";
 import { RealRobots } from "@/components/RL/RealRobots";
 import { GuideDemo } from "@/components/RL/GuideDemo";
+import { RlhfDemo } from "@/components/RL/RlhfDemo";
 import { DEMO_WORLD } from "@/components/landing/LiveRover";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { CompetitionWorld } from "@/lib/competition/world";
@@ -28,6 +29,7 @@ const CHAPTERS = [
   { id: "alpha", de: "α Lernrate", en: "α Learning rate" },
   { id: "gamma", de: "γ Weitsicht", en: "γ Foresight" },
   { id: "formel", de: "Die Formel", en: "The formula" },
+  { id: "llm", de: "KI-Chat & RLHF", en: "AI chat & RLHF" },
   { id: "alltag", de: "Im Alltag", en: "Real life" },
 ] as const;
 
@@ -147,10 +149,10 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
           <Section id="epsilon" title={t("ε: Wie neugierig ist der Rover?", "ε: How curious is the rover?")}>
             <Dial
               symbol="ε"
-              name={t("Neugier (Epsilon)", "Curiosity (epsilon)")}
+              name={t("Neugier (Epsilon, in der Fachsprache „Exploration“)", "Curiosity (epsilon, technically “exploration”)")}
               line={t(
-                "Wie oft folgt der Rover einer Laune statt seinem Wissen? Bei 0,2 geht er jeden fünften Schritt in eine zufällige Richtung.",
-                "How often does the rover follow a whim instead of what it knows? At 0.2 it takes a random step every fifth move.",
+                "Wie oft folgt der Rover einer Laune statt seinem Wissen? Bei 0,2 geht er jeden fünften Schritt in eine zufällige Richtung. Wie im Restaurant: Meist bestellst du dein Lieblingsgericht, aber ab und zu probierst du etwas Neues.",
+                "How often does the rover follow a whim instead of what it knows? At 0.2 it takes a random step every fifth move. Like in a restaurant: usually you order your favourite, but now and then you try something new.",
               )}
               tip={t(
                 "Zu niedrig: Er bleibt auf dem ersten Weg hängen, den er findet. Zu hoch: Er irrt weiter herum, obwohl er den Weg längst kennt.",
@@ -207,7 +209,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
           <Section id="gamma" title={t("γ: Wie weit denkt der Rover voraus?", "γ: How far ahead does the rover think?")}>
             <Dial
               symbol="γ"
-              name={t("Weitsicht (Gamma)", "Foresight (gamma)")}
+              name={t("Weitsicht (Gamma, auch „Discount-Faktor“)", "Foresight (gamma, also “discount factor”)")}
               line={t(
                 "Wie viel zählt für den Rover, was erst später kommt? Bei 0,9 lohnt sich ein Umweg, wenn am Ende das Ziel wartet. Bei 0 denkt er nur an das Feld direkt vor sich.",
                 "How much does the rover care about what comes later? At 0.9 a detour is worth it if the goal waits at the end. At 0 it only thinks about the tile right in front of it.",
@@ -248,6 +250,28 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
               {t(
                 "s ist das Feld, auf dem er steht, a der Schritt, den er macht, r die Belohnung dafür und s′ das Feld, auf dem er landet. Das ist Q-Learning.",
                 "s is the tile it stands on, a the step it takes, r the reward for it and s′ the tile it lands on. This is Q-learning.",
+              )}
+            </p>
+          </Section>
+
+          <Section id="llm" title={t("Auch ChatGPT & Co. lernen so: RLHF", "ChatGPT & co. learn like this too: RLHF")}>
+            <p>
+              {t(
+                "Ein Sprachmodell lernt zuerst nur, Text weiterzuschreiben. Damit es auch hilfreich antwortet, kommt ein zweiter Schritt dazu: Menschen vergleichen zwei Antworten und wählen die bessere. Das ist die Belohnung. Das Fachwort dafür ist RLHF, Reinforcement Learning from Human Feedback.",
+                "A language model first only learns to continue text. To make it answer helpfully, a second step follows: people compare two answers and pick the better one. That is the reward. The technical term is RLHF, reinforcement learning from human feedback.",
+              )}
+            </p>
+            <p>
+              {t(
+                "Der Rover und das Modell funktionieren gleich: Eine Antwort ist wie ein Schritt, dein Daumen ist die Belohnung, und die Wahrscheinlichkeit, mit der das Modell etwas sagt, ist wie die Pfeile im Spielfeld. Probier es selbst: Du bist der Mensch.",
+                "The rover and the model work alike: an answer is like a step, your thumbs-up is the reward, and the probability that the model says something is like the arrows on the board. Try it yourself: you are the human.",
+              )}
+            </p>
+            <RlhfDemo translate={t} />
+            <p className="text-base text-muted-foreground">
+              {t(
+                "In echt bewerten Menschen tausende Antworten. Daraus lernt ein eigenes Belohnungsmodell, das danach Millionen Antworten automatisch bewertet. Hier siehst du die Idee stark vereinfacht.",
+                "In reality people rate thousands of answers. A separate reward model learns from them and then rates millions of answers automatically. Here you see the idea in a very simplified form.",
               )}
             </p>
           </Section>

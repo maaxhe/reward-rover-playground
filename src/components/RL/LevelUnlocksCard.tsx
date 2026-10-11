@@ -16,7 +16,7 @@ const FEATURE_LABELS = {
     canChangeGridSize: "Gittergröße (mittel)",
     canUseLargeGrid: "Großes Feld",
     canAdjustAlpha: "Lernrate (α)",
-    canAdjustGamma: "Diskontfaktor (γ)",
+    canAdjustGamma: "Weitsicht (γ, Diskontfaktor)",
   },
   en: {
     canPlaceWalls: "Place walls",
@@ -26,7 +26,7 @@ const FEATURE_LABELS = {
     canChangeGridSize: "Grid size (medium)",
     canUseLargeGrid: "Large board",
     canAdjustAlpha: "Learning rate (α)",
-    canAdjustGamma: "Discount factor (γ)",
+    canAdjustGamma: "Foresight (γ, discount factor)",
   },
 };
 

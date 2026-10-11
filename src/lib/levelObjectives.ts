@@ -23,8 +23,8 @@ export const LEVEL_OBJECTIVES: Record<LevelNumber, LevelObjective> = {
     efficientEpisodes: 2,
     stepFactor: 3.5,
     hint: {
-      de: "Anfangs läuft der Rover fast blind. Mit jeder Runde merkt er sich bessere Wege. Probiere die Erkundungsrate: zu niedrig und er probiert nichts Neues, zu hoch und er läuft weiter zufällig.",
-      en: "At first the rover moves almost blindly. Each run it remembers better paths. Try the exploration rate: too low and it never tries anything new, too high and it keeps wandering randomly.",
+      de: "Anfangs läuft der Rover fast blind. Mit jeder Runde merkt er sich bessere Wege. Probiere die Neugier (ε) aus: zu niedrig und er probiert nichts Neues, zu hoch und er läuft weiter zufällig.",
+      en: "At first the rover moves almost blindly. Each run it remembers better paths. Try the curiosity (ε, also called exploration rate): too low and it never tries anything new, too high and it keeps wandering randomly.",
     },
   },
   2: {
@@ -41,8 +41,8 @@ export const LEVEL_OBJECTIVES: Record<LevelNumber, LevelObjective> = {
     stepFactor: 2,
     minGamma: 0.9,
     hint: {
-      de: "Gamma bestimmt, wie sehr der Rover an die Zukunft denkt. Bei hohem γ lohnt sich der Weg zum Ziel mehr als die kleine Belohnung am Rand. Setze γ auf mindestens 0,9.",
-      en: "Gamma decides how much the rover cares about the future. With a high γ the path to the goal is worth more than the small reward on the side. Set γ to at least 0.9.",
+      de: "Gamma (Weitsicht, auch Diskontfaktor genannt) bestimmt, wie sehr der Rover an die Zukunft denkt. Bei hohem γ lohnt sich der Weg zum Ziel mehr als die kleine Belohnung am Rand. Setze γ auf mindestens 0,9.",
+      en: "Gamma (foresight, also called discount factor) decides how much the rover cares about the future. With a high γ the path to the goal is worth more than the small reward on the side. Set γ to at least 0.9.",
     },
   },
   4: {
@@ -91,19 +91,19 @@ export const LEVEL_OBJECTIVES: Record<LevelNumber, LevelObjective> = {
     },
   },
   9: {
-    efficientEpisodes: 4,
-    stepFactor: 1.75,
+    efficientEpisodes: 3,
+    stepFactor: 2.5,
     hint: {
-      de: "Jetzt zählt Effizienz: Die letzten vier Läufe müssen nah am kürzesten Weg liegen. Passe α, γ und die Erkundung an.",
-      en: "Efficiency counts now: the last four runs must be close to the shortest path. Tune α, γ and exploration.",
+      de: "Der Rover startet unten links, das Ziel ist oben rechts. Jetzt zählt Effizienz: Die letzten drei Läufe müssen nah am kürzesten Weg liegen. Passe Neugier, Lernrate und Weitsicht an.",
+      en: "The rover starts at the bottom left, the goal is at the top right. Efficiency counts now: the last three runs must be close to the shortest path. Tune curiosity, learning rate and foresight.",
     },
   },
   10: {
-    efficientEpisodes: 5,
-    stepFactor: 1.6,
+    efficientEpisodes: 4,
+    stepFactor: 1.75,
     hint: {
-      de: "Meisterprüfung: Fünf Läufe in Folge fast auf dem optimalen Weg. Danach kennst du alle Stellschrauben und der Free Mode wartet.",
-      en: "Master test: five runs in a row almost on the optimal path. After that you know every knob, and Free Mode awaits.",
+      de: "Meisterprüfung: Vier Läufe in Folge fast auf dem optimalen Weg. Danach kennst du alle Stellschrauben und der Free Mode wartet.",
+      en: "Master test: four runs in a row almost on the optimal path. After that you know every knob, and Free Mode awaits.",
     },
   },
 };
@@ -206,8 +206,8 @@ export function evaluateObjective(args: {
     requirements.push({
       id: "gamma",
       done: gamma >= objective.minGamma,
-      de: `Diskontfaktor γ auf mindestens ${objective.minGamma} stellen`,
-      en: `Set discount factor γ to at least ${objective.minGamma}`,
+      de: `Weitsicht γ (Diskontfaktor) auf mindestens ${objective.minGamma} stellen`,
+      en: `Set foresight γ (discount factor) to at least ${objective.minGamma}`,
     });
   }
   if (objective.build) {

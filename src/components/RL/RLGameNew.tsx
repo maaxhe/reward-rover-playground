@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { RLGame } from "./RLGame";
 import { ParametersPanel } from "./ParametersPanel";
@@ -14,6 +14,22 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { getUnlockedFeatures } from "@/lib/levelProgression";
 import type { LevelNumber } from "@/lib/levelProgression";
 import { api } from "@/lib/api";
+
+/** Static info cards fold away on phones (tap to open) and stay fully visible on larger screens. */
+function MobileFold({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <>
+      <details className="group mt-4 rounded-lg border border-border/40 bg-card/60 md:hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-semibold uppercase tracking-wide text-foreground">
+          {title}
+          <span className="text-muted-foreground transition-transform group-open:rotate-180" aria-hidden>▾</span>
+        </summary>
+        <div className="px-2 pb-2">{children}</div>
+      </details>
+      <div className="hidden md:block">{children}</div>
+    </>
+  );
+}
 
 export function RLGameNew() {
   const { translate } = useLanguage();
@@ -277,8 +293,10 @@ export function RLGameNew() {
                       )}
                 </p>
               )}
-              <div className="mt-6" />
-              <LevelUnlocksCard currentLevel={currentLevel} translate={translate} />
+              <MobileFold title={translate("Das schaltest du frei", "What you unlock")}>
+                <div className="mt-6 md:mt-6" />
+                <LevelUnlocksCard currentLevel={currentLevel} translate={translate} />
+              </MobileFold>
               {!loggedIn && (maxUnlockedLevel > 1 || freeModeUnlocked) && (
                 <button
                   type="button"
@@ -305,7 +323,9 @@ export function RLGameNew() {
             translate={translate}
           />
           <RLGuideButton className="my-4 w-full font-semibold" />
-          <GameLegend translate={translate} showPortal={!isLevelMode || unlockedFeatures.canPlacePortals} />
+          <MobileFold title={translate("Legende", "Legend")}>
+            <GameLegend translate={translate} showPortal={!isLevelMode || unlockedFeatures.canPlacePortals} />
+          </MobileFold>
         </div>
 
         {/* Right Content - Game */}

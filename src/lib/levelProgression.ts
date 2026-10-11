@@ -25,10 +25,10 @@ export interface LevelConfig {
 export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
   1: {
     level: 1,
-    name: "Anfänger – Erkunden",
-    nameEn: "Beginner – Exploration",
-    description: "Lerne nur die Exploration kennen. Alles andere ist deaktiviert.",
-    descriptionEn: "Learn only exploration. Everything else is disabled.",
+    name: "Anfänger – Neugier",
+    nameEn: "Beginner – Curiosity",
+    description: "Lerne nur die Neugier (Exploration) kennen. Alles andere ist deaktiviert.",
+    descriptionEn: "Learn only curiosity (exploration). Everything else is disabled.",
     unlockedFeatures: {
       canPlaceWalls: false,
       canPlaceRewards: false,
@@ -59,10 +59,10 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
   },
   3: {
     level: 3,
-    name: "Diskontfaktor – Gamma (γ)",
-    nameEn: "Discount Factor – Gamma (γ)",
-    description: "Schalte den Diskontfaktor frei. Kurz- vs. Langfristiges Denken.",
-    descriptionEn: "Unlock discount factor. Short-term vs. long-term thinking.",
+    name: "Weitsicht – Gamma (γ)",
+    nameEn: "Foresight – Gamma (γ)",
+    description: "Schalte die Weitsicht (den Diskontfaktor) frei. Kurz- vs. Langfristiges Denken.",
+    descriptionEn: "Unlock foresight (the discount factor). Short-term vs. long-term thinking.",
     unlockedFeatures: {
       canPlaceWalls: false,
       canPlaceRewards: false,

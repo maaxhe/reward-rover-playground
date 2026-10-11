@@ -78,11 +78,13 @@ describe("classroom pages", () => {
     expect(screen.getByText("Deine Statistik")).toBeTruthy();
     await waitFor(() => expect(screen.getByRole("img", { name: /Schritte pro Episode\. Letzte Episode: \d+ Schritte/ })).toBeTruthy(), { timeout: 12000 });
     fireEvent.click(screen.getByText("✓ Jetzt werten"));
-    await waitFor(() => expect(submits.length).toBeGreaterThan(0));
-    expect(Object.keys((submits[0] as { qTable: object }).qTable).length).toBeGreaterThan(0);
+    // The periodic auto-submit can fire before the first episode ends (no paramLog yet), so look at the manual one.
+    type Submit = { qTable: object; paramLog?: number[][] };
+    await waitFor(() => expect((submits as Submit[]).some((x) => x.paramLog?.length)).toBe(true));
+    const last = (submits as Submit[]).filter((x) => x.paramLog?.length).pop()!;
+    expect(Object.keys(last.qTable).length).toBeGreaterThan(0);
     // which ε/α/γ the episodes ran with travels along: [[fromEpisode, ε, α, γ], …]
-    const log = (submits[0] as { paramLog?: number[][] }).paramLog;
-    expect(log?.[0]).toEqual([0, 0.3, 0.3, 0.9]);
+    expect(last.paramLog?.[0]).toEqual([0, 0.3, 0.3, 0.9]);
   }, 30000);
 
   it("first start shows a short tour that can be skipped for good", async () => {
