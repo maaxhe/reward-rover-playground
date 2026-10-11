@@ -278,6 +278,8 @@ export function RLGameNew() {
         <Link to="/datenschutz" className="underline underline-offset-2 hover:text-foreground">
           {translate("Datenschutz", "Privacy")}
         </Link>
+        {" · "}
+        {translate("Mit Unterstützung von Claude (Anthropic) entwickelt", "Built with the help of Claude (Anthropic)")}
       </footer>
     </div>
   );

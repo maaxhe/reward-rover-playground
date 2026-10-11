@@ -145,7 +145,9 @@ const LandingContent = () => {
 
       <footer>
         <div className="wrap">
-          <span>Reward Rover</span>
+          <span>
+            Reward Rover · {translate("Mit Unterstützung von Claude (Anthropic) entwickelt", "Built with the help of Claude (Anthropic)")}
+          </span>
           <span>
             <Link to="/spiel">{translate("Spielen", "Play")}</Link>
             {" · "}

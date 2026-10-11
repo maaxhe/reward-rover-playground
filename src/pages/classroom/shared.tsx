@@ -26,6 +26,8 @@ export const ClassroomShell = ({ children, wide = false }: { children: ReactNode
         <Link to="/impressum" className="underline underline-offset-2 hover:text-foreground">Impressum</Link>
         {" · "}
         <Link to="/datenschutz" className="underline underline-offset-2 hover:text-foreground">Datenschutz</Link>
+        {" · "}
+        Mit Unterstützung von Claude (Anthropic) entwickelt
       </footer>
     </div>
   </LanguageProvider>
