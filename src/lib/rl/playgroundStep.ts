@@ -56,6 +56,8 @@ export const stepPlayground = (state: PlaygroundState, params: PlaygroundParams)
   if (pendingPortalTeleport) {
     if (pendingPortalTeleport.waitCounter <= 0) {
       nextPos = pendingPortalTeleport.to;
+      // Cooldown starts on arrival so the rover cannot hop straight back through the portal pair.
+      portalCooldowns = withPortalCooldowns(portalCooldowns, [pendingPortalTeleport.from, pendingPortalTeleport.to]);
       pendingPortalTeleport = null;
     } else {
       pendingPortalTeleport = { ...pendingPortalTeleport, waitCounter: pendingPortalTeleport.waitCounter - 1 };

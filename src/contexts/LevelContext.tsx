@@ -6,12 +6,15 @@ interface LevelContextType {
   currentLevel: LevelNumber;
   /** Called when the rover solves the current level (reaches the goal). */
   onLevelSolved?: () => void;
+  /** Jumps to the next level (only offered after the current one is solved). */
+  onNextLevel?: () => void;
 }
 
 const defaultValue: LevelContextType = {
   levelMode: false,
   currentLevel: 1,
   onLevelSolved: undefined,
+  onNextLevel: undefined,
 };
 
 const LevelContext = createContext<LevelContextType>(defaultValue);
@@ -21,11 +24,12 @@ interface LevelProviderProps {
   levelMode: boolean;
   currentLevel: LevelNumber;
   onLevelSolved?: () => void;
+  onNextLevel?: () => void;
 }
 
-export function LevelProvider({ children, levelMode, currentLevel, onLevelSolved }: LevelProviderProps) {
+export function LevelProvider({ children, levelMode, currentLevel, onLevelSolved, onNextLevel }: LevelProviderProps) {
   return (
-    <LevelContext.Provider value={{ levelMode, currentLevel, onLevelSolved }}>
+    <LevelContext.Provider value={{ levelMode, currentLevel, onLevelSolved, onNextLevel }}>
       {children}
     </LevelContext.Provider>
   );

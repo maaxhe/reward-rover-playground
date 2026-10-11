@@ -80,7 +80,19 @@ interface RLGameProps {
 }
 
 export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAuthTokenChange, onComparisonActiveChange }: RLGameProps = {}) {
-  const { levelMode, currentLevel, onLevelSolved } = useLevel();
+  const { levelMode, currentLevel, onLevelSolved, onNextLevel } = useLevel();
+  const [levelSolvedDialog, setLevelSolvedDialog] = useState<number | null>(null);
+  // Breite des Spielbereichs: das Feld schrumpft, damit die Settings-Spalte nie zu schmal wird.
+  const layoutRef = useRef<HTMLDivElement | null>(null);
+  const [layoutWidth, setLayoutWidth] = useState(0);
+  useEffect(() => {
+    const el = layoutRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(([entry]) => setLayoutWidth(entry.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const [goalFlash, setGoalFlash] = useState<{ x: number; y: number; key: number } | null>(null);
   const unlockedFeatures = levelMode ? getUnlockedFeatures(currentLevel as LevelNumber) : null;
 
   const placementModeRef = useRef<PlaceableTile>("obstacle");
@@ -345,7 +357,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   // Tutorial Slides
   const tutorialSlides = useMemo(() => [
     {
-      title: translate("Welcome to Reward Rover", "Welcome to Reward Rover"),
+      title: translate("Willkommen bei Reward Rover", "Welcome to Reward Rover"),
       content: translate(
         "Entdecke, wie Reinforcement Learning funktioniert! Der Rover lernt eigenständig, welche Wege zum Ziel führen.",
         "Discover how reinforcement learning works! The rover learns on its own which paths lead to the goal."
@@ -371,7 +383,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
       ],
     },
     {
-      title: translate("Design the Playfield", "Design the Playfield"),
+      title: translate("Gestalte das Spielfeld", "Design the Playfield"),
       content: translate(
         "Nutze die Platzierungs-Tools links, um Hindernisse, Belohnungen oder Strafen zu platzieren. Experimentiere und beobachte, wie der Rover lernt!",
         "Use the placement tools on the left to place obstacles, rewards, or penalties. Experiment and watch how the rover learns!"
@@ -1270,7 +1282,7 @@ const handleActiveBonusClick = useCallback(() => {
     const rank = rankIndex === -1 ? sortedHistory.length : rankIndex + 1;
     const fact = CELEBRATION_FACTS[Math.floor(Math.random() * CELEBRATION_FACTS.length)][language];
     toast({
-      title: translate("Mission Complete", "Mission Complete"),
+      title: translate("Mission geschafft", "Mission Complete"),
       description: translate(
         `Du hast ${title} in ${latest.steps} Zügen geknackt. Schau ins Leaderboard!`,
         `You conquered ${title} in ${latest.steps} moves. Check the leaderboard!`,
@@ -1287,6 +1299,8 @@ const handleActiveBonusClick = useCallback(() => {
     const latest = playgroundState.episodeHistory[playgroundState.episodeHistory.length - 1];
     if (!latest || !latest.success) return;
     if (latest.episode <= lastCelebratedEpisodeRef.current.playground) return;
+    // Show the rover on the goal for a moment; the model already reset it to the start.
+    setGoalFlash({ x: playgroundState.goal.x, y: playgroundState.goal.y, key: latest.episode });
     if (isAutoRestartEnabled) {
       lastCelebratedEpisodeRef.current.playground = latest.episode;
       setCelebration(null);
@@ -1302,7 +1316,7 @@ const handleActiveBonusClick = useCallback(() => {
     const rank = rankIndex === -1 ? sortedHistory.length : rankIndex + 1;
     const fact = CELEBRATION_FACTS[Math.floor(Math.random() * CELEBRATION_FACTS.length)][language];
     toast({
-      title: translate("Mission Complete", "Mission Complete"),
+      title: translate("Mission geschafft", "Mission Complete"),
       description: translate(
         `Du hast ${title} in ${latest.steps} Zügen gemeistert. Schau ins Leaderboard!`,
         `You completed ${title} in ${latest.steps} moves. Check the leaderboard!`,
@@ -1330,18 +1344,19 @@ const handleActiveBonusClick = useCallback(() => {
         : null,
     [levelMode, currentLevel, playgroundState.grid, playgroundState.spawn, playgroundState.goal, playgroundState.episodeHistory, alpha, gamma],
   );
+  useEffect(() => {
+    if (!goalFlash) return;
+    const id = window.setTimeout(() => setGoalFlash(null), 900);
+    return () => window.clearTimeout(id);
+  }, [goalFlash]);
   const solvedLevelRef = useRef<number | null>(null);
   useEffect(() => {
     if (!objectiveStatus?.solved || solvedLevelRef.current === currentLevel) return;
     solvedLevelRef.current = currentLevel;
     onLevelSolved?.();
-    toast({
-      title: translate("Level geschafft!", "Level solved!"),
-      description:
-        currentLevel >= 10
-          ? translate("Du hast alle Level gemeistert. Der Free Mode ist freigeschaltet!", "You mastered every level. Free Mode is unlocked!")
-          : translate("Das nächste Level ist freigeschaltet.", "The next level is unlocked."),
-    });
+    // Pause and show a clear call to action instead of a toast that is easy to miss.
+    setPlaygroundState((prev) => ({ ...prev, isRunning: false }));
+    setLevelSolvedDialog(currentLevel);
   }, [objectiveStatus?.solved, currentLevel, onLevelSolved, translate]);
 
   const handlePlaygroundStart = () =>
@@ -1998,7 +2013,13 @@ const handleActiveBonusClick = useCallback(() => {
   const activeGrid = mode === "playground" ? playgroundState.grid : randomState.grid;
   const activeQTable = mode === "playground" ? playgroundState.qTable : randomState.qTable;
   const gridSize = activeGrid.length;
-  const tileSizePx = Math.max(24, Math.floor(GRID_PIXEL_TARGET[tileSize] / Math.max(gridSize, 1)));
+  // Nebeneinander (ab lg): zwei Seitenspalten à min. 260 px, 2×24 px Abstand, ~80 px Rahmen um das Feld.
+  const SIDE_COLUMN_MIN = 260;
+  const sideBySide = layoutWidth > 0 && typeof window !== "undefined" && window.innerWidth >= 1024;
+  const gridPixelTarget = sideBySide
+    ? Math.max(280, Math.min(GRID_PIXEL_TARGET[tileSize], layoutWidth - 2 * SIDE_COLUMN_MIN - 48 - 80))
+    : GRID_PIXEL_TARGET[tileSize];
+  const tileSizePx = Math.max(24, Math.floor(gridPixelTarget / Math.max(gridSize, 1)));
   const TILE_GAP = 3;
   const gridPixelDimension = tileSizePx * gridSize + TILE_GAP * (gridSize - 1);
 
@@ -2009,10 +2030,10 @@ const handleActiveBonusClick = useCallback(() => {
 
   // Grid-Layout: Bei größeren Feldern wird die Playground-Spalte breiter
   const gridCols = tileSize === 's'
-    ? 'lg:grid-cols-[minmax(250px,1fr)_auto_minmax(250px,1fr)]'
+    ? 'lg:grid-cols-[minmax(260px,1fr)_auto_minmax(260px,1fr)]'
     : tileSize === 'm'
-    ? 'lg:grid-cols-[minmax(200px,0.7fr)_auto_minmax(200px,0.7fr)]'
-    : 'lg:grid-cols-[minmax(180px,0.5fr)_auto_minmax(180px,0.5fr)]';
+    ? 'lg:grid-cols-[minmax(260px,0.7fr)_auto_minmax(260px,0.7fr)]'
+    : 'lg:grid-cols-[minmax(260px,0.5fr)_auto_minmax(260px,0.5fr)]';
 
   const leftComparisonGridSize = comparisonState.left.grid.length;
   const rightComparisonGridSize = comparisonState.right.grid.length;
@@ -2073,9 +2094,9 @@ const handleActiveBonusClick = useCallback(() => {
   const leaderboardTitle =
     mode === "random"
       ? speedrunEnabled
-        ? translate("Speedrun Leaderboard", "Speedrun Leaderboard")
-        : translate("Random Mode Leaderboard", "Random Mode Leaderboard")
-      : translate("Playground Leaderboard", "Playground Leaderboard");
+        ? translate("Speedrun-Bestenliste", "Speedrun Leaderboard")
+        : translate("Zufallsmodus-Bestenliste", "Random Mode Leaderboard")
+      : translate("Playground-Bestenliste", "Playground Leaderboard");
   const leaderboardEmptyText = mode === "random"
     ? speedrunEnabled
       ? translate(
@@ -2174,7 +2195,7 @@ const handleActiveBonusClick = useCallback(() => {
           onClick={() => setShowRandomStatsCard((prev) => !prev)}
           className="flex w-full items-center justify-between px-4 py-3 text-sm font-semibold text-foreground transition-colors hover:text-primary"
         >
-          <span>{translate("Random Mode Statistics", "Random Mode Statistics")}</span>
+          <span>{translate("Zufallsmodus-Statistik", "Random Mode Statistics")}</span>
           {showRandomStatsCard ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
         {showRandomStatsCard && (
@@ -3213,6 +3234,45 @@ const handleActiveBonusClick = useCallback(() => {
         </div>
       )}
 
+        {levelSolvedDialog !== null && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+            <Card className="relative w-full max-w-md border-primary/40 bg-card p-8 text-center shadow-sm">
+              <div className="space-y-4">
+                <h2 className="text-3xl font-black text-primary">
+                  {translate("Level geschafft!", "Level solved!")}
+                </h2>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {levelSolvedDialog >= 10
+                    ? translate("Du hast alle Level gemeistert. Der Free Mode ist freigeschaltet!", "You mastered every level. Free Mode is unlocked!")
+                    : translate(`Der Rover hat gelernt, das Ziel zuverlässig zu finden. Level ${levelSolvedDialog + 1} ist freigeschaltet.`, `The rover learned to find the goal reliably. Level ${levelSolvedDialog + 1} is unlocked.`)}
+                </p>
+                <div className="flex flex-wrap justify-center gap-3 pt-2">
+                  {levelSolvedDialog < 10 && (
+                    <Button
+                      onClick={() => {
+                        setLevelSolvedDialog(null);
+                        setCelebration(null);
+                        onNextLevel?.();
+                      }}
+                    >
+                      {translate(`Weiter zu Level ${levelSolvedDialog + 1}`, `Continue to level ${levelSolvedDialog + 1}`)}
+                    </Button>
+                  )}
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setLevelSolvedDialog(null);
+                      setCelebration(null);
+                    }}
+                  >
+                    {translate("Hier bleiben", "Stay here")}
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
         {celebration && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4">
             <Card className="relative w-full max-w-xl overflow-hidden border-primary/40 bg-card/95 p-8 text-center shadow-sm">
@@ -3220,7 +3280,7 @@ const handleActiveBonusClick = useCallback(() => {
               <div className="absolute -bottom-12 -right-12 h-36 w-36 rounded-full bg-accent/30 blur-3xl" />
               <div className="relative space-y-4">
                 <h2 className="text-3xl md:text-4xl font-black text-primary drop-shadow">
-                  {translate("Congratulations!", "Congratulations!")}
+                  {translate("Glückwunsch!", "Congratulations!")}
                 </h2>
                 <p className="text-sm uppercase tracking-wide text-primary/80">
                   {translate("Mission", "Mission")} #{celebration.rank}
@@ -3261,7 +3321,7 @@ const handleActiveBonusClick = useCallback(() => {
               onClick={() => setShowPlaygroundStatsCard((prev) => !prev)}
               className="flex w-full items-center justify-between text-left text-sm font-semibold text-foreground"
             >
-              <span>{translate("Playground Statistics", "Playground Statistics")}</span>
+              <span>{translate("Playground-Statistik", "Playground Statistics")}</span>
               {showPlaygroundStatsCard ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>
             {showPlaygroundStatsCard && (
@@ -3297,7 +3357,7 @@ const handleActiveBonusClick = useCallback(() => {
           </Card>
         )}
 
-        <div className="relative">
+        <div className="relative" ref={layoutRef}>
           <div
             className={cn("flex flex-col gap-6 lg:grid lg:items-stretch transition-opacity", gridCols)}
             aria-disabled={mode === "comparison"}
@@ -3382,7 +3442,7 @@ const handleActiveBonusClick = useCallback(() => {
                   <CollapsibleTrigger className="w-full">
                     <div className="flex items-center justify-between cursor-pointer">
                       <h3 className="text-base font-bold text-foreground">
-                        {translate("Reward History", "Reward History")}
+                        {translate("Reward-Verlauf", "Reward History")}
                       </h3>
                       {showRewardHistory ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </div>
@@ -3692,6 +3752,23 @@ const handleActiveBonusClick = useCallback(() => {
               >
                 <span className="rr-rover" />
               </div>
+              {mode === "playground" && goalFlash && (
+                <div
+                  key={goalFlash.key}
+                  className="absolute pointer-events-none flex items-center justify-center"
+                  style={{
+                    left: goalFlash.x * (tileSizePx + TILE_GAP),
+                    top: goalFlash.y * (tileSizePx + TILE_GAP),
+                    width: tileSizePx,
+                    height: tileSizePx,
+                    zIndex: 11,
+                  }}
+                  aria-hidden
+                >
+                  <span className="absolute inset-0 rounded-lg bg-primary/50 animate-ping" />
+                  <span className="rr-rover" />
+                </div>
+              )}
             </div>
             </div>
 
@@ -3772,7 +3849,7 @@ const handleActiveBonusClick = useCallback(() => {
                 className="flex items-center justify-between w-full text-left lg:pointer-events-none"
               >
                 <h2 className="text-xl font-bold gradient-text">
-                  {translate("Settings", "Settings")}
+                  {translate("Einstellungen", "Settings")}
                 </h2>
                 <ChevronDown className={cn("h-5 w-5 transition-transform lg:hidden", showSettingsPanel && "rotate-180")} />
               </button>
@@ -3782,7 +3859,7 @@ const handleActiveBonusClick = useCallback(() => {
             <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-4">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <h3 className="text-lg font-bold text-foreground">
-                  {translate("Q-Values & Exploration", "Q-Values & Exploration")}
+                  {translate("Q-Werte & Exploration", "Q-Values & Exploration")}
                 </h3>
                 <div className="flex flex-col items-end gap-3">
                   <div className="space-y-1">

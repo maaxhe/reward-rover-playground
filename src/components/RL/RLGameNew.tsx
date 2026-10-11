@@ -310,7 +310,7 @@ export function RLGameNew() {
 
         {/* Right Content - Game */}
         <div className="flex-1 min-w-0 md:overflow-auto">
-          <LevelProvider levelMode={isLevelMode} currentLevel={currentLevel} onLevelSolved={handleLevelSolved}>
+          <LevelProvider levelMode={isLevelMode} currentLevel={currentLevel} onLevelSolved={handleLevelSolved} onNextLevel={() => goToLevel(currentLevel + 1)}>
             <RLGame explorationRate={explorationRate} alpha={alpha} gamma={gamma} onAuthTokenChange={handleAuthTokenChange} onComparisonActiveChange={setComparisonActive} />
           </LevelProvider>
         </div>

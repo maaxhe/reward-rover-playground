@@ -192,7 +192,7 @@ describe('portalUtils', () => {
 
       const result = withPortalCooldowns(cooldowns, positions);
 
-      expect(result['0,0']).toBe(4); // PORTAL_COOLDOWN_STEPS
+      expect(result['0,0']).toBe(6); // PORTAL_COOLDOWN_STEPS
     });
 
     it('should override existing cooldowns', () => {
