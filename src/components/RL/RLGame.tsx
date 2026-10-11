@@ -52,7 +52,6 @@ import {
   TILE_SIZE_MAP,
   TUTORIAL_STORAGE_KEY,
   LEVEL_COACH_STORAGE_KEY,
-  GUIDE_AUTO_STORAGE_KEY,
   TileSizeOption,
   TileState,
   buildSpeedrunState,
@@ -437,21 +436,34 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
       console.warn("Could not save coach status", e);
     }
   }, [currentLevel]);
-  // Level 1: open the "How does the rover learn?" guide once, before the first hint popups.
+  // Level 1: every time the game is opened, show the "How does the rover learn?" guide first, then the hint popups.
+  const level1IntroDone = useRef(false);
+  const level1GuideShown = useRef(false);
+  const level1GuideSeenOpen = useRef(false);
   useEffect(() => {
-    if (!levelMode || currentLevel !== 1 || tutorialOpen || mode !== "playground") return;
+    if (!levelMode || currentLevel !== 1 || tutorialOpen || mode !== "playground" || level1GuideShown.current) return;
     try {
-      if (localStorage.getItem(GUIDE_AUTO_STORAGE_KEY)) return;
-      localStorage.setItem(GUIDE_AUTO_STORAGE_KEY, "true");
-      setRlDialogOpen(true);
-    } catch (e) {
-      console.warn("Could not save guide status", e);
+      // The general tutorial opens in its own effect; wait for it instead of stacking dialogs.
+      if (!localStorage.getItem(TUTORIAL_STORAGE_KEY)) return;
+    } catch {
+      /* ignore */
     }
+    level1GuideShown.current = true;
+    setRlDialogOpen(true);
   }, [levelMode, currentLevel, tutorialOpen, mode]);
-  // Open automatically on the first visit of a level (after the general tutorial and the guide are done).
+  // Hint popups open on the first visit of a level; level 1 shows them on every page load, right after the guide.
   useEffect(() => {
+    if (rlDialogOpen) level1GuideSeenOpen.current = true;
     if (!levelMode || tutorialOpen || rlDialogOpen || mode !== "playground") {
       setCoachStep(null);
+      return;
+    }
+    if (currentLevel === 1) {
+      if (!level1GuideSeenOpen.current) return;
+      if (!level1IntroDone.current) {
+        level1IntroDone.current = true;
+        setCoachStep(0);
+      }
       return;
     }
     try {
