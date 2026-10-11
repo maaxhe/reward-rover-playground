@@ -2530,7 +2530,7 @@ const handleActiveBonusClick = useCallback(() => {
                   onClick={() => setRlDialogOpen(true)}
                   className="text-xs"
                 >
-                  {translate("Mehr über Reinforcement Learning", "Learn more about reinforcement learning")}
+                  📖 {translate("Erklärung: Wie lernt der Rover?", "Guide: How does the rover learn?")}
                 </Button>
               </div>
             </CollapsibleContent>
