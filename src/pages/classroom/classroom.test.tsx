@@ -58,10 +58,10 @@ describe("classroom pages", () => {
     expect(fastSwitch.getAttribute("aria-checked")).toBe("false");
     fireEvent.click(fastSwitch); // normal speed is too slow for a unit test
     fireEvent.click(screen.getByText("▶ Trainieren"));
-    await waitFor(() => expect(screen.getByText(/Episoden:/).textContent).toMatch(/Episoden:\s*[1-9]/), { timeout: 3000 });
+    await waitFor(() => expect(screen.getByText(/Episoden:/).textContent).toMatch(/Episoden:\s*[1-9]/), { timeout: 12000 });
     // the statistics card fills with the learning curve once episodes are done
     expect(screen.getByText("Deine Statistik")).toBeTruthy();
-    await waitFor(() => expect(screen.getByRole("img", { name: /Schritte pro Episode\. Letzte Episode: \d+ Schritte/ })).toBeTruthy(), { timeout: 3000 });
+    await waitFor(() => expect(screen.getByRole("img", { name: /Schritte pro Episode\. Letzte Episode: \d+ Schritte/ })).toBeTruthy(), { timeout: 12000 });
     fireEvent.click(screen.getByText("✓ Jetzt werten"));
     await waitFor(() => expect(submits.length).toBeGreaterThan(0));
     expect(Object.keys((submits[0] as { qTable: object }).qTable).length).toBeGreaterThan(0);
@@ -74,9 +74,13 @@ describe("classroom pages", () => {
     await waitFor(() => expect(screen.getByText("▶ Trainieren")).toBeTruthy());
     fireEvent.click(screen.getByRole("switch", { name: /Schnell/ })); // normal speed would take minutes
     fireEvent.click(screen.getByText("▶ Trainieren"));
-    await waitFor(() => expect(screen.getByText("Budget aufgebraucht")).toBeTruthy(), { timeout: 5000 });
+    await waitFor(() => expect(screen.getByText("Budget aufgebraucht")).toBeTruthy(), { timeout: 25000 });
     expect(screen.getByText(/Episoden:/).textContent).toMatch(/10\s*\/\s*10/);
-  });
+    // restarting gives the whole budget back
+    fireEvent.click(screen.getByText("↺ Neu starten"));
+    await waitFor(() => expect(screen.getByText(/Episoden:/).textContent).toMatch(/0\s*\/\s*10/));
+    expect(screen.getByText("▶ Trainieren")).toBeTruthy();
+  }, 40000);
 
   it("host view shows the code and the start button in the lobby", async () => {
     localStorage.setItem("rr-class-host-1234", JSON.stringify("hostkey"));

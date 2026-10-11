@@ -16,10 +16,10 @@ import { TrainingStats, type EpisodeRecord, type TestRecord } from "./TrainingSt
 import { shortestPathLength } from "@/lib/levelObjectives";
 import { useRoom, useTick } from "./useRoom";
 
-const FAST_STEPS_PER_TICK = 300;
-/** Normal speed is one step per 280 ms so students can follow the rover; "Schnell" does many steps per 60 ms tick. */
+/** Normal speed is one step per 280 ms so students can follow the rover; "Schnell" is ~15x faster, not instant. */
 const SLOW_TICK_MS = 280;
-const FAST_TICK_MS = 60;
+const FAST_TICK_MS = 100;
+const FAST_STEPS_PER_TICK = 6;
 const SUBMIT_EVERY_MS = 3000;
 /** How often (in episodes) the greedy test score is sampled for the statistics chart. */
 const TEST_SNAPSHOT_EVERY = 2;
@@ -210,7 +210,8 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
   const preview = useMemo(() => runTest(world, view.qTable), [world, view.qTable]);
 
   const reset = () => {
-    usedBase.current += stateRef.current.episode;
+    // Full restart: the used episodes come back too, so an accidental "Schnell" doesn't burn the whole budget.
+    usedBase.current = 0;
     episodeLog.current = [];
     testLog.current = [];
     setStats({ episodes: [], tests: [] });
@@ -248,6 +249,7 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
             showArrows={showArrows}
             qTable={view.qTable}
             label="Spielfeld"
+            glideMs={running && !fast ? SLOW_TICK_MS : 0}
           />
         )}
         {replayError && <p className="text-sm text-destructive">{replayError}</p>}
@@ -271,7 +273,7 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
               <Button disabled={!canTrain} onClick={() => setRunning((r) => !r)}>
                 {running ? "⏸ Pause" : budgetLeft === 0 ? "Budget aufgebraucht" : "▶ Trainieren"}
               </Button>
-              <Button variant="outline" onClick={reset} disabled={view.episode === 0 && Object.keys(view.qTable).length === 0}>
+              <Button variant="outline" onClick={reset} disabled={used === 0 && Object.keys(view.qTable).length === 0}>
                 ↺ Neu starten
               </Button>
               <Button variant="secondary" disabled={!trainingOpen} onClick={submit}>
@@ -281,7 +283,7 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <div className="flex items-center gap-2">
                 <Switch id="fast" checked={fast} onCheckedChange={setFast} />
-                <Label htmlFor="fast" className="text-sm">Schnell (verbraucht das Budget in Sekunden)</Label>
+                <Label htmlFor="fast" className="text-sm">Schnell (verbraucht Episoden deutlich schneller)</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Switch id="arrows" checked={showArrows} onCheckedChange={setShowArrows} />
@@ -289,7 +291,7 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              „Neu starten“ löscht das Gelernte, verbrauchte Episoden kommen aber nicht zurück.
+              „Neu starten“ löscht das Gelernte und gibt dir alle Episoden zurück – die Zeit läuft aber weiter.
             </p>
           </Card>
         )}

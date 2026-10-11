@@ -20,8 +20,8 @@ export interface LevelObjective {
 
 export const LEVEL_OBJECTIVES: Record<LevelNumber, LevelObjective> = {
   1: {
-    efficientEpisodes: 3,
-    stepFactor: 2.5,
+    efficientEpisodes: 2,
+    stepFactor: 3.5,
     hint: {
       de: "Anfangs läuft der Rover fast blind. Mit jeder Runde merkt er sich bessere Wege. Probiere die Erkundungsrate: zu niedrig und er probiert nichts Neues, zu hoch und er läuft weiter zufällig.",
       en: "At first the rover moves almost blindly. Each run it remembers better paths. Try the exploration rate: too low and it never tries anything new, too high and it keeps wandering randomly.",
