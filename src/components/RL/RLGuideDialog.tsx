@@ -116,6 +116,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             <GuideDemo
               world={DEMO_WORLD}
               initial={{ epsilon: 0.25, alpha: 0.4, gamma: 0.95 }}
+              nudge={{ de: "Schau zu, wie nach und nach Pfeile erscheinen. Mit „Schneller“ oder „Von vorn“ kannst du das Lernen beschleunigen oder neu starten.", en: "Watch the arrows appear one by one. “Faster” and “Start over” let you speed up or restart the learning." }}
               translate={t}
               caption={({ episode, lastSteps, shortest }) =>
                 episode === 0
@@ -159,6 +160,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             <GuideDemo
               world={DEMO_WORLD}
               initial={{ epsilon: 0.8, alpha: 0.5, gamma: 0.95 }}
+              nudge={{ de: "Zieh die Neugier ε auf 0 und schau, ob der Rover bei einem schlechten Weg hängen bleibt. Dann auf 1: lernt er noch etwas?", en: "Drag curiosity ε to 0 and see whether the rover gets stuck on a poor path. Then to 1: does it still learn anything?" }}
               dials={["epsilon"]}
               translate={t}
               caption={({ settings, episode }) =>
@@ -189,6 +191,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             <GuideDemo
               world={DEMO_WORLD}
               initial={{ epsilon: 0.2, alpha: 0.05, gamma: 0.95 }}
+              nudge={{ de: "Zieh die Lernrate α hoch und runter und vergleiche, wie schnell die Schritte pro Runde sinken.", en: "Drag the learning rate α up and down and compare how fast the steps per run drop." }}
               dials={["alpha"]}
               translate={t}
               caption={({ settings }) =>
@@ -217,6 +220,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             <GuideDemo
               world={FORESIGHT_WORLD}
               initial={{ epsilon: 0.3, alpha: 0.5, gamma: 0.1 }}
+              nudge={{ de: "Zieh die Weitsicht γ auf 0 und dann auf 1. Läuft der Rover zum Bonbon oder zum Ziel?", en: "Drag foresight γ to 0 and then to 1. Does the rover go for the candy or for the goal?" }}
               dials={["gamma"]}
               consumeRewards={false}
               translate={t}

@@ -23,6 +23,8 @@ interface Props {
   /** Rewards vanish when eaten (default) or stay on the board with decaying payout. */
   consumeRewards?: boolean;
   translate: (de: string, en: string) => string;
+  /** A pulsing hint bubble that tells the reader what to try; it disappears after the first interaction. */
+  nudge?: { de: string; en: string };
   /** One sentence under the board that reacts to what the rover is doing. */
   caption?: (info: { episode: number; lastSteps: number | null; shortest: number; settings: DemoSettings }) => string;
 }
@@ -38,11 +40,21 @@ const DIAL_META: Record<DialName, { symbol: string; de: string; en: string; step
 const reducedMotion = () =>
   typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+const Nudge = ({ text }: { text: string }) => (
+  <p
+    role="note"
+    className="tutorial-spotlight relative z-0 rounded-2xl border border-primary/60 bg-primary/10 px-4 py-3 text-base font-semibold leading-6 text-foreground"
+  >
+    👉 {text}
+  </p>
+);
+
 /**
  * A live Q-learning rover for the explainer: the real learning step from the game, a few dials,
  * and numbers that show what the dials do. Pauses itself while scrolled out of view.
  */
-export function GuideDemo({ world, initial, dials = [], consumeRewards = true, translate: t, caption }: Props) {
+export function GuideDemo({ world, initial, dials = [], consumeRewards = true, translate: t, nudge, caption }: Props) {
+  const [touched, setTouched] = useState(false);
   const fresh = useCallback((): PlaygroundState => ({ ...worldToState(world), isRunning: true }), [world]);
   const stateRef = useRef<PlaygroundState>(fresh());
   const [view, setView] = useState<PlaygroundState>(stateRef.current);
@@ -138,6 +150,8 @@ export function GuideDemo({ world, initial, dials = [], consumeRewards = true, t
               : t(`Der Rover kennt ${known} von ${walkable} Feldern.`, `The rover knows ${known} of ${walkable} tiles.`)}
           </p>
 
+          {nudge && !touched && dials.length > 0 && <Nudge text={t(nudge.de, nudge.en)} />}
+
           {dials.map((d) => {
             const meta = DIAL_META[d];
             return (
@@ -154,14 +168,19 @@ export function GuideDemo({ world, initial, dials = [], consumeRewards = true, t
                   max={1}
                   step={meta.step}
                   value={[settings[d]]}
-                  onValueChange={([v]) => setSettings((s) => ({ ...s, [d]: v }))}
+                  onValueChange={([v]) => {
+                    setTouched(true);
+                    setSettings((s) => ({ ...s, [d]: v }));
+                  }}
                   aria-label={t(meta.de, meta.en)}
                 />
               </div>
             );
           })}
 
-          <div className="flex flex-wrap gap-2 pt-1">
+          {nudge && !touched && dials.length === 0 && <Nudge text={t(nudge.de, nudge.en)} />}
+
+          <div className="flex flex-wrap gap-2 pt-1" onClickCapture={() => setTouched(true)}>
             <Button size="sm" variant="outline" onClick={() => setPaused((p) => !p)}>
               {paused ? t("▶ Weiter", "▶ Resume") : t("⏸ Pause", "⏸ Pause")}
             </Button>
