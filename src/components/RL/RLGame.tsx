@@ -94,6 +94,8 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   }, []);
   const [goalFlash, setGoalFlash] = useState<{ x: number; y: number; key: number } | null>(null);
   const unlockedFeatures = levelMode ? getUnlockedFeatures(currentLevel as LevelNumber) : null;
+  const unlockedFeaturesRef = useRef(unlockedFeatures);
+  unlockedFeaturesRef.current = unlockedFeatures;
 
   const placementModeRef = useRef<PlaceableTile>("obstacle");
   // Free Mode: "set goal" armed → the next tile click moves the goal there.
@@ -357,6 +359,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   // Tutorial Slides
   const tutorialSlides = useMemo(() => [
     {
+      target: "board",
       title: translate("Willkommen bei Reward Rover", "Welcome to Reward Rover"),
       content: translate(
         "Entdecke, wie Reinforcement Learning funktioniert! Der Rover lernt eigenständig, welche Wege zum Ziel führen.",
@@ -364,6 +367,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
       ),
     },
     {
+      target: "start",
       title: translate("Der Start-Button ▶️", "The Start Button ▶️"),
       content: translate(
         "Drücke den Start-Button im linken Panel, um den Lernprozess zu starten. Der Rover beginnt dann, das Spielfeld zu erkunden.",
@@ -371,6 +375,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
       ),
     },
     {
+      target: "board",
       title: translate("Pfeiltasten = Impulse geben! ⌨️", "Arrow Keys = Give Hints! ⌨️"),
       content: translate(
         "WICHTIG: Die Pfeiltasten steuern den Rover NICHT direkt! Sie geben ihm nur kurzfristige Impulse in eine Richtung. Der Rover entscheidet weiterhin selbst und lernt dabei.",
@@ -383,6 +388,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
       ],
     },
     {
+      target: "tools",
       title: translate("Gestalte das Spielfeld", "Design the Playfield"),
       content: translate(
         "Nutze die Platzierungs-Tools links, um Hindernisse, Belohnungen oder Strafen zu platzieren. Experimentiere und beobachte, wie der Rover lernt!",
@@ -414,6 +420,16 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
       setTutorialStep(prev => prev - 1);
     }
   }, [tutorialStep]);
+
+  // Highlight the element the current slide talks about.
+  const highlightTarget = tutorialOpen ? tutorialSlides[tutorialStep]?.target : undefined;
+  useEffect(() => {
+    if (!highlightTarget) return;
+    const els = Array.from(document.querySelectorAll<HTMLElement>(`[data-tutorial="${highlightTarget}"]`));
+    els.forEach((el) => el.classList.add("tutorial-spotlight"));
+    els[0]?.scrollIntoView({ block: "center", behavior: "smooth" });
+    return () => els.forEach((el) => el.classList.remove("tutorial-spotlight"));
+  }, [highlightTarget]);
 
   // Check if tutorial was already seen
   useEffect(() => {
@@ -1091,6 +1107,17 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
       }
       if (mode === "playground") {
         const selectedType = placementModeRef.current;
+        // Im Level-Modus nur Felder platzieren, die schon freigeschaltet sind (der Button kann grau sein, der gewählte Typ bleibt trotzdem gesetzt).
+        const features = unlockedFeaturesRef.current;
+        if (features) {
+          const allowed =
+            selectedType === "obstacle" ? features.canPlaceWalls
+            : selectedType === "reward" ? features.canPlaceRewards
+            : selectedType === "punishment" ? features.canPlacePunishments
+            : selectedType === "portal" ? features.canPlacePortals
+            : true;
+          if (!allowed) return;
+        }
         setPlaygroundState((prev) => {
           if ((x === prev.agent.x && y === prev.agent.y) || (x === prev.goal.x && y === prev.goal.y)) {
             return prev;
@@ -2237,8 +2264,12 @@ const handleActiveBonusClick = useCallback(() => {
   return (
     <>
       {/* Tutorial Dialog */}
-      <Dialog open={tutorialOpen} onOpenChange={setTutorialOpen}>
-        <DialogContent className="max-w-2xl">
+      <Dialog open={tutorialOpen} onOpenChange={setTutorialOpen} modal={false}>
+        <DialogContent
+          hideOverlay
+          onInteractOutside={(e) => e.preventDefault()}
+          className="max-w-2xl top-auto bottom-4 translate-y-0 data-[state=open]:slide-in-from-top-0 data-[state=closed]:slide-out-to-top-0 shadow-2xl border-primary/40"
+        >
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle className="text-2xl font-bold">{currentSlide?.title}</DialogTitle>
@@ -2702,6 +2733,52 @@ const handleActiveBonusClick = useCallback(() => {
                 <div className="space-y-1">
                   <div className="flex justify-between">
                     <div className="flex items-center gap-1.5">
+                      <span>{translate("Exploration:", "Exploration:")}</span>
+                      <button
+                        onClick={() => setShowComparisonLeftExplorationInfo(!showComparisonLeftExplorationInfo)}
+                        className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                        aria-label="Toggle info"
+                      >
+                        <Info className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <span className="font-bold">{Math.round(comparisonState.left.explorationRate * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={comparisonState.left.explorationRate}
+                    onChange={(e) =>
+                      setComparisonState((prev) => ({
+                        ...prev,
+                        left: { ...prev.left, explorationRate: e.target.valueAsNumber },
+                      }))
+                    }
+                    className="input-slider w-full"
+                    style={{ "--slider-value": comparisonState.left.explorationRate } as CSSProperties}
+                  />
+                  <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+                    <span className="font-medium">
+                      {translate("← Ausbeutung", "← Exploitation")}
+                    </span>
+                    <span className="font-medium">
+                      {translate("Entdeckung →", "Exploration →")}
+                    </span>
+                  </div>
+                  {showComparisonLeftExplorationInfo && (
+                    <p className="text-sm text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
+                      {translate(
+                        "Bestimmt, wie oft der Rover neue Wege ausprobiert statt bekannte Routen zu nutzen. Hohe Werte = mehr Entdecken, niedrige Werte = mehr Ausbeuten bereits gelernter Strategien.",
+                        "Determines how often the rover tries new paths instead of using known routes. Higher values explore more, lower values exploit known strategies."
+                      )}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <div className="flex items-center gap-1.5">
                       <span>{translate("Lernrate (α):", "Learning rate (α):")}</span>
                       <button
                         onClick={() => setShowComparisonLeftAlphaInfo(!showComparisonLeftAlphaInfo)}
@@ -2771,52 +2848,6 @@ const handleActiveBonusClick = useCallback(() => {
                       {translate(
                         "Gewichtet zukünftige Belohnungen. Hohe Werte = langfristige Planung, niedrige Werte = kurzfristige Belohnungen bevorzugen.",
                         "Weights future rewards. High values = long-term planning, low values = prefer immediate rewards."
-                      )}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <span>{translate("Exploration:", "Exploration:")}</span>
-                      <button
-                        onClick={() => setShowComparisonLeftExplorationInfo(!showComparisonLeftExplorationInfo)}
-                        className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-                        aria-label="Toggle info"
-                      >
-                        <Info className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <span className="font-bold">{Math.round(comparisonState.left.explorationRate * 100)}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={comparisonState.left.explorationRate}
-                    onChange={(e) =>
-                      setComparisonState((prev) => ({
-                        ...prev,
-                        left: { ...prev.left, explorationRate: e.target.valueAsNumber },
-                      }))
-                    }
-                    className="input-slider w-full"
-                    style={{ "--slider-value": comparisonState.left.explorationRate } as CSSProperties}
-                  />
-                  <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
-                    <span className="font-medium">
-                      {translate("← Ausbeutung", "← Exploitation")}
-                    </span>
-                    <span className="font-medium">
-                      {translate("Entdeckung →", "Exploration →")}
-                    </span>
-                  </div>
-                  {showComparisonLeftExplorationInfo && (
-                    <p className="text-sm text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
-                      {translate(
-                        "Bestimmt, wie oft der Rover neue Wege ausprobiert statt bekannte Routen zu nutzen. Hohe Werte = mehr Entdecken, niedrige Werte = mehr Ausbeuten bereits gelernter Strategien.",
-                        "Determines how often the rover tries new paths instead of using known routes. Higher values explore more, lower values exploit known strategies."
                       )}
                     </p>
                   )}
@@ -2959,6 +2990,52 @@ const handleActiveBonusClick = useCallback(() => {
                 <div className="space-y-1">
                   <div className="flex justify-between">
                     <div className="flex items-center gap-1.5">
+                      <span>{translate("Exploration:", "Exploration:")}</span>
+                      <button
+                        onClick={() => setShowComparisonRightExplorationInfo(!showComparisonRightExplorationInfo)}
+                        className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                        aria-label="Toggle info"
+                      >
+                        <Info className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <span className="font-bold">{Math.round(comparisonState.right.explorationRate * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={comparisonState.right.explorationRate}
+                    onChange={(e) =>
+                      setComparisonState((prev) => ({
+                        ...prev,
+                        right: { ...prev.right, explorationRate: e.target.valueAsNumber },
+                      }))
+                    }
+                    className="input-slider w-full"
+                    style={{ "--slider-value": comparisonState.right.explorationRate } as CSSProperties}
+                  />
+                  <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+                    <span className="font-medium">
+                      {translate("← Ausbeutung", "← Exploitation")}
+                    </span>
+                    <span className="font-medium">
+                      {translate("Entdeckung →", "Exploration →")}
+                    </span>
+                  </div>
+                  {showComparisonRightExplorationInfo && (
+                    <p className="text-sm text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
+                      {translate(
+                        "Bestimmt, wie oft der Rover neue Wege ausprobiert statt bekannte Routen zu nutzen. Hohe Werte = mehr Entdecken, niedrige Werte = mehr Ausbeuten bereits gelernter Strategien.",
+                        "Determines how often the rover tries new paths instead of using known routes. Higher values explore more, lower values exploit known strategies."
+                      )}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <div className="flex items-center gap-1.5">
                       <span>{translate("Lernrate (α):", "Learning rate (α):")}</span>
                       <button
                         onClick={() => setShowComparisonRightAlphaInfo(!showComparisonRightAlphaInfo)}
@@ -3028,52 +3105,6 @@ const handleActiveBonusClick = useCallback(() => {
                       {translate(
                         "Gewichtet zukünftige Belohnungen. Hohe Werte = langfristige Planung, niedrige Werte = kurzfristige Belohnungen bevorzugen.",
                         "Weights future rewards. High values = long-term planning, low values = prefer immediate rewards."
-                      )}
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <span>{translate("Exploration:", "Exploration:")}</span>
-                      <button
-                        onClick={() => setShowComparisonRightExplorationInfo(!showComparisonRightExplorationInfo)}
-                        className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-                        aria-label="Toggle info"
-                      >
-                        <Info className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <span className="font-bold">{Math.round(comparisonState.right.explorationRate * 100)}%</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={0}
-                    max={1}
-                    step={0.01}
-                    value={comparisonState.right.explorationRate}
-                    onChange={(e) =>
-                      setComparisonState((prev) => ({
-                        ...prev,
-                        right: { ...prev.right, explorationRate: e.target.valueAsNumber },
-                      }))
-                    }
-                    className="input-slider w-full"
-                    style={{ "--slider-value": comparisonState.right.explorationRate } as CSSProperties}
-                  />
-                  <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
-                    <span className="font-medium">
-                      {translate("← Ausbeutung", "← Exploitation")}
-                    </span>
-                    <span className="font-medium">
-                      {translate("Entdeckung →", "Exploration →")}
-                    </span>
-                  </div>
-                  {showComparisonRightExplorationInfo && (
-                    <p className="text-sm text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
-                      {translate(
-                        "Bestimmt, wie oft der Rover neue Wege ausprobiert statt bekannte Routen zu nutzen. Hohe Werte = mehr Entdecken, niedrige Werte = mehr Ausbeuten bereits gelernter Strategien.",
-                        "Determines how often the rover tries new paths instead of using known routes. Higher values explore more, lower values exploit known strategies."
                       )}
                     </p>
                   )}
@@ -3305,6 +3336,29 @@ const handleActiveBonusClick = useCallback(() => {
                     {numberFormatter.format(celebration.reward)}
                   </Badge>
                 </div>
+                {!isAutoRestartEnabled && (
+                  <div className="rounded-lg border border-primary/30 bg-primary/10 p-3 text-sm text-foreground">
+                    <p>
+                      {translate(
+                        "Tipp: Mit Auto-Restart startet der Rover nach jedem Ziel von selbst neu – so lernt er ohne Klicken weiter.",
+                        "Tip: With auto restart the rover starts over by itself after every goal, so it keeps learning without extra clicks.",
+                      )}
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="mt-2"
+                      onClick={() => {
+                        setIsAutoRestartEnabled(true);
+                        setCelebration(null);
+                        if (mode === "playground") setPlaygroundState((prev) => ({ ...prev, isRunning: true }));
+                        else if (mode === "random") setRandomState((prev) => ({ ...prev, isRunning: true }));
+                      }}
+                    >
+                      {translate("Auto-Restart einschalten", "Turn on auto restart")}
+                    </Button>
+                  </div>
+                )}
                 <Button className="mt-4" onClick={() => setCelebration(null)}>
                   {translate("Weiter geht's", "Keep exploring")}
                 </Button>
@@ -3367,7 +3421,7 @@ const handleActiveBonusClick = useCallback(() => {
               ref={consoleScrollRef}
               className={cn(
                 "flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm overflow-y-auto transition-all duration-200 hover:border-primary/30",
-                "h-auto lg:h-[var(--console-height)]",
+                "h-auto lg:min-h-[var(--console-height)]",
                 mode === "comparison" && "pointer-events-none opacity-40 grayscale",
               )}
               style={{
@@ -3666,6 +3720,7 @@ const handleActiveBonusClick = useCallback(() => {
 
             <div
               ref={gridRef}
+              data-tutorial="board"
               tabIndex={0}
               role="application"
               aria-label={translate("Reward Rover Spielfeld", "Reward Rover playfield")}
@@ -3838,7 +3893,7 @@ const handleActiveBonusClick = useCallback(() => {
               ref={settingsScrollRef}
               className={cn(
                 "flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm overflow-y-auto transition-all duration-200 hover:border-primary/30",
-                "h-auto lg:h-[var(--settings-height)]"
+                "h-auto lg:min-h-[var(--settings-height)]"
               )}
               style={{
                 ["--settings-height" as string]: `${cardHeight}px`,

@@ -373,3 +373,17 @@ All colors MUST be HSL.
   outline-offset: 6px;
   border-radius: 0.75rem;
 }
+
+/* Tutorial: pulsierender Rahmen um das Element, über das die aktuelle Folie spricht */
+.tutorial-spotlight {
+  position: relative;
+  z-index: 30;
+  outline: 3px solid hsl(var(--primary));
+  outline-offset: 4px;
+  border-radius: 0.75rem;
+  animation: tutorial-pulse 1.4s ease-in-out infinite;
+}
+@keyframes tutorial-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.55); }
+  50% { box-shadow: 0 0 0 12px hsl(var(--primary) / 0); }
+}

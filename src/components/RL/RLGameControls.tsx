@@ -74,7 +74,7 @@ export const PlaygroundControls = ({
   return (
     <div className="space-y-5">
       <div>
-        <Button className="w-full font-semibold" size="lg" onClick={state.isRunning ? onPause : onStart}>
+        <Button data-tutorial="start" className="w-full font-semibold" size="lg" onClick={state.isRunning ? onPause : onStart}>
           {state.isRunning ? <Pause className="mr-2 h-5 w-5" /> : <Play className="mr-2 h-5 w-5" />}
           {state.isRunning ? translate("Pause", "Pause") : translate("Start", "Start")}
         </Button>
@@ -135,7 +135,7 @@ export const PlaygroundControls = ({
       <Label className="text-base font-semibold text-foreground">
         {translate("Platzierungs-Modus", "Placement Mode")}
       </Label>
-      <div className="grid grid-cols-2 gap-2">
+      <div data-tutorial="tools" className="grid grid-cols-2 gap-2">
         <Button
           variant={placementMode === "obstacle" ? "default" : "outline"}
           onClick={() => onPlacementModeChange("obstacle")}
