@@ -54,7 +54,7 @@ const ClassroomBeamer = () => {
   }
 
   const joinUrl = `${window.location.origin}/klasse?code=${room.code}`;
-  const remainingMs = room.trainingEndsAt - serverNow();
+  const remainingMs = room.trainingEndsAt - (room.pausedAt ?? serverNow());
   const rows = room.leaderboard.slice(0, MAX_ROWS);
   const finished = room.phase === "finished";
 
@@ -65,7 +65,7 @@ const ClassroomBeamer = () => {
           Reward Rover · Runde {room.round}
           {room.levelId ? <span className="ml-3 text-xl font-semibold text-muted-foreground lg:text-2xl">Level {room.levelId}: {levelLabel(room.levelId)}</span> : null}
         </h1>
-        {room.phase === "training" && <span className="text-5xl font-extrabold tabular-nums text-primary lg:text-7xl">⏱ {formatCountdown(remainingMs)}</span>}
+        {room.phase === "training" && <span className="text-5xl font-extrabold tabular-nums text-primary lg:text-7xl">{room.pausedAt ? "⏸" : "⏱"} {formatCountdown(remainingMs)}</span>}
         {finished && <span className="text-4xl font-extrabold lg:text-5xl">🏁 Beendet</span>}
         {room.phase === "lobby" && <span className="text-3xl font-bold lg:text-4xl">Gleich geht's los</span>}
       </header>

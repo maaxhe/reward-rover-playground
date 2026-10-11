@@ -67,7 +67,8 @@ const ClassroomPlay = () => {
         world={room.world}
         phase={room.phase}
         episodeBudget={room.episodeBudget}
-        remainingMs={room.trainingEndsAt - serverNow()}
+        remainingMs={room.trainingEndsAt - (room.pausedAt ?? serverNow())}
+        paused={Boolean(room.pausedAt)}
         leaderboard={room.leaderboard}
         meId={room.me.id}
         myRank={room.me.rank}
@@ -87,6 +88,7 @@ interface TrainerProps {
   phase: "lobby" | "training" | "finished";
   episodeBudget: number;
   remainingMs: number;
+  paused: boolean;
   leaderboard: LeaderboardRow[];
   meId: string;
   myRank: number | null;
@@ -99,7 +101,7 @@ interface TrainerProps {
 const TABLET_MIN_WIDTH = 768;
 const reservedWidth = (w: number) => (w >= TABLET_MIN_WIDTH ? 440 : 48);
 
-const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingMs, leaderboard, meId, myRank, playerCount, totals, vote }: TrainerProps) => {
+const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingMs, paused, leaderboard, meId, myRank, playerCount, totals, vote }: TrainerProps) => {
   const tileSize = useTileSize(world.size, 52, reservedWidth, 200);
   const stateRef = useRef<PlaygroundState>(worldToState(world));
   const [view, setView] = useState<PlaygroundState>(stateRef.current);
@@ -132,7 +134,7 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
   const used = usedBase.current + view.episode;
   const budgetLeft = Math.max(0, episodeBudget - used);
   const trainingOpen = phase === "training" && remainingMs > 0;
-  const canTrain = trainingOpen && budgetLeft > 0;
+  const canTrain = trainingOpen && !paused && budgetLeft > 0;
 
   // ── Training loop ──────────────────────────────────────────────────────────
   const lastSubmittedEpisode = useRef(-1);
@@ -252,7 +254,7 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
       {/* The board stays in view on tablets while the controls next to it scroll. */}
       <div className="space-y-4 md:sticky md:top-4 md:self-start">
         <div className="flex flex-wrap items-center gap-3">
-          <StatusBadge phase={phase} remainingMs={remainingMs} />
+          <StatusBadge phase={phase} remainingMs={remainingMs} paused={paused} />
           <span className="text-sm text-muted-foreground">
             Episoden: <b className="text-foreground">{Math.min(used, episodeBudget)}</b> / {episodeBudget}
           </span>
@@ -333,7 +335,7 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
             <h2 className="text-sm font-semibold uppercase tracking-wide">Test-Lauf</h2>
             <p>
               Dein Rover jetzt (ohne Zufall):{" "}
-              <b>{preview.totalReward} Pkt</b> · {preview.reachedGoal ? `🎯 ${preview.steps} Schritte` : "erreicht das Ziel nicht"}
+              <b>{preview.totalReward} Pkt</b> · {preview.reachedGoal ? `🎯 ${preview.steps} Schritte` : `⏱ Zeitlimit (${preview.steps} Schritte) erreicht – Ziel nicht gefunden`}
             </p>
             {serverResult && (
               <p className="text-muted-foreground">
@@ -366,10 +368,10 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-const StatusBadge = ({ phase, remainingMs }: { phase: string; remainingMs: number }) => {
+const StatusBadge = ({ phase, remainingMs, paused }: { phase: string; remainingMs: number; paused: boolean }) => {
   if (phase === "lobby") return <span className="rounded-full bg-secondary px-3 py-1 text-sm font-semibold">Lobby</span>;
   if (phase === "finished" || remainingMs <= 0) return <span className="rounded-full bg-secondary px-3 py-1 text-sm font-semibold">🏁 Beendet</span>;
-  return <span className="rounded-full bg-primary/15 px-3 py-1 text-sm font-bold tabular-nums text-primary">⏱ {formatCountdown(remainingMs)}</span>;
+  return <span className="rounded-full bg-primary/15 px-3 py-1 text-sm font-bold tabular-nums text-primary">{paused ? "⏸ Pause" : "⏱"} {formatCountdown(remainingMs)}</span>;
 };
 
 interface ParamSliderProps {

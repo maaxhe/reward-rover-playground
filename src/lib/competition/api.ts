@@ -66,6 +66,8 @@ export interface RoomState {
   seed: number;
   serverNow: number;
   trainingEndsAt: number;
+  /** Set while the teacher has frozen the training clock. */
+  pausedAt?: number | null;
   trainingMs: number;
   episodeBudget: number;
   world: CompetitionWorld;
@@ -145,6 +147,8 @@ export const competitionApi = {
     ),
 
   start: (code: string, hostKey: string) => call<{ ok: true }>(`/rooms/${code}/start`, { method: "POST", hostKey }),
+  pause: (code: string, hostKey: string, paused: boolean) =>
+    call<{ ok: true }>(`/rooms/${code}/pause`, { method: "POST", hostKey, body: JSON.stringify({ paused }) }),
   finish: (code: string, hostKey: string) => call<{ ok: true }>(`/rooms/${code}/finish`, { method: "POST", hostKey }),
   kick: (code: string, hostKey: string, playerId: string) =>
     call<{ ok: true }>(`/rooms/${code}/players/${playerId}`, { method: "DELETE", hostKey }),

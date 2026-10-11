@@ -23,7 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tile, TileType } from "./Tile";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/use-toast";
-import { ChevronDown, ChevronUp, Gamepad2, Info, Moon, Pause, Play, Sun, Target } from "lucide-react";
+import { ChevronDown, ChevronUp, Gamepad2, Info, Pause, Play, Target } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { Position, PlaygroundState, ComparisonRoverState } from "@/lib/rl/types";
@@ -99,14 +99,6 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   const rlWorkerRef = useRef<Worker | null>(null);
   // True while we are applying a snapshot from the worker (to avoid re-syncing it back)
   const workerSnapshotRef = useRef(false);
-  const [theme, setTheme] = useState<"light" | "dark">(() => {
-    if (typeof window !== "undefined") {
-      const stored = safeLocalStorageGet("theme");
-      if (stored === "light" || stored === "dark") return stored;
-      return "dark"; // Default immer dark
-    }
-    return "dark";
-  });
   const { language, setLanguage, isEnglish, translate } = useLanguage();
   const [mode, setMode] = useState<Mode>("playground");
   useEffect(() => {
@@ -423,18 +415,6 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
     }
   }, []);
 
-  // Theme effect
-  useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove("light", "dark");
-    root.classList.add(theme);
-    try {
-      localStorage.setItem("theme", theme);
-    } catch (e) {
-      console.warn("Could not save theme preference", e);
-    }
-  }, [theme]);
-
   // Clear animation after it plays
   useEffect(() => {
     if (rewardAnimation) {
@@ -463,9 +443,6 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
     }
   }, [rightRewardAnimation]);
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
-  };
 
   const tileLabels = useMemo(() => TILE_LABELS[language], [language]);
   const sizeLabels = useMemo(() => TILE_SIZE_LABELS[language], [language]);
@@ -2460,17 +2437,6 @@ const handleActiveBonusClick = useCallback(() => {
                   {translate("Login", "Login")}
                 </Button>
               )}
-              <button
-                onClick={toggleTheme}
-                className="flex items-center gap-2 rounded-full border border-border/60 bg-card/70 px-3 py-1.5 hover:bg-card transition-colors"
-                aria-label={translate("Theme umschalten", "Toggle theme")}
-              >
-                {theme === "light" ? (
-                  <Moon className="h-4 w-4 text-muted-foreground" />
-                ) : (
-                  <Sun className="h-4 w-4 text-muted-foreground" />
-                )}
-              </button>
               <div className="flex items-center gap-2 rounded-full border border-border/60 bg-card/70 px-3 py-1.5">
                 <span className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   <span role="img" aria-hidden>

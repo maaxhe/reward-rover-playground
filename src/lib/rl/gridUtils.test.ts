@@ -102,15 +102,15 @@ describe('gridUtils', () => {
     });
 
     it('should return correct value for punishment', () => {
-      expect(getTileValue('punishment')).toBe(-15);
+      expect(getTileValue('punishment')).toBe(-10);
     });
 
     it('should return correct value for goal', () => {
-      expect(getTileValue('goal')).toBe(24); // REWARD_VALUE * 2
+      expect(getTileValue('goal')).toBe(100); // GOAL_REWARD
     });
 
     it('should return correct value for obstacle', () => {
-      expect(getTileValue('obstacle')).toBe(-20);
+      expect(getTileValue('obstacle')).toBe(-10);
     });
 
     it('should return 0 for portal', () => {

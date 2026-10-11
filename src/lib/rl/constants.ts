@@ -6,9 +6,9 @@ export const LEARNING_RATE = 0.1;
 export const DISCOUNT_FACTOR = 0.85;
 export const STEP_PENALTY = -1;
 export const REWARD_VALUE = 12;
-export const PUNISHMENT_VALUE = -15;
-export const OBSTACLE_PENALTY = -20;
-export const GOAL_REWARD = REWARD_VALUE * 2;
+export const PUNISHMENT_VALUE = -10;
+export const OBSTACLE_PENALTY = -10;
+export const GOAL_REWARD = 100;
 export const PORTAL_COOLDOWN_STEPS = 4;
 
 // Grid Configuration

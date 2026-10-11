@@ -64,7 +64,7 @@ const ClassroomHost = () => {
   }
 
   const joinUrl = `${window.location.origin}/klasse?code=${room.code}`;
-  const remainingMs = room.trainingEndsAt - serverNow();
+  const remainingMs = room.trainingEndsAt - (room.pausedAt ?? serverNow());
   const submittedCount = room.leaderboard.filter((r) => r.submitted).length;
   const top3 = room.leaderboard.filter((r) => r.rank && r.rank <= 3);
 
@@ -98,7 +98,10 @@ const ClassroomHost = () => {
             )}
             {room.phase === "training" && (
               <>
-                <span className="text-3xl font-bold tabular-nums text-primary">⏱ {formatCountdown(remainingMs)}</span>
+                <span className="text-3xl font-bold tabular-nums text-primary">{room.pausedAt ? "⏸" : "⏱"} {formatCountdown(remainingMs)}</span>
+                <Button variant="secondary" disabled={busy} onClick={() => act(() => competitionApi.pause(code, hostKey, !room.pausedAt))}>
+                  {room.pausedAt ? "▶ Weiter" : "⏸ Pause"}
+                </Button>
                 <span className="text-sm text-muted-foreground">{submittedCount} von {room.playerCount} haben schon gewertet</span>
                 <Button variant="outline" disabled={busy} onClick={() => act(() => competitionApi.finish(code, hostKey))}>
                   Jetzt beenden

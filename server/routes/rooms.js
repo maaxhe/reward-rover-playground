@@ -74,7 +74,7 @@ const worldSettingsOf = (settings) => ({
 
 /** Phase is derived lazily so a room finishes even if nobody calls /finish. */
 const currentPhase = (room, now = Date.now()) => {
-  if (room.phase === "training" && now >= room.trainingEndsAt + SUBMIT_GRACE_MS) {
+  if (room.phase === "training" && !room.pausedAt && now >= room.trainingEndsAt + SUBMIT_GRACE_MS) {
     room.phase = "finished";
     markDirty(room, true);
   }
@@ -316,6 +316,7 @@ router.get("/rooms/:code", (req, res) => {
     phase: room.phase,
     serverNow: Date.now(),
     trainingEndsAt: room.trainingEndsAt,
+    pausedAt: room.pausedAt || null,
     trainingMs: room.settings.trainingMinutes * 60 * 1000,
     episodeBudget: room.settings.episodeBudget,
     settings: room.settings,
@@ -339,10 +340,28 @@ router.post("/rooms/:code/start", (req, res) => {
   return res.json({ ok: true, trainingEndsAt: room.trainingEndsAt });
 });
 
+/** Freeze or resume the training clock. While paused nobody can submit, and the pause does not eat training time. */
+router.post("/rooms/:code/pause", (req, res) => {
+  const room = loadRoom(req, res);
+  if (!room || !requireHost(req, res, room)) return;
+  if (room.phase !== "training") return res.status(409).json({ error: "Not in training" });
+  const paused = Boolean(req.body?.paused);
+  const now = Date.now();
+  if (paused && !room.pausedAt) {
+    room.pausedAt = now;
+  } else if (!paused && room.pausedAt) {
+    room.trainingEndsAt += now - room.pausedAt;
+    room.pausedAt = null;
+  }
+  persist(room, true);
+  return res.json({ ok: true, pausedAt: room.pausedAt || null, trainingEndsAt: room.trainingEndsAt });
+});
+
 router.post("/rooms/:code/finish", (req, res) => {
   const room = loadRoom(req, res);
   if (!room || !requireHost(req, res, room)) return;
   if (room.phase === "training") {
+    room.pausedAt = null;
     room.trainingEndsAt = Date.now() - SUBMIT_GRACE_MS;
     room.phase = "finished";
     persist(room, true);
@@ -438,6 +457,7 @@ router.post("/rooms/:code/restart", (req, res) => {
   room.round += 1;
   room.phase = "lobby";
   room.trainingEndsAt = 0;
+  room.pausedAt = null;
   room.vote = { open: false, votes: new Map() };
   persist(room, true);
   return res.json({ ok: true, round: room.round });

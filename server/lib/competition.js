@@ -32,8 +32,8 @@ export const maxStepsFor = (size) => size * size * 2;
 
 const STEP_PENALTY = -1;
 const REWARD_VALUE = 12;
-const PUNISHMENT_VALUE = -15;
-const GOAL_REWARD = REWARD_VALUE * 2;
+const PUNISHMENT_VALUE = -10;
+const GOAL_REWARD = 100;
 
 // Same order as ACTION_DIRS in src/lib/rl/qLearning.ts: up, down, left, right.
 const DIRS = [

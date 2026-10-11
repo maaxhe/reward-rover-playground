@@ -180,7 +180,7 @@ describe('qLearning', () => {
 
       const reward = getTileReward(grid, goals, pos);
 
-      expect(reward).toBe(24); // GOAL_REWARD
+      expect(reward).toBe(100); // GOAL_REWARD
     });
 
     it('should return reward value for reward tile', () => {
@@ -200,7 +200,7 @@ describe('qLearning', () => {
 
       const reward = getTileReward(grid, [], pos);
 
-      expect(reward).toBe(-15); // PUNISHMENT_VALUE
+      expect(reward).toBe(-10); // PUNISHMENT_VALUE
     });
 
     it('should return obstacle penalty for obstacle', () => {
@@ -210,7 +210,7 @@ describe('qLearning', () => {
 
       const reward = getTileReward(grid, [], pos);
 
-      expect(reward).toBe(-20); // OBSTACLE_PENALTY
+      expect(reward).toBe(-10); // OBSTACLE_PENALTY
     });
 
     it('should return 0 for portal', () => {
