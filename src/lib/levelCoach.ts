@@ -3,6 +3,7 @@ import type { LevelNumber } from "@/lib/levelProgression";
 /** Which element a coach popup points at (matches `data-tutorial="…"` in the UI). */
 export type CoachTarget =
   | "objective"
+  | "guide"
   | "start"
   | "board"
   | "explore"
@@ -56,8 +57,17 @@ const placeOnBoard = (tool: string, toolEn: string): CoachSlide => ({
   },
 });
 
+const guide: CoachSlide = {
+  target: "guide",
+  title: { de: "Wie lernt der Rover? 📖", en: "How does the rover learn? 📖" },
+  text: {
+    de: "Klicke auf diesen Button, wenn du verstehen willst, was hinter dem Lernen steckt. Die Erklärung ist kurz, anschaulich und hat kleine Rover zum Ausprobieren. Du kannst sie jederzeit wieder öffnen.",
+    en: "Click this button if you want to understand what is behind the learning. The guide is short, visual and has little rovers to play with. You can reopen it any time.",
+  },
+};
+
 export const LEVEL_COACH: Record<LevelNumber, CoachSlide[]> = {
-  1: [objective, start, explore],
+  1: [guide, objective, start, explore],
   2: [
     objective,
     {

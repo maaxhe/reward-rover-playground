@@ -70,6 +70,7 @@ export const MIN_GOAL_DISTANCE = 5;
 export const BONUS_INTERVAL = 10;
 export const TUTORIAL_STORAGE_KEY = "reward_rover_tutorial_seen";
 export const LEVEL_COACH_STORAGE_KEY = "rr-level-coach-seen";
+export const GUIDE_AUTO_STORAGE_KEY = "rr-guide-auto-opened";
 
 export const EPISODE_TITLES = [
   "Aurora Approach",

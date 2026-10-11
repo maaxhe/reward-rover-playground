@@ -281,7 +281,7 @@ export function RLGuideButton({ className, variant = "outline", size = "sm", com
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button type="button" variant={variant} size={size} className={className} onClick={() => setOpen(true)}>
+      <Button type="button" variant={variant} size={size} className={className} data-tutorial="guide" onClick={() => setOpen(true)}>
         📖 {compact ? translate("Erklärung", "Guide") : translate("Wie lernt der Rover? Erklärung", "How does the rover learn? Guide")}
       </Button>
       <RLGuideDialog open={open} onOpenChange={setOpen} translate={translate} />

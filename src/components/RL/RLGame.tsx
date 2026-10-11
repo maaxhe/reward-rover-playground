@@ -52,6 +52,7 @@ import {
   TILE_SIZE_MAP,
   TUTORIAL_STORAGE_KEY,
   LEVEL_COACH_STORAGE_KEY,
+  GUIDE_AUTO_STORAGE_KEY,
   TileSizeOption,
   TileState,
   buildSpeedrunState,
@@ -436,9 +437,20 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
       console.warn("Could not save coach status", e);
     }
   }, [currentLevel]);
-  // Open automatically on the first visit of a level (after the general tutorial is done).
+  // Level 1: open the "How does the rover learn?" guide once, before the first hint popups.
   useEffect(() => {
-    if (!levelMode || tutorialOpen || mode !== "playground") {
+    if (!levelMode || currentLevel !== 1 || tutorialOpen || mode !== "playground") return;
+    try {
+      if (localStorage.getItem(GUIDE_AUTO_STORAGE_KEY)) return;
+      localStorage.setItem(GUIDE_AUTO_STORAGE_KEY, "true");
+      setRlDialogOpen(true);
+    } catch (e) {
+      console.warn("Could not save guide status", e);
+    }
+  }, [levelMode, currentLevel, tutorialOpen, mode]);
+  // Open automatically on the first visit of a level (after the general tutorial and the guide are done).
+  useEffect(() => {
+    if (!levelMode || tutorialOpen || rlDialogOpen || mode !== "playground") {
       setCoachStep(null);
       return;
     }
@@ -448,7 +460,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
     } catch {
       setCoachStep(0);
     }
-  }, [levelMode, currentLevel, tutorialOpen, mode]);
+  }, [levelMode, currentLevel, tutorialOpen, rlDialogOpen, mode]);
   // The coach is part of the level UI, close it when the rover is started on purpose.
   const activeCoachSlide = coachStep !== null ? coachSlides[coachStep] : undefined;
 
