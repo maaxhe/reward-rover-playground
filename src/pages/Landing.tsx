@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import "@fontsource-variable/bricolage-grotesque";
 import "./landing.css";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
+import { RLGuideButton } from "@/components/RL/RLGuideDialog";
 import { LiveRover } from "@/components/landing/LiveRover";
 
 const REPO_URL = "https://github.com/maaxhe/reward-rover-playground";
@@ -55,6 +56,7 @@ const LandingContent = () => {
             <div className="cta-row">
               <Link to="/spiel" className="btn btn-primary">{translate("Mit Level 1 anfangen", "Start with level 1")}</Link>
               <Link to="/klasse" className="btn btn-ghost">{translate("Eine Klasse einladen", "Invite a class")}</Link>
+              <RLGuideButton size="default" variant="outline" className="h-auto rounded-full border-white/30 bg-transparent px-5 py-3 text-base text-inherit hover:bg-white/10" />
             </div>
           </div>
           <LiveRover translate={translate} />

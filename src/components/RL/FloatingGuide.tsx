@@ -9,7 +9,7 @@ export function FloatingGuide() {
   return (
     <LanguageProvider>
       <div className="fixed bottom-4 right-4 z-40">
-        <RLGuideButton compact variant="default" className="shadow-lg" />
+        <RLGuideButton compact size="default" variant="default" className="rounded-full px-5 text-base shadow-xl ring-2 ring-white/20" />
       </div>
     </LanguageProvider>
   );
