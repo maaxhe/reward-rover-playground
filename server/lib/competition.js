@@ -122,6 +122,36 @@ export const buildWorld = (seed, settings = DEFAULT_WORLD_SETTINGS) => {
   throw new Error("Could not build a solvable world");
 };
 
+/**
+ * Validates a hand-built world sent by the teacher (e.g. a level world). Returns the clean world or null.
+ * Portals are not supported (their random teleports would make the test run unfair).
+ */
+export const buildCustomWorld = (input) => {
+  if (!input || typeof input !== "object") return null;
+  const size = Number(input.size);
+  if (!Number.isInteger(size) || size < 5 || size > 12) return null;
+  const inBounds = (p) => p && Number.isInteger(p.x) && Number.isInteger(p.y) && p.x >= 0 && p.y >= 0 && p.x < size && p.y < size;
+  if (!inBounds(input.agent) || !inBounds(input.goal)) return null;
+  if (input.agent.x === input.goal.x && input.agent.y === input.goal.y) return null;
+  if (!Array.isArray(input.tiles) || input.tiles.length > size * size) return null;
+
+  const used = new Set([key(input.agent.x, input.agent.y), key(input.goal.x, input.goal.y)]);
+  const tiles = [];
+  const blocked = new Set();
+  for (const t of input.tiles) {
+    if (!inBounds(t) || !["obstacle", "reward", "punishment"].includes(t.type)) return null;
+    const k = key(t.x, t.y);
+    if (used.has(k)) return null;
+    used.add(k);
+    tiles.push({ x: t.x, y: t.y, type: t.type });
+    if (t.type === "obstacle") blocked.add(k);
+  }
+  const agent = { x: input.agent.x, y: input.agent.y };
+  const goal = { x: input.goal.x, y: input.goal.y };
+  if (!isReachable(size, blocked, agent, goal)) return null;
+  return { size, agent, goal, tiles, maxSteps: maxStepsFor(size) };
+};
+
 const tileMap = (world) => {
   const map = new Map();
   for (const t of world.tiles) map.set(key(t.x, t.y), t.type);

@@ -5,12 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { competitionApi, type RoomSettings } from "@/lib/competition/api";
+import { LEVEL_NUMBERS, levelHasPortals, levelLabel, levelToCustomWorld } from "@/lib/competition/levelWorld";
 
 interface Props {
   code: string;
   hostKey: string;
   settings: RoomSettings;
   seed: number;
+  /** Level world picked for this room (1–10) or null for a random world. */
+  levelId?: number | null;
   onChanged: () => Promise<void> | void;
   onError: (message: string | null) => void;
 }
@@ -32,11 +35,12 @@ const estimateMinutes = (s: RoomSettings) => {
 };
 
 /** Lobby-only world and round settings. Edits are applied (debounced) so the preview next to it stays live. */
-export const SettingsPanel = ({ code, hostKey, settings, seed, onChanged, onError }: Props) => {
+export const SettingsPanel = ({ code, hostKey, settings, seed, levelId = null, onChanged, onError }: Props) => {
   const [draft, setDraft] = useState<RoomSettings | null>(null);
   const [seedInput, setSeedInput] = useState("");
   const timer = useRef<ReturnType<typeof setTimeout>>();
   const shown = draft ?? settings;
+  const fixedWorld = levelId !== null;
 
   const rows: Row[] = [
     { key: "trainingMinutes", label: "Trainingszeit", hint: "Wie lange dürfen alle üben?", min: 1, max: 30, step: 1, unit: "Min" },
@@ -64,6 +68,19 @@ export const SettingsPanel = ({ code, hostKey, settings, seed, onChanged, onErro
 
   useEffect(() => () => clearTimeout(timer.current), []);
 
+  const pickLevel = async (level: number | null) => {
+    clearTimeout(timer.current);
+    try {
+      if (level === null) await competitionApi.updateSettings(code, hostKey, { ...shown, levelId: null, reroll: true });
+      else await competitionApi.setCustomWorld(code, hostKey, levelToCustomWorld(level), level, shown);
+      onError(null);
+    } catch (e) {
+      onError(e instanceof Error ? e.message : "Fehler");
+    }
+    await onChanged();
+    setDraft(null);
+  };
+
   const change = (key: keyof RoomSettings, value: number) => {
     const next = { ...shown, [key]: value };
     setDraft(next);
@@ -86,6 +103,28 @@ export const SettingsPanel = ({ code, hostKey, settings, seed, onChanged, onErro
         </Button>
       </div>
 
+      <div className="space-y-2">
+        <Label htmlFor="world-source" className="font-semibold">Welt</Label>
+        <select
+          id="world-source"
+          className="h-11 w-full rounded-md border border-input bg-background px-3 text-base"
+          value={levelId ?? ""}
+          onChange={(e) => pickLevel(e.target.value === "" ? null : Number(e.target.value))}
+        >
+          <option value="">Zufällige Welt (unten einstellbar)</option>
+          {LEVEL_NUMBERS.map((n) => (
+            <option key={n} value={n}>
+              Level {n} – {levelLabel(n)}{levelHasPortals(n) ? " (ohne Portale)" : ""}
+            </option>
+          ))}
+        </select>
+        {fixedWorld && (
+          <p className="text-xs text-muted-foreground">
+            Feste Welt aus dem Level-Modus: Größe, Mauern, Belohnungen und Strafen sind vorgegeben. Zeit und Budget kannst du weiter ändern.
+          </p>
+        )}
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2">
         {rows.map((row) => (
           <div key={row.key} className="space-y-1">
@@ -101,6 +140,7 @@ export const SettingsPanel = ({ code, hostKey, settings, seed, onChanged, onErro
               min={row.min}
               max={row.max}
               step={row.step}
+              disabled={fixedWorld && row.key !== "trainingMinutes" && row.key !== "episodeBudget"}
               onValueChange={(v) => change(row.key, v[0])}
             />
             <p className="text-xs text-muted-foreground">
@@ -116,7 +156,7 @@ export const SettingsPanel = ({ code, hostKey, settings, seed, onChanged, onErro
           <Input
             id="seed"
             inputMode="numeric"
-            className="w-44 tabular-nums"
+            className="w-44 tabular-nums md:text-base"
             placeholder={String(seed)}
             value={seedInput}
             onChange={(e) => setSeedInput(e.target.value.replace(/\D/g, "").slice(0, 10))}
@@ -125,7 +165,7 @@ export const SettingsPanel = ({ code, hostKey, settings, seed, onChanged, onErro
         <Button
           variant="outline"
           size="sm"
-          disabled={!seedInput}
+          disabled={!seedInput || fixedWorld}
           onClick={() => {
             setDraft(shown);
             apply({ ...shown, seed: Number(seedInput) });

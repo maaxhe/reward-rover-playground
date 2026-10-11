@@ -6,9 +6,11 @@ import { Card } from "@/components/ui/card";
 import { CompetitionBoard, useTileSize } from "@/components/RL/CompetitionBoard";
 import { competitionApi, sessionStore, type LeaderboardRow, type Replay } from "@/lib/competition/api";
 import { worldToState } from "@/lib/competition/world";
-import { ClassroomShell, Leaderboard, MEDALS, formatCountdown } from "./shared";
+import { ClassroomShell, Leaderboard, MEDALS, TotalsCard, formatCountdown } from "./shared";
 import { ReplayBoard } from "./ReplayBoard";
 import { SettingsPanel } from "./SettingsPanel";
+import { HostVoteCard } from "./VoteCard";
+import { downloadCsv, roundCsv } from "./exportCsv";
 import { useRoom, useTick } from "./useRoom";
 
 const ClassroomHost = () => {
@@ -41,7 +43,7 @@ const ClassroomHost = () => {
   const showReplay = async (row: LeaderboardRow) => {
     setSelected(row);
     try {
-      setReplay(await competitionApi.replay(code, row.id));
+      setReplay(await competitionApi.replay(code, row.id, hostKey ?? undefined));
     } catch (e) {
       setReplay(null);
       setActionError(e instanceof Error ? e.message : "Fehler");
@@ -79,7 +81,11 @@ const ClassroomHost = () => {
               <p className="text-6xl font-extrabold tracking-[0.3em] gradient-text">{room.code}</p>
               <p className="mt-2 text-sm">
                 {room.playerCount} {room.playerCount === 1 ? "Person" : "Personen"} · Training {room.settings.trainingMinutes} Min · Budget {room.settings.episodeBudget} Episoden · {room.world.size}×{room.world.size}
+              {room.round > 1 ? ` · Runde ${room.round}` : ""}{room.levelId ? ` · Level ${room.levelId}` : ""}
               </p>
+              <Button asChild variant="outline" size="sm" className="mt-3">
+                <a href={`/klasse/beamer/${room.code}`} target="_blank" rel="noopener noreferrer">📽 Beamer-Ansicht öffnen</a>
+              </Button>
             </div>
           </Card>
 
@@ -107,6 +113,9 @@ const ClassroomHost = () => {
                 <Button variant="secondary" disabled={busy} onClick={() => act(() => competitionApi.restart(code, hostKey, true))}>
                   🎲 Nochmal – neue Welt
                 </Button>
+                <Button variant="outline" onClick={() => downloadCsv(`reward-rover-${room.code}-runde-${room.round}.csv`, roundCsv(room.leaderboard, room.totals))}>
+                  ⬇ CSV
+                </Button>
                 <span className="text-xs text-muted-foreground">Alle bleiben im Raum, Ergebnisse werden gelöscht. In der Lobby kannst du noch Einstellungen ändern.</span>
               </>
             )}
@@ -131,9 +140,14 @@ const ClassroomHost = () => {
               hostKey={hostKey}
               settings={room.settings}
               seed={room.seed}
+              levelId={room.levelId ?? null}
               onChanged={refresh}
               onError={setActionError}
             />
+          )}
+
+          {room.phase === "lobby" && room.vote && (
+            <HostVoteCard code={code} hostKey={hostKey} vote={room.vote} playerCount={room.playerCount} onChanged={refresh} onError={setActionError} />
           )}
 
           <Leaderboard
@@ -142,6 +156,8 @@ const ClassroomHost = () => {
             selectedId={selected?.id}
             onKick={(row) => act(() => competitionApi.kick(code, hostKey, row.id))}
           />
+
+          {room.totals && room.totals.length > 0 && <TotalsCard totals={room.totals} />}
         </div>
 
         <div className="space-y-3">

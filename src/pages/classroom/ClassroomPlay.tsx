@@ -8,9 +8,11 @@ import { Switch } from "@/components/ui/switch";
 import { CompetitionBoard, useTileSize } from "@/components/RL/CompetitionBoard";
 import { stepPlayground } from "@/lib/rl/playgroundStep";
 import type { PlaygroundState } from "@/lib/rl/types";
-import { competitionApi, sessionStore, type LeaderboardRow, type Replay, type SubmitResult } from "@/lib/competition/api";
+import { competitionApi, sessionStore, type LeaderboardRow, type ParamLog, type Replay, type SubmitResult, type TotalsRow, type VoteState } from "@/lib/competition/api";
 import { runTest, worldToState, type CompetitionWorld } from "@/lib/competition/world";
-import { ClassroomShell, Leaderboard, formatCountdown } from "./shared";
+import { ClassroomShell, Leaderboard, TotalsCard, formatCountdown } from "./shared";
+import { PlayerVoteCard } from "./VoteCard";
+import { GuidedTour, markTourSeen, tourAlreadySeen } from "./GuidedTour";
 import { ReplayBoard } from "./ReplayBoard";
 import { TrainingStats, type EpisodeRecord, type TestRecord } from "./TrainingStats";
 import { shortestPathLength } from "@/lib/levelObjectives";
@@ -69,6 +71,8 @@ const ClassroomPlay = () => {
         meId={room.me.id}
         myRank={room.me.rank}
         playerCount={room.playerCount}
+        totals={room.totals ?? null}
+        vote={room.vote ?? null}
       />
     </ClassroomShell>
   );
@@ -86,16 +90,29 @@ interface TrainerProps {
   meId: string;
   myRank: number | null;
   playerCount: number;
+  totals: TotalsRow[] | null;
+  vote: VoteState | null;
 }
 
-const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingMs, leaderboard, meId, myRank, playerCount }: TrainerProps) => {
-  const tileSize = useTileSize(world.size, 52, 48);
+/** From tablet width on, the controls sit next to the board (leaves ~380 px for them). */
+const TABLET_MIN_WIDTH = 768;
+const reservedWidth = (w: number) => (w >= TABLET_MIN_WIDTH ? 440 : 48);
+
+const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingMs, leaderboard, meId, myRank, playerCount, totals, vote }: TrainerProps) => {
+  const tileSize = useTileSize(world.size, 52, reservedWidth, 200);
   const stateRef = useRef<PlaygroundState>(worldToState(world));
   const [view, setView] = useState<PlaygroundState>(stateRef.current);
   const usedBase = useRef(sessionStore.getUsedEpisodes(code, round));
   const [params, setParams] = useState({ explorationRate: 0.3, alpha: 0.3, gamma: 0.9 });
   const paramsRef = useRef(params);
   paramsRef.current = params;
+  // Which ε/α/γ each episode ran with, as [fromEpisode, ε, α, γ] entries (only when something changed). Sent along with the result.
+  const paramLog = useRef<ParamLog>([]);
+  const [tourStep, setTourStep] = useState<number | null>(() => (tourAlreadySeen() ? null : 0));
+  const closeTour = () => {
+    markTourSeen();
+    setTourStep(null);
+  };
   const [running, setRunning] = useState(false);
   // Off by default: at full speed the whole episode budget is gone in seconds and the training time stops mattering.
   const [fast, setFast] = useState(false);
@@ -131,6 +148,10 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
         if (s.episode > before) {
           const run = s.episodeHistory[s.episodeHistory.length - 1];
           episodeLog.current.push({ episode: s.episode, steps: run.steps, reward: Math.round(run.reward) });
+          const p = paramsRef.current;
+          const entry: ParamLog[number] = [s.episode - 1, round2(p.explorationRate), round2(p.alpha), round2(p.gamma)];
+          const lastEntry = paramLog.current[paramLog.current.length - 1];
+          if (!lastEntry || lastEntry[1] !== entry[1] || lastEntry[2] !== entry[2] || lastEntry[3] !== entry[3]) paramLog.current.push(entry);
           if (s.episode % TEST_SNAPSHOT_EVERY === 0) {
             const t = runTest(world, s.qTable);
             testLog.current.push({ episode: s.episode, reward: t.totalReward, reachedGoal: t.reachedGoal });
@@ -158,7 +179,7 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
   const submit = useCallback(async () => {
     const s = stateRef.current;
     try {
-      const result = await competitionApi.submit(code, session, s.qTable, Math.min(episodeBudget, usedBase.current + s.episode));
+      const result = await competitionApi.submit(code, session, s.qTable, Math.min(episodeBudget, usedBase.current + s.episode), paramLog.current.length ? [...paramLog.current] : undefined);
       lastSubmittedEpisode.current = s.episode;
       setServerResult(result);
       setSubmitError(null);
@@ -214,6 +235,7 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
     usedBase.current = 0;
     episodeLog.current = [];
     testLog.current = [];
+    paramLog.current = [];
     setStats({ episodes: [], tests: [] });
     stateRef.current = worldToState(world);
     setView(stateRef.current);
@@ -224,8 +246,10 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
   const setParam = (key: keyof typeof params) => (v: number[]) => setParams((p) => ({ ...p, [key]: v[0] }));
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[auto_1fr]">
-      <div className="space-y-4">
+    <div className="grid gap-6 md:grid-cols-[auto_1fr]">
+      {tourStep !== null && phase === "training" && <GuidedTour step={tourStep} onStep={setTourStep} onClose={closeTour} />}
+      {/* The board stays in view on tablets while the controls next to it scroll. */}
+      <div className="space-y-4 md:sticky md:top-4 md:self-start">
         <div className="flex flex-wrap items-center gap-3">
           <StatusBadge phase={phase} remainingMs={remainingMs} />
           <span className="text-sm text-muted-foreground">
@@ -241,6 +265,7 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
         {phase === "finished" && replay ? (
           <ReplayBoard world={world} replay={replay} />
         ) : (
+          <div id="tour-board" className="w-fit">
           <CompetitionBoard
             grid={view.grid}
             agent={view.agent}
@@ -251,6 +276,7 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
             label="Spielfeld"
             glideMs={running && !fast ? SLOW_TICK_MS : 0}
           />
+          </div>
         )}
         {replayError && <p className="text-sm text-destructive">{replayError}</p>}
 
@@ -261,37 +287,42 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
         )}
       </div>
 
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4">
+        {phase === "lobby" && vote?.open && <PlayerVoteCard code={code} session={session} vote={vote} />}
+
         {phase === "training" && (
           <Card className="space-y-4 rounded-lg border-border/40 bg-card/60 p-4">
             <h2 className="text-sm font-semibold uppercase tracking-wide">Lernparameter</h2>
+            <div id="tour-params" className="space-y-4">
             <ParamSlider id="eps" label="Neugier ε" hint="Wie oft probiert der Rover Neues?" value={params.explorationRate} min={0} max={1} step={0.05} onChange={setParam("explorationRate")} />
             <ParamSlider id="alpha" label="Lernrate α" hint="Wie stark überschreiben neue Erfahrungen alte?" value={params.alpha} min={0.05} max={1} step={0.05} onChange={setParam("alpha")} />
             <ParamSlider id="gamma" label="Weitsicht γ" hint="Kurzfristig oder langfristig denken?" value={params.gamma} min={0} max={0.99} step={0.01} onChange={setParam("gamma")} />
+            </div>
 
-            <div className="flex flex-wrap gap-2">
-              <Button disabled={!canTrain} onClick={() => setRunning((r) => !r)}>
+            <div id="tour-buttons" className="flex flex-wrap gap-2">
+              <Button className="h-12 text-base" disabled={!canTrain} onClick={() => setRunning((r) => !r)}>
                 {running ? "⏸ Pause" : budgetLeft === 0 ? "Budget aufgebraucht" : "▶ Trainieren"}
               </Button>
-              <Button variant="outline" onClick={reset} disabled={used === 0 && Object.keys(view.qTable).length === 0}>
+              <Button className="h-12 text-base" variant="outline" onClick={reset} disabled={used === 0 && Object.keys(view.qTable).length === 0}>
                 ↺ Neu starten
               </Button>
-              <Button variant="secondary" disabled={!trainingOpen} onClick={submit}>
+              <Button className="h-12 text-base" variant="secondary" disabled={!trainingOpen} onClick={submit}>
                 ✓ Jetzt werten
               </Button>
             </div>
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 py-1">
                 <Switch id="fast" checked={fast} onCheckedChange={setFast} />
                 <Label htmlFor="fast" className="text-sm">Schnell (verbraucht Episoden deutlich schneller)</Label>
               </div>
-              <div className="flex items-center gap-2">
+              <div id="tour-arrows" className="flex items-center gap-2 py-1">
                 <Switch id="arrows" checked={showArrows} onCheckedChange={setShowArrows} />
                 <Label htmlFor="arrows" className="text-sm">Pfeile (bester Zug)</Label>
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              „Neu starten“ löscht das Gelernte und gibt dir alle Episoden zurück – die Zeit läuft aber weiter.
+              „Neu starten“ löscht das Gelernte und gibt dir alle Episoden zurück – die Zeit läuft aber weiter.{" "}
+              <button type="button" className="underline underline-offset-2" onClick={() => setTourStep(0)}>Kurz-Tour</button>
             </p>
           </Card>
         )}
@@ -321,12 +352,17 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
           />
         )}
 
-        <Leaderboard rows={leaderboard} meId={meId} onSelect={phase === "finished" ? showReplay : undefined} selectedId={selected?.id} />
+        <div id="tour-leaderboard">
+          <Leaderboard rows={leaderboard} meId={meId} onSelect={phase === "finished" ? showReplay : undefined} selectedId={selected?.id} />
+        </div>
+        {totals && totals.length > 0 && <TotalsCard totals={totals} meId={meId} />}
         {phase === "finished" && <p className="text-xs text-muted-foreground">Tippe auf einen Namen, um dessen Test-Lauf abzuspielen.</p>}
       </div>
     </div>
   );
 };
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
 
 const StatusBadge = ({ phase, remainingMs }: { phase: string; remainingMs: number }) => {
   if (phase === "lobby") return <span className="rounded-full bg-secondary px-3 py-1 text-sm font-semibold">Lobby</span>;
@@ -350,7 +386,7 @@ const ParamSlider = ({ id, label, hint, value, min, max, step, onChange }: Param
       <Label htmlFor={id} className="font-semibold">{label}</Label>
       <span className="text-sm tabular-nums">{value.toFixed(2)}</span>
     </div>
-    <Slider id={id} value={[value]} min={min} max={max} step={step} onValueChange={onChange} />
+    <Slider id={id} className="py-3" thumbClassName="h-8 w-8" value={[value]} min={min} max={max} step={step} onValueChange={onChange} />
     <p className="text-xs text-muted-foreground">{hint}</p>
   </div>
 );

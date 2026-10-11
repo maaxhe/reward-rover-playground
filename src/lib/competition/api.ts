@@ -6,6 +6,17 @@ const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 
 export type Phase = "lobby" | "training" | "finished";
 
+/** First → last value of ε, α, γ over the training that produced the best result, plus how often they were changed. */
+export interface ParamSummary {
+  epsilon: [number, number];
+  alpha: [number, number];
+  gamma: [number, number];
+  changes: number;
+}
+
+/** One entry per change: [fromEpisode, ε, α, γ]. */
+export type ParamLog = Array<[number, number, number, number]>;
+
 export interface LeaderboardRow {
   id: string;
   name: string;
@@ -15,6 +26,26 @@ export interface LeaderboardRow {
   steps: number | null;
   reachedGoal: boolean;
   rank: number | null;
+  /** Only sent once the round is finished. */
+  params?: ParamSummary | null;
+}
+
+export interface TotalsRow {
+  id: string;
+  name: string;
+  total: number;
+  rank: number;
+  /** Rank points per round. */
+  rounds: number[];
+}
+
+export interface VoteState {
+  open: boolean;
+  minutesOptions: number[];
+  budgetOptions: number[];
+  tally: { minutes: Record<string, number>; budget: Record<string, number> };
+  voters: number;
+  mine: { minutes?: number; budget?: number } | null;
 }
 
 export interface RoomSettings {
@@ -40,6 +71,11 @@ export interface RoomState {
   world: CompetitionWorld;
   playerCount: number;
   leaderboard: LeaderboardRow[];
+  /** Level world picked by the teacher (1–10), or null for a random world. */
+  levelId?: number | null;
+  /** Overall standings, only from round 2 on. */
+  totals?: TotalsRow[] | null;
+  vote?: VoteState;
   me: { id: string; name: string; rank: number | null } | null;
 }
 
@@ -57,6 +93,14 @@ export interface Replay {
   steps: number;
   reachedGoal: boolean;
   path: Position[];
+  paramLog?: ParamLog | null;
+}
+
+export interface CustomWorldInput {
+  size: number;
+  agent: Position;
+  goal: Position;
+  tiles: Array<{ x: number; y: number; type: "obstacle" | "reward" | "punishment" }>;
 }
 
 export interface PlayerSession {
@@ -82,8 +126,12 @@ export const competitionApi = {
     call<{ code: string; hostKey: string }>("/rooms", { method: "POST", body: JSON.stringify({ ...settings, password }) }),
 
   /** Lobby only. `reroll` builds a new world; `seed` pins a specific one. */
-  updateSettings: (code: string, hostKey: string, patch: Partial<RoomSettings> & { reroll?: boolean; seed?: number }) =>
+  updateSettings: (code: string, hostKey: string, patch: Partial<RoomSettings> & { reroll?: boolean; seed?: number; levelId?: null }) =>
     call<{ ok: true }>(`/rooms/${code}/settings`, { method: "PATCH", hostKey, body: JSON.stringify(patch) }),
+
+  /** Lobby: use an exact world (e.g. a level world) instead of a random one. */
+  setCustomWorld: (code: string, hostKey: string, world: CustomWorldInput, levelId: number | null, settings: Pick<RoomSettings, "trainingMinutes" | "episodeBudget">) =>
+    call<{ ok: true }>(`/rooms/${code}/settings`, { method: "PATCH", hostKey, body: JSON.stringify({ ...settings, customWorld: world, levelId }) }),
 
   restart: (code: string, hostKey: string, newWorld: boolean) =>
     call<{ ok: true; round: number }>(`/rooms/${code}/restart`, { method: "POST", hostKey, body: JSON.stringify({ newWorld }) }),
@@ -101,13 +149,22 @@ export const competitionApi = {
   kick: (code: string, hostKey: string, playerId: string) =>
     call<{ ok: true }>(`/rooms/${code}/players/${playerId}`, { method: "DELETE", hostKey }),
 
-  submit: (code: string, session: PlayerSession, qTable: QTable, episodes: number) =>
+  submit: (code: string, session: PlayerSession, qTable: QTable, episodes: number, paramLog?: ParamLog) =>
     call<SubmitResult>(`/rooms/${code}/submit`, {
       method: "POST",
-      body: JSON.stringify({ ...session, qTable, episodes }),
+      body: JSON.stringify({ ...session, qTable, episodes, paramLog }),
     }),
 
-  replay: (code: string, playerId: string) => call<Replay>(`/rooms/${code}/replay/${playerId}`),
+  /** The teacher may pass the host key to watch replays while the round is still running (beamer view). */
+  replay: (code: string, playerId: string, hostKey?: string) => call<Replay>(`/rooms/${code}/replay/${playerId}`, { hostKey }),
+
+  /** Teacher: open or close the lobby vote on training time and budget. */
+  openVote: (code: string, hostKey: string, open: boolean, reset = false) =>
+    call<{ ok: true }>(`/rooms/${code}/vote/open`, { method: "POST", hostKey, body: JSON.stringify({ open, reset }) }),
+  applyVote: (code: string, hostKey: string) =>
+    call<{ ok: true; trainingMinutes: number; episodeBudget: number }>(`/rooms/${code}/vote/apply`, { method: "POST", hostKey, body: "{}" }),
+  vote: (code: string, session: PlayerSession, choice: { minutes?: number; budget?: number }) =>
+    call<{ ok: true }>(`/rooms/${code}/vote`, { method: "POST", body: JSON.stringify({ ...session, ...choice }) }),
 };
 
 // ── Browser-side session memory (so a reload does not kick anyone out) ────────

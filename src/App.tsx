@@ -14,6 +14,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const ClassroomHome = lazy(() => import("./pages/classroom/ClassroomHome"));
 const ClassroomHost = lazy(() => import("./pages/classroom/ClassroomHost"));
 const ClassroomPlay = lazy(() => import("./pages/classroom/ClassroomPlay"));
+const ClassroomBeamer = lazy(() => import("./pages/classroom/ClassroomBeamer"));
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/klasse" element={<ClassroomHome />} />
           <Route path="/klasse/host/:code" element={<ClassroomHost />} />
           <Route path="/klasse/play/:code" element={<ClassroomPlay />} />
+          <Route path="/klasse/beamer/:code" element={<ClassroomBeamer />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

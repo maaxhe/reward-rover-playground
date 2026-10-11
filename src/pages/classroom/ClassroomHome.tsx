@@ -80,7 +80,7 @@ const ClassroomHome = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Dein Name"
-                className="h-14 text-center text-xl"
+                className="h-14 text-center text-xl md:text-xl"
               />
             </>
           )}
@@ -113,12 +113,12 @@ const ClassroomHome = () => {
               placeholder="1234"
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-              className="text-center text-2xl tracking-widest"
+              className="text-center text-2xl tracking-widest md:text-2xl"
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="nick">Spielername</Label>
-            <Input id="nick" maxLength={20} value={name} onChange={(e) => setName(e.target.value)} placeholder="z. B. Rover-Fan" />
+            <Input className="md:text-base" id="nick" maxLength={20} value={name} onChange={(e) => setName(e.target.value)} placeholder="z. B. Rover-Fan" />
           </div>
           <Button className="w-full" disabled={busy || code.length !== 4 || (name.trim().length < 2 && !sessionStore.getPlayer(code))} onClick={join}>
             Beitreten
@@ -132,18 +132,18 @@ const ClassroomHome = () => {
           </p>
           <div className="space-y-2">
             <Label htmlFor="minutes">Trainingszeit (Minuten)</Label>
-            <Input id="minutes" type="number" min={1} max={30} value={minutes} onChange={(e) => setMinutes(Number(e.target.value))} />
+            <Input className="md:text-base" id="minutes" type="number" min={1} max={30} value={minutes} onChange={(e) => setMinutes(Number(e.target.value))} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="budget">Episoden-Budget pro Person</Label>
-            <Input id="budget" type="number" min={10} max={500} step={10} value={budget} onChange={(e) => setBudget(Number(e.target.value))} />
+            <Input className="md:text-base" id="budget" type="number" min={10} max={500} step={10} value={budget} onChange={(e) => setBudget(Number(e.target.value))} />
             <p className="text-xs text-muted-foreground">
               Weniger Episoden heißt: Die Wahl von ε, α und γ entscheidet stärker über das Ergebnis.
             </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="teacher-pw">Lehrkraft-Passwort</Label>
-            <Input id="teacher-pw" type="password" autoComplete="off" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Input className="md:text-base" id="teacher-pw" type="password" autoComplete="off" value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
           <Button className="w-full" variant="secondary" disabled={busy || !password} onClick={create}>
             Raum erstellen

@@ -80,6 +80,40 @@ describe("classroom pages", () => {
     fireEvent.click(screen.getByText("✓ Jetzt werten"));
     await waitFor(() => expect(submits.length).toBeGreaterThan(0));
     expect(Object.keys((submits[0] as { qTable: object }).qTable).length).toBeGreaterThan(0);
+    // which ε/α/γ the episodes ran with travels along: [[fromEpisode, ε, α, γ], …]
+    const log = (submits[0] as { paramLog?: number[][] }).paramLog;
+    expect(log?.[0]).toEqual([0, 0.3, 0.3, 0.9]);
+  }, 30000);
+
+  it("first start shows a short tour that can be skipped for good", async () => {
+    localStorage.setItem("rr-class-player-1234", JSON.stringify({ playerId: "a", token: "t" }));
+    mockFetch(() => roomPayload());
+    const { unmount } = render(<MemoryRouter initialEntries={["/klasse/play/1234"]}><Routes><Route path="/klasse/play/:code" element={<ClassroomPlay />} /></Routes></MemoryRouter>);
+    await waitFor(() => expect(screen.getByRole("dialog", { name: "Kurz-Tour" })).toBeTruthy());
+    fireEvent.click(screen.getByText("Weiter"));
+    expect(screen.getByText("Die Pfeile")).toBeTruthy();
+    fireEvent.click(screen.getByText("Überspringen"));
+    expect(screen.queryByRole("dialog", { name: "Kurz-Tour" })).toBeNull();
+    unmount();
+    render(<MemoryRouter initialEntries={["/klasse/play/1234"]}><Routes><Route path="/klasse/play/:code" element={<ClassroomPlay />} /></Routes></MemoryRouter>);
+    await waitFor(() => expect(screen.getByText("Anna")).toBeTruthy());
+    expect(screen.queryByRole("dialog", { name: "Kurz-Tour" })).toBeNull();
+  });
+
+  it("player can vote in the lobby only once the teacher opened the vote; totals show from round 2", async () => {
+    localStorage.setItem("rr-class-player-1234", JSON.stringify({ playerId: "a", token: "t" }));
+    localStorage.setItem("rr-class-tour-done", "1");
+    const votes: unknown[] = [];
+    const vote = { open: true, minutesOptions: [3, 5, 8, 12], budgetOptions: [30, 60, 100, 200], tally: { minutes: { 3: 0, 5: 1, 8: 0, 12: 0 }, budget: { 30: 0, 60: 0, 100: 0, 200: 0 } }, voters: 1, mine: null };
+    mockFetch((url, init) => {
+      if (url.endsWith("/vote")) { votes.push(JSON.parse(String(init?.body))); return { ok: true }; }
+      return roomPayload({ phase: "lobby", trainingEndsAt: 0, round: 2, vote, totals: [{ id: "a", name: "Anna", total: 10, rank: 1, rounds: [10] }] });
+    });
+    render(<MemoryRouter initialEntries={["/klasse/play/1234"]}><Routes><Route path="/klasse/play/:code" element={<ClassroomPlay />} /></Routes></MemoryRouter>);
+    await waitFor(() => expect(screen.getByText("🗳 Stimmt ab!")).toBeTruthy());
+    fireEvent.click(screen.getByText("8 Min"));
+    await waitFor(() => expect(votes).toEqual([expect.objectContaining({ minutes: 8 })]));
+    expect(screen.getByText("Gesamtwertung")).toBeTruthy();
   });
 
   it("player view stops at the episode budget", async () => {
@@ -108,6 +142,23 @@ describe("classroom pages", () => {
     expect(screen.getByText("⚙ Einstellungen")).toBeTruthy();
     expect(screen.getByText("🎲 Welt neu würfeln")).toBeTruthy();
     await act(async () => {});
+  });
+
+  it("host picks a level world and opens the vote in the lobby", async () => {
+    localStorage.setItem("rr-class-host-1234", JSON.stringify("hostkey"));
+    const calls: Array<{ url: string; body: Record<string, unknown> }> = [];
+    const vote = { open: false, minutesOptions: [3, 5, 8, 12], budgetOptions: [30, 60, 100, 200], tally: { minutes: {}, budget: {} }, voters: 0, mine: null };
+    mockFetch((url, init) => {
+      if (init?.method && init.method !== "GET") calls.push({ url, body: JSON.parse(String(init.body ?? "{}")) });
+      return roomPayload({ phase: "lobby", trainingEndsAt: 0, vote, levelId: null });
+    });
+    render(<MemoryRouter initialEntries={["/klasse/host/1234"]}><Routes><Route path="/klasse/host/:code" element={<ClassroomHost />} /></Routes></MemoryRouter>);
+    await waitFor(() => expect(screen.getByLabelText("Welt")).toBeTruthy());
+    fireEvent.change(screen.getByLabelText("Welt"), { target: { value: "3" } });
+    await waitFor(() => expect(calls.some((c) => c.url.endsWith("/settings") && c.body.levelId === 3 && (c.body.customWorld as { size: number }).size === 6)).toBe(true));
+    fireEvent.click(screen.getByText("Abstimmung freigeben"));
+    await waitFor(() => expect(calls.some((c) => c.url.endsWith("/vote/open") && c.body.open === true)).toBe(true));
+    expect(screen.getByText("📽 Beamer-Ansicht öffnen")).toBeTruthy();
   });
 
   it("host can restart a finished round (same or new world)", async () => {

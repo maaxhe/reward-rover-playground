@@ -4,16 +4,31 @@ import { getBestActionDirection, type QTable } from "@/lib/rl/qLearning";
 import type { Position, TileState } from "@/lib/rl/types";
 
 /** Tile size that fits the viewport: 8 columns, never wider than `max`. */
-export const useTileSize = (columns: number, max = 52, reserved = 56) => {
-  const compute = () =>
-    typeof window === "undefined" ? max : Math.max(24, Math.min(max, Math.floor((window.innerWidth - reserved) / columns)));
+/**
+ * Largest tile that fits the screen. `reserved` is the width taken by everything besides the board (a function of the
+ * window width, so a side panel can appear on tablets). `reservedHeight` > 0 also keeps the board inside the screen
+ * height on tablets and larger (≥ 768 px wide, e.g. an iPad in landscape); phones just scroll.
+ */
+export const useTileSize = (columns: number, max = 52, reserved: number | ((windowWidth: number) => number) = 56, reservedHeight = 0) => {
+  const compute = () => {
+    if (typeof window === "undefined") return max;
+    const width = window.innerWidth;
+    const taken = typeof reserved === "function" ? reserved(width) : reserved;
+    let size = Math.floor((width - taken) / columns);
+    if (reservedHeight > 0 && width >= 768) size = Math.min(size, Math.floor((window.innerHeight - reservedHeight) / columns));
+    return Math.max(24, Math.min(max, size));
+  };
   const [size, setSize] = useState(compute);
   useEffect(() => {
     const onResize = () => setSize(compute());
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [columns, max, reserved]);
+  }, [columns, max, reserved, reservedHeight]);
   return size;
 };
 
