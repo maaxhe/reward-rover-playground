@@ -436,9 +436,18 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
       console.warn("Could not save coach status", e);
     }
   }, [currentLevel]);
-  // Level 1: every time the game is opened, show the "How does the rover learn?" guide first, then the hint popups.
-  const level1IntroDone = useRef(false);
-  const level1GuideShown = useRef(false);
+  // Level 1: once per session, show the "How does the rover learn?" guide first, then the hint popups.
+  // "Once per session" = once per browser tab session (sessionStorage), so a reload does not repeat it.
+  const SESSION_KEY = "rr-level1-intro-session";
+  const introSeenThisSession = (() => {
+    try {
+      return sessionStorage.getItem(SESSION_KEY) === "1";
+    } catch {
+      return false;
+    }
+  })();
+  const level1IntroDone = useRef(introSeenThisSession);
+  const level1GuideShown = useRef(introSeenThisSession);
   const level1GuideSeenOpen = useRef(false);
   useEffect(() => {
     if (!levelMode || currentLevel !== 1 || tutorialOpen || mode !== "playground" || level1GuideShown.current) return;
@@ -451,7 +460,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
     level1GuideShown.current = true;
     setRlDialogOpen(true);
   }, [levelMode, currentLevel, tutorialOpen, mode]);
-  // Hint popups open on the first visit of a level; level 1 shows them on every page load, right after the guide.
+  // Hint popups open on the first visit of a level; level 1 shows them once per session, right after the guide.
   useEffect(() => {
     if (rlDialogOpen) level1GuideSeenOpen.current = true;
     if (!levelMode || tutorialOpen || rlDialogOpen || mode !== "playground") {
@@ -462,6 +471,11 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
       if (!level1GuideSeenOpen.current) return;
       if (!level1IntroDone.current) {
         level1IntroDone.current = true;
+        try {
+          sessionStorage.setItem(SESSION_KEY, "1");
+        } catch {
+          /* ignore */
+        }
         setCoachStep(0);
       }
       return;
