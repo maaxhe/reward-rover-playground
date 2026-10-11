@@ -16,7 +16,7 @@ const ClassroomHome = () => {
   const [showFull, setShowFull] = useState(false);
   const [name, setName] = useState("");
   const [minutes, setMinutes] = useState(5);
-  const [budget, setBudget] = useState(60);
+  const [budget, setBudget] = useState(30);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

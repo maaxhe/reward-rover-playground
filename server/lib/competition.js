@@ -6,10 +6,10 @@
 
 export const DEFAULT_WORLD_SETTINGS = {
   size: 8,
-  obstacles: 11,
+  obstacles: 18,
   rewards: 6,
   punishments: 5,
-  minDistance: 8,
+  minDistance: 10,
 };
 
 const clampInt = (value, min, max, fallback) => {

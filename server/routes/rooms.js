@@ -56,7 +56,7 @@ const newSeed = () => crypto.randomInt(1, 2 ** 31);
 
 /** Round settings = training time + budget + the world recipe. */
 const normalizeSettings = (input = {}, base = null) => {
-  const prev = base ?? { trainingMinutes: 5, episodeBudget: 60, ...DEFAULT_WORLD_SETTINGS };
+  const prev = base ?? { trainingMinutes: 5, episodeBudget: 30, ...DEFAULT_WORLD_SETTINGS };
   return {
     trainingMinutes: clampInt(input.trainingMinutes, 1, 30, prev.trainingMinutes),
     episodeBudget: clampInt(input.episodeBudget, 10, 500, prev.episodeBudget),
