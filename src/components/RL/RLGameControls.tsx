@@ -12,6 +12,7 @@ import type { UnlockedFeatures } from "@/lib/levelProgression";
 import type { Language, Mode } from "@/lib/rl/types";
 import { SIMULATION_SPEEDS, type SimulationSpeed } from "@/lib/rl/simulation";
 import type { PlaceableTile, PlaygroundState, RandomModeState } from "./RLGame";
+import { RewardHistoryChart } from "./RewardHistoryChart";
 import { ChevronDown, ChevronUp, Pause, Play, RotateCcw, Undo2 } from "lucide-react";
 
 type PlaygroundControlsProps = {
@@ -137,6 +138,7 @@ export const PlaygroundControls = ({
       </Label>
       <div data-tutorial="tools" className="grid grid-cols-2 gap-2">
         <Button
+          data-tutorial="tool-obstacle"
           variant={placementMode === "obstacle" ? "default" : "outline"}
           onClick={() => onPlacementModeChange("obstacle")}
           disabled={levelMode && !unlockedFeatures?.canPlaceWalls}
@@ -145,6 +147,7 @@ export const PlaygroundControls = ({
           {translate("Mauer", "Wall")}
         </Button>
         <Button
+          data-tutorial="tool-reward"
           variant={placementMode === "reward" ? "default" : "outline"}
           onClick={() => onPlacementModeChange("reward")}
           disabled={levelMode && !unlockedFeatures?.canPlaceRewards}
@@ -153,6 +156,7 @@ export const PlaygroundControls = ({
           {translate("Belohnung", "Reward")}
         </Button>
         <Button
+          data-tutorial="tool-punishment"
           variant={placementMode === "punishment" ? "default" : "outline"}
           onClick={() => onPlacementModeChange("punishment")}
           disabled={levelMode && !unlockedFeatures?.canPlacePunishments}
@@ -161,6 +165,7 @@ export const PlaygroundControls = ({
           {translate("Strafe", "Penalty")}
         </Button>
         <Button
+          data-tutorial="tool-portal"
           variant={placementMode === "portal" ? "default" : "outline"}
           onClick={() => onPlacementModeChange("portal")}
           disabled={levelMode && !unlockedFeatures?.canPlacePortals}
@@ -220,6 +225,10 @@ export const PlaygroundControls = ({
             <span className="font-semibold text-green-400">
               {numberFormatter.format(Math.max(...state.episodeHistory.map(e => e.reward)))}
             </span>
+          </div>
+          <div className="pt-2">
+            <h4 className="mb-2 text-xs font-bold text-foreground">{translate("Reward-Verlauf", "Reward History")}</h4>
+            <RewardHistoryChart history={state.episodeHistory} translate={translate} />
           </div>
         </div>)}
       </Card>

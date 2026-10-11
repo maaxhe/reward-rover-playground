@@ -69,6 +69,7 @@ export const GRID_PIXEL_TARGET: Record<keyof typeof TILE_SIZE_MAP, number> = {
 export const MIN_GOAL_DISTANCE = 5;
 export const BONUS_INTERVAL = 10;
 export const TUTORIAL_STORAGE_KEY = "reward_rover_tutorial_seen";
+export const LEVEL_COACH_STORAGE_KEY = "rr-level-coach-seen";
 
 export const EPISODE_TITLES = [
   "Aurora Approach",

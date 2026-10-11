@@ -1,0 +1,183 @@
+import type { LevelNumber } from "@/lib/levelProgression";
+
+/** Which element a coach popup points at (matches `data-tutorial="…"` in the UI). */
+export type CoachTarget =
+  | "objective"
+  | "start"
+  | "board"
+  | "explore"
+  | "alpha"
+  | "gamma"
+  | "tool-obstacle"
+  | "tool-reward"
+  | "tool-punishment"
+  | "tool-portal"
+  | "gridsize";
+
+export interface CoachSlide {
+  target: CoachTarget;
+  title: { de: string; en: string };
+  text: { de: string; en: string };
+}
+
+const objective: CoachSlide = {
+  target: "objective",
+  title: { de: "Deine Aufgabe", en: "Your task" },
+  text: {
+    de: "Hier steht, was du in diesem Level schaffen musst. Die Haken zeigen dir, was schon erledigt ist.",
+    en: "This is what you have to achieve in this level. The ticks show what is already done.",
+  },
+};
+
+const start: CoachSlide = {
+  target: "start",
+  title: { de: "Rover starten ▶️", en: "Start the rover ▶️" },
+  text: {
+    de: "Klicke auf Start. Der Rover läuft los und lernt von Runde zu Runde, bis er den kürzesten Weg zum Ziel kennt.",
+    en: "Click Start. The rover sets off and learns run after run until it knows the shortest way to the goal.",
+  },
+};
+
+const explore: CoachSlide = {
+  target: "explore",
+  title: { de: "Erkundung (ε)", en: "Exploration (ε)" },
+  text: {
+    de: "Mit diesem Regler bestimmst du, wie oft der Rover etwas Neues ausprobiert. Zu niedrig: er bleibt bei seinem ersten Weg. Zu hoch: er läuft weiter zufällig. Probier etwas dazwischen.",
+    en: "This slider sets how often the rover tries something new. Too low: it sticks to its first path. Too high: it keeps wandering randomly. Try something in between.",
+  },
+};
+
+const placeOnBoard = (tool: string, toolEn: string): CoachSlide => ({
+  target: "board",
+  title: { de: "Aufs Feld klicken", en: "Click on the board" },
+  text: {
+    de: `Klicke jetzt auf ein freies Feld im Spielfeld, um dort ${tool} zu setzen. Du kannst auch mit gedrückter Maustaste über mehrere Felder ziehen. Ein zweiter Klick auf dasselbe Feld nimmt es wieder weg.`,
+    en: `Now click an empty tile on the board to place ${toolEn} there. You can also hold the mouse button and drag across several tiles. Clicking the same tile again removes it.`,
+  },
+});
+
+export const LEVEL_COACH: Record<LevelNumber, CoachSlide[]> = {
+  1: [objective, start, explore],
+  2: [
+    objective,
+    {
+      target: "alpha",
+      title: { de: "Lernrate (α)", en: "Learning rate (α)" },
+      text: {
+        de: "Ziehe den Regler für die Lernrate auf mindestens 0,5. Je höher α, desto stärker überschreibt neue Erfahrung das alte Wissen.",
+        en: "Drag the learning rate slider to at least 0.5. The higher α, the more new experience overwrites old knowledge.",
+      },
+    },
+    start,
+  ],
+  3: [
+    objective,
+    {
+      target: "gamma",
+      title: { de: "Diskontfaktor (γ)", en: "Discount factor (γ)" },
+      text: {
+        de: "Stelle γ auf mindestens 0,9. Dann denkt der Rover weit voraus und wählt den Weg zum Ziel statt der kleinen Belohnung am Rand.",
+        en: "Set γ to at least 0.9. The rover then thinks far ahead and picks the path to the goal over the small reward on the side.",
+      },
+    },
+    start,
+  ],
+  4: [
+    objective,
+    {
+      target: "tool-reward",
+      title: { de: "Werkzeug: Belohnung", en: "Tool: Reward" },
+      text: {
+        de: "Wähle zuerst das Werkzeug „Belohnung“ im Platzierungs-Modus.",
+        en: "First pick the “Reward” tool in the placement mode.",
+      },
+    },
+    placeOnBoard("eine Belohnung", "a reward"),
+    start,
+  ],
+  5: [
+    objective,
+    {
+      target: "tool-punishment",
+      title: { de: "Werkzeug: Strafe", en: "Tool: Penalty" },
+      text: {
+        de: "Wähle zuerst das Werkzeug „Strafe“ im Platzierungs-Modus.",
+        en: "First pick the “Penalty” tool in the placement mode.",
+      },
+    },
+    placeOnBoard("eine Strafe, am besten auf den kürzesten Weg,", "a penalty, ideally on the shortest path,"),
+    start,
+  ],
+  6: [
+    objective,
+    {
+      target: "tool-obstacle",
+      title: { de: "Werkzeug: Mauer", en: "Tool: Wall" },
+      text: {
+        de: "Wähle zuerst das Werkzeug „Mauer“ im Platzierungs-Modus.",
+        en: "First pick the “Wall” tool in the placement mode.",
+      },
+    },
+    placeOnBoard("zwei Mauern", "two walls"),
+    start,
+  ],
+  7: [
+    objective,
+    {
+      target: "gridsize",
+      title: { de: "Feld-Größe ändern", en: "Change the grid size" },
+      text: {
+        de: "Klicke hier auf eine andere Größe, zum Beispiel „Mittel“. Dann entsteht ein neues Feld und der Rover fängt von vorn an.",
+        en: "Click another size here, for example “Medium”. A new board appears and the rover starts from scratch.",
+      },
+    },
+    start,
+  ],
+  8: [
+    objective,
+    {
+      target: "tool-portal",
+      title: { de: "Werkzeug: Portal", en: "Tool: Portal" },
+      text: {
+        de: "Wähle zuerst das Werkzeug „Portal“. Portale kommen immer als Paar: Wer in das eine hineinläuft, kommt am anderen heraus.",
+        en: "First pick the “Portal” tool. Portals come in pairs: step into one and you come out of the other.",
+      },
+    },
+    placeOnBoard("ein Portal (dann das zweite, damit es ein Paar wird)", "a portal (then the second one to make a pair)"),
+    start,
+  ],
+  9: [
+    objective,
+    explore,
+    {
+      target: "alpha",
+      title: { de: "Lernrate (α)", en: "Learning rate (α)" },
+      text: {
+        de: "Zu viel α macht den Rover sprunghaft, zu wenig macht ihn langsam. Hier kannst du nachjustieren.",
+        en: "Too much α makes the rover erratic, too little makes it slow. Fine-tune it here.",
+      },
+    },
+    {
+      target: "gamma",
+      title: { de: "Diskontfaktor (γ)", en: "Discount factor (γ)" },
+      text: {
+        de: "Ein hohes γ lässt ihn weit vorausplanen. Für kurze, direkte Wege reicht oft ein hoher Wert.",
+        en: "A high γ makes it plan far ahead. For short, direct routes a high value usually works.",
+      },
+    },
+    start,
+  ],
+  10: [
+    objective,
+    explore,
+    {
+      target: "alpha",
+      title: { de: "Alle Regler gehören dir", en: "All the knobs are yours" },
+      text: {
+        de: "Für die Meisterprüfung kombinierst du Erkundung, Lernrate und Diskontfaktor. Beobachte nach jedem Lauf, ob die Schritte weniger werden, und drehe dann gezielt nach.",
+        en: "For the master test you combine exploration, learning rate and discount factor. After each run check whether the steps shrink, then adjust deliberately.",
+      },
+    },
+    start,
+  ],
+};

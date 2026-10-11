@@ -50,7 +50,7 @@ export function ParametersPanel({
 
       <div className="space-y-4">
         {/* Exploration Rate */}
-        <div className="space-y-2">
+        <div data-tutorial="explore" className="space-y-2">
           <div className="flex justify-between items-center">
             <Label className="text-xs font-medium">
               {translate("Exploration (ε)", "Exploration (ε)")}
@@ -77,6 +77,7 @@ export function ParametersPanel({
 
         {/* Alpha (Learning Rate) */}
         <div
+          data-tutorial="alpha"
           className={cn(
             "space-y-2 transition-opacity",
             alphaLocked && "opacity-50 pointer-events-none"
@@ -109,6 +110,7 @@ export function ParametersPanel({
 
         {/* Gamma (Discount Factor) */}
         <div
+          data-tutorial="gamma"
           className={cn(
             "space-y-2 transition-opacity",
             gammaLocked && "opacity-50 pointer-events-none"

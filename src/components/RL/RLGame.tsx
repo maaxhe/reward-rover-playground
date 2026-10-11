@@ -11,6 +11,8 @@ import { LevelObjectivePanel } from "./LevelObjectivePanel";
 import { RLGuideDialog } from "./RLGuideDialog";
 import { ControlBar, PlaygroundControls, RandomControls, ScrollIndicator } from "./RLGameControls";
 import type { LevelNumber } from "@/lib/levelProgression";
+import { LEVEL_COACH } from "@/lib/levelCoach";
+import { RewardHistoryChart } from "./RewardHistoryChart";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -49,6 +51,7 @@ import {
   TILE_SIZE_LABELS,
   TILE_SIZE_MAP,
   TUTORIAL_STORAGE_KEY,
+  LEVEL_COACH_STORAGE_KEY,
   TileSizeOption,
   TileState,
   buildSpeedrunState,
@@ -421,13 +424,41 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
     }
   }, [tutorialStep]);
 
+  // Level coach: short popups per level that point at what to click. Shown once per level, replayable via the help button.
+  const [coachStep, setCoachStep] = useState<number | null>(null);
+  const coachSlides = levelMode ? LEVEL_COACH[currentLevel as LevelNumber] ?? [] : [];
+  const closeCoach = useCallback(() => {
+    setCoachStep(null);
+    try {
+      const seen: number[] = JSON.parse(localStorage.getItem(LEVEL_COACH_STORAGE_KEY) ?? "[]");
+      if (!seen.includes(currentLevel)) localStorage.setItem(LEVEL_COACH_STORAGE_KEY, JSON.stringify([...seen, currentLevel]));
+    } catch (e) {
+      console.warn("Could not save coach status", e);
+    }
+  }, [currentLevel]);
+  // Open automatically on the first visit of a level (after the general tutorial is done).
+  useEffect(() => {
+    if (!levelMode || tutorialOpen || mode !== "playground") {
+      setCoachStep(null);
+      return;
+    }
+    try {
+      const seen: number[] = JSON.parse(localStorage.getItem(LEVEL_COACH_STORAGE_KEY) ?? "[]");
+      setCoachStep(seen.includes(currentLevel) ? null : 0);
+    } catch {
+      setCoachStep(0);
+    }
+  }, [levelMode, currentLevel, tutorialOpen, mode]);
+  // The coach is part of the level UI, close it when the rover is started on purpose.
+  const activeCoachSlide = coachStep !== null ? coachSlides[coachStep] : undefined;
+
   // Highlight the element the current slide talks about.
-  const highlightTarget = tutorialOpen ? tutorialSlides[tutorialStep]?.target : undefined;
+  const highlightTarget = tutorialOpen ? tutorialSlides[tutorialStep]?.target : activeCoachSlide?.target;
   useEffect(() => {
     if (!highlightTarget) return;
     const els = Array.from(document.querySelectorAll<HTMLElement>(`[data-tutorial="${highlightTarget}"]`));
     els.forEach((el) => el.classList.add("tutorial-spotlight"));
-    els[0]?.scrollIntoView({ block: "center", behavior: "smooth" });
+    (els.find((el) => el.offsetParent !== null) ?? els[0])?.scrollIntoView({ block: "center", behavior: "smooth" });
     return () => els.forEach((el) => el.classList.remove("tutorial-spotlight"));
   }, [highlightTarget]);
 
@@ -2325,6 +2356,46 @@ const handleActiveBonusClick = useCallback(() => {
         </DialogContent>
       </Dialog>
 
+      {/* Level coach: short hint popups per level */}
+      <Dialog open={coachStep !== null && !!activeCoachSlide} onOpenChange={(open) => !open && closeCoach()} modal={false}>
+        <DialogContent
+          hideOverlay
+          onInteractOutside={(e) => e.preventDefault()}
+          className="max-w-xl top-auto bottom-4 translate-y-0 data-[state=open]:slide-in-from-top-0 data-[state=closed]:slide-out-to-top-0 shadow-2xl border-primary/40"
+        >
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">
+              {activeCoachSlide && translate(activeCoachSlide.title.de, activeCoachSlide.title.en)}
+            </DialogTitle>
+            <DialogDescription className="text-base leading-relaxed pt-1">
+              {activeCoachSlide && translate(activeCoachSlide.text.de, activeCoachSlide.text.en)}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center justify-between pt-3 border-t">
+            <div className="text-sm text-muted-foreground">
+              {translate("Hilfe", "Hint")} {(coachStep ?? 0) + 1} / {coachSlides.length}
+            </div>
+            <div className="flex gap-2">
+              {(coachStep ?? 0) > 0 && (
+                <Button variant="outline" onClick={() => setCoachStep((s) => Math.max(0, (s ?? 0) - 1))}>
+                  {translate("Zurück", "Back")}
+                </Button>
+              )}
+              <Button variant="ghost" onClick={closeCoach}>
+                {translate("Schließen", "Close")}
+              </Button>
+              <Button
+                onClick={() =>
+                  (coachStep ?? 0) < coachSlides.length - 1 ? setCoachStep((s) => (s ?? 0) + 1) : closeCoach()
+                }
+              >
+                {(coachStep ?? 0) < coachSlides.length - 1 ? translate("Weiter", "Next") : translate("Verstanden!", "Got it!")}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog
         open={authDialogOpen}
         onOpenChange={(open) => {
@@ -2590,11 +2661,20 @@ const handleActiveBonusClick = useCallback(() => {
         </div>
 
         {levelMode && objectiveStatus && (
-          <LevelObjectivePanel
-            level={currentLevel as LevelNumber}
-            status={objectiveStatus}
-            translate={translate}
-          />
+          <>
+            <LevelObjectivePanel
+              level={currentLevel as LevelNumber}
+              status={objectiveStatus}
+              translate={translate}
+            />
+            {coachSlides.length > 0 && coachStep === null && (
+              <div className="flex justify-end">
+                <Button variant="outline" size="sm" onClick={() => setCoachStep(0)}>
+                  💡 {translate("Hilfe zu diesem Level zeigen", "Show help for this level")}
+                </Button>
+              </div>
+            )}
+          </>
         )}
 
         <ControlBar
@@ -3489,8 +3569,8 @@ const handleActiveBonusClick = useCallback(() => {
               />
             )}
 
-            {/* Verlaufsdiagramm */}
-            {(mode === "playground" ? playgroundState.episodeHistory : randomState.episodeHistory).length > 0 && (
+            {/* Verlaufsdiagramm (im Playground sitzt es in der Statistik-Kachel) */}
+            {mode !== "playground" && randomState.episodeHistory.length > 0 && (
               <Collapsible open={showRewardHistory} onOpenChange={setShowRewardHistory}>
                 <Card className="rounded-lg border border-border/40 bg-card/50 p-4">
                   <CollapsibleTrigger className="w-full">
@@ -3503,71 +3583,7 @@ const handleActiveBonusClick = useCallback(() => {
                   </CollapsibleTrigger>
                   <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
                     <div className="mt-3">
-                <div className="relative w-full h-40 bg-background/50 rounded-lg p-2">
-                  {(() => {
-                    const history = mode === "playground" ? playgroundState.episodeHistory : randomState.episodeHistory;
-                    const displayHistory = history.slice(-20); // Zeige letzte 20 Episoden
-
-                    if (displayHistory.length < 2) return null;
-
-                    const maxReward = Math.max(...displayHistory.map(h => h.reward), 1);
-                    const minReward = Math.min(...displayHistory.map(h => h.reward), 0);
-                    const range = maxReward - minReward || 1;
-
-                    const width = 100; // Prozent
-                    const height = 100; // Prozent
-                    const padding = 5;
-
-                    const points = displayHistory.map((stat, i) => {
-                      const x = padding + (i / (displayHistory.length - 1)) * (width - 2 * padding);
-                      const y = height - padding - ((stat.reward - minReward) / range) * (height - 2 * padding);
-                      return `${x},${y}`;
-                    }).join(' ');
-
-                    return (
-                      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full">
-                        {/* Gitterlinie */}
-                        <line
-                          x1={padding}
-                          y1={height / 2}
-                          x2={width - padding}
-                          y2={height / 2}
-                          stroke="currentColor"
-                          strokeWidth="0.2"
-                          opacity="0.2"
-                        />
-                        {/* Linie */}
-                        <polyline
-                          points={points}
-                          fill="none"
-                          stroke="rgb(var(--primary))"
-                          strokeWidth="1"
-                          strokeLinejoin="round"
-                        />
-                        {/* Punkte */}
-                        {displayHistory.map((stat, i) => {
-                          const x = padding + (i / (displayHistory.length - 1)) * (width - 2 * padding);
-                          const y = height - padding - ((stat.reward - minReward) / range) * (height - 2 * padding);
-                          return (
-                            <circle
-                              key={i}
-                              cx={x}
-                              cy={y}
-                              r="1"
-                              fill="rgb(var(--primary))"
-                            />
-                          );
-                        })}
-                      </svg>
-                    );
-                  })()}
-                </div>
-                <p className="text-xs text-muted-foreground text-center mt-2">
-                  {translate(
-                    `Letzte ${Math.min((mode === "playground" ? playgroundState.episodeHistory : randomState.episodeHistory).length, 20)} Episoden`,
-                    `Last ${Math.min((mode === "playground" ? playgroundState.episodeHistory : randomState.episodeHistory).length, 20)} episodes`
-                  )}
-                </p>
+                      <RewardHistoryChart history={randomState.episodeHistory} translate={translate} />
                     </div>
                   </CollapsibleContent>
                 </Card>
@@ -3868,6 +3884,7 @@ const handleActiveBonusClick = useCallback(() => {
           <div className="lg:hidden mt-4 mx-auto w-full max-w-md px-4">
             {mode === "playground" ? (
               <Button
+                data-tutorial="start"
                 className="w-full font-semibold shadow-lg"
                 size="lg"
                 onClick={playgroundState.isRunning ? handlePlaygroundPause : handlePlaygroundStart}
@@ -4060,7 +4077,7 @@ const handleActiveBonusClick = useCallback(() => {
               </div>
             </Card>
 
-            <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4">
+            <Card data-tutorial="gridsize" className="rounded-lg border border-border/40 bg-secondary/20 p-4">
               <h3 className="text-lg font-bold text-foreground mb-1">
                 {translate("📏 Feld-Größe", "📏 Grid size")}
               </h3>

@@ -22,7 +22,6 @@ export const LEVEL_WORLDS: Record<LevelNumber, LevelWorld> = {
       { x: 2, y: 0, type: "obstacle" },
       { x: 3, y: 0, type: "obstacle" },
       { x: 2, y: 1, type: "obstacle" },
-      { x: 1, y: 2, type: "reward" },
     ],
     agent: { x: 0, y: 4 },
     goal: { x: 4, y: 0 },

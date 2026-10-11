@@ -16,6 +16,7 @@ export function LevelObjectivePanel({ level, status, translate }: Props) {
 
   return (
     <Card
+      data-tutorial="objective"
       className={cn(
         "space-y-3 border-2 p-4 shadow-md",
         status.solved
