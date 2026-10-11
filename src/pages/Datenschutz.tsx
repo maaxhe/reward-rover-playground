@@ -103,6 +103,13 @@ const Datenschutz = () => {
             Die Schrift ist auf dem eigenen Server gespeichert. Es werden keine Google Fonts und keine
             Social-Media-Plugins geladen.
           </p>
+          <p>
+            Auf manchen Seiten (Erklärung, Ende einer Klassenrunde) gibt es eingebettete YouTube-Videos. Sie
+            werden über <code>youtube-nocookie.com</code> erst geladen, wenn du auf „Video laden“ klickst.
+            Vorher wird nichts an YouTube übertragen. Nach dem Klick erhält YouTube (Google) technisch bedingt
+            deine IP-Adresse und kann Daten in deinem Browser speichern. Rechtsgrundlage ist deine Einwilligung
+            durch den Klick (Art. 6 Abs. 1 lit. a DSGVO).
+          </p>
 
           <h2 className="legal-h">9. Deine Rechte</h2>
           <p>

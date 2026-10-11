@@ -1,6 +1,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { RealRobots } from "@/components/RL/RealRobots";
 import { GuideDemo } from "@/components/RL/GuideDemo";
 import { DEMO_WORLD } from "@/components/landing/LiveRover";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -254,6 +255,10 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
               <li>{t("Stromnetze, die Angebot und Nachfrage laufend abgleichen.", "Power grids that keep balancing supply and demand.")}</li>
               <li>{t("Sprachmodelle, die mit menschlichem Feedback als Belohnung nachtrainiert werden.", "Language models fine-tuned with human feedback as the reward.")}</li>
             </ul>
+          </Section>
+
+          <Section id="roboter" title={t("Echte Roboter, gleiches Prinzip", "Real robots, same principle")}>
+            <RealRobots />
           </Section>
 
           <Section id="probieren" title={t("Probier das aus", "Try this")}>

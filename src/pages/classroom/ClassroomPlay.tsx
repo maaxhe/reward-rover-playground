@@ -13,6 +13,7 @@ import { runTest, worldToState, type CompetitionWorld } from "@/lib/competition/
 import { ClassroomShell, Leaderboard, TotalsCard, formatCountdown } from "./shared";
 import { PlayerVoteCard } from "./VoteCard";
 import { GuidedTour, markTourSeen, tourAlreadySeen } from "./GuidedTour";
+import { RealRobotsCard } from "@/components/RL/RealRobots";
 import { ReplayBoard } from "./ReplayBoard";
 import { TrainingStats, type EpisodeRecord, type TestRecord } from "./TrainingStats";
 import { shortestPathLength } from "@/lib/levelObjectives";
@@ -357,6 +358,7 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
         </div>
         {totals && totals.length > 0 && <TotalsCard totals={totals} meId={meId} />}
         {phase === "finished" && <p className="text-xs text-muted-foreground">Tippe auf einen Namen, um dessen Test-Lauf abzuspielen.</p>}
+        {phase === "finished" && <RealRobotsCard />}
       </div>
     </div>
   );

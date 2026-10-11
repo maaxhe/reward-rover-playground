@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { RealRobotsCard } from "@/components/RL/RealRobots";
 import { Link, useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { Button } from "@/components/ui/button";
@@ -121,6 +122,8 @@ const ClassroomHost = () => {
             )}
             {actionError && <span className="text-sm text-destructive">{actionError}</span>}
           </Card>
+
+          {room.phase === "finished" && <RealRobotsCard />}
 
           {room.phase === "finished" && top3.length > 0 && (
             <div className="grid gap-3 sm:grid-cols-3">
