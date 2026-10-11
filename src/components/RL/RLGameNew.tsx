@@ -9,6 +9,8 @@ import { RLGuideButton } from "./RLGuideDialog";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { LevelProvider } from "@/contexts/LevelContext";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { getUnlockedFeatures } from "@/lib/levelProgression";
 import type { LevelNumber } from "@/lib/levelProgression";
 import { api } from "@/lib/api";
@@ -123,6 +125,23 @@ export function RLGameNew() {
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, []);
 
+  const [pwOpen, setPwOpen] = useState(false);
+  const [pw, setPw] = useState("");
+  const [pwError, setPwError] = useState(false);
+  const submitPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pw.trim().toLowerCase() === "blauwal") {
+      setFreeModeUnlocked(true);
+      window.localStorage.setItem(FREE_MODE_KEY, "true");
+      setPwOpen(false);
+      setPw("");
+      setPwError(false);
+      setMode("free");
+    } else {
+      setPwError(true);
+    }
+  };
+
   const canAccessFreeMode = freeModeUnlocked || maxUnlockedLevel > 10;
   const isLevelMode = mode === "levels";
   const unlockedFeatures = getUnlockedFeatures(currentLevel);
@@ -165,9 +184,8 @@ export function RLGameNew() {
           </Button>
           <Button
             variant={mode === "free" ? "default" : "outline"}
-            onClick={() => setMode("free")}
+            onClick={() => (canAccessFreeMode ? setMode("free") : setPwOpen(true))}
             className="font-semibold"
-            disabled={!canAccessFreeMode && mode !== "free"}
           >
             {translate("Free Mode", "Free Mode")}
             {!canAccessFreeMode && <span className="ml-2 text-xs">🔒</span>}
@@ -175,8 +193,35 @@ export function RLGameNew() {
           <Button asChild variant="outline" className="ml-auto font-semibold">
             <Link to="/klasse">🏫 {translate("Klassen-Modus", "Classroom")}</Link>
           </Button>
+          <RLGuideButton size="default" variant="default" className="font-semibold" />
         </div>
       </div>
+
+      <Dialog open={pwOpen} onOpenChange={(o) => { setPwOpen(o); if (!o) { setPw(""); setPwError(false); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Free Mode 🔒</DialogTitle>
+            <DialogDescription>
+              {translate(
+                "Gib das Passwort ein, oder löse alle 10 Level.",
+                "Enter the password, or solve all 10 levels.",
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={submitPassword} className="flex flex-col gap-3">
+            <Input
+              type="password"
+              autoFocus
+              value={pw}
+              onChange={(e) => { setPw(e.target.value); setPwError(false); }}
+              placeholder={translate("Passwort", "Password")}
+              aria-label={translate("Passwort", "Password")}
+            />
+            {pwError && <p className="text-sm text-destructive" role="alert">{translate("Falsches Passwort.", "Wrong password.")}</p>}
+            <Button type="submit">{translate("Freischalten", "Unlock")}</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Main Content - 2 Column Layout */}
       <div className="flex flex-1 flex-col md:flex-row md:overflow-hidden">
