@@ -18,6 +18,7 @@ export function RLGameNew() {
   const [alpha, setAlpha] = useState(0.1);
   const [gamma, setGamma] = useState(0.85);
   const [mode, setMode] = useState<"levels" | "free">("levels");
+  const [comparisonActive, setComparisonActive] = useState(false);
   const [currentLevel, setCurrentLevel] = useState<LevelNumber>(1);
   const [freeModeUnlocked, setFreeModeUnlocked] = useState(false);
   // Highest level the player has unlocked by solving the previous one.
@@ -254,6 +255,7 @@ export function RLGameNew() {
             isLevelMode={isLevelMode}
             canAdjustAlpha={unlockedFeatures.canAdjustAlpha}
             canAdjustGamma={unlockedFeatures.canAdjustGamma}
+            disabled={comparisonActive}
             translate={translate}
           />
           <GameLegend translate={translate} showPortal={!isLevelMode || unlockedFeatures.canPlacePortals} />
@@ -262,7 +264,7 @@ export function RLGameNew() {
         {/* Right Content - Game */}
         <div className="flex-1 min-w-0 md:overflow-auto">
           <LevelProvider levelMode={isLevelMode} currentLevel={currentLevel} onLevelSolved={handleLevelSolved}>
-            <RLGame explorationRate={explorationRate} alpha={alpha} gamma={gamma} onAuthTokenChange={handleAuthTokenChange} />
+            <RLGame explorationRate={explorationRate} alpha={alpha} gamma={gamma} onAuthTokenChange={handleAuthTokenChange} onComparisonActiveChange={setComparisonActive} />
           </LevelProvider>
         </div>
       </div>

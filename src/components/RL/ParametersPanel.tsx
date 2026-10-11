@@ -13,6 +13,8 @@ type ParametersPanelProps = {
   isLevelMode: boolean;
   canAdjustAlpha: boolean;
   canAdjustGamma: boolean;
+  /** Comparison Mode has its own sliders per rover, so these global ones do nothing there. */
+  disabled?: boolean;
   translate: (de: string, en: string) => string;
 };
 
@@ -26,16 +28,25 @@ export function ParametersPanel({
   isLevelMode,
   canAdjustAlpha,
   canAdjustGamma,
+  disabled = false,
   translate,
 }: ParametersPanelProps) {
   const alphaLocked = isLevelMode && !canAdjustAlpha;
   const gammaLocked = isLevelMode && !canAdjustGamma;
 
   return (
-    <Card className="p-5 bg-card/60 border-border/40 rounded-lg">
+    <Card
+      className={cn("p-5 bg-card/60 border-border/40 rounded-lg transition-opacity", disabled && "pointer-events-none opacity-40 grayscale")}
+      aria-disabled={disabled}
+    >
       <h3 className="text-sm font-semibold mb-4 uppercase tracking-wide text-foreground">
         {translate("Lernparameter", "Learning Parameters")}
       </h3>
+      {disabled && (
+        <p className="mb-3 text-xs text-muted-foreground">
+          {translate("Im Vergleichsmodus stellst du α, γ und ε direkt bei jedem Rover ein.", "In comparison mode you set α, γ and ε on each rover directly.")}
+        </p>
+      )}
 
       <div className="space-y-4">
         {/* Exploration Rate */}
@@ -55,6 +66,7 @@ export function ParametersPanel({
             step={0.01}
             value={explorationRate}
             onChange={(e) => onExplorationRateChange(e.target.valueAsNumber)}
+            disabled={disabled}
             className="input-slider w-full"
             style={{ "--slider-value": explorationRate } as React.CSSProperties}
           />
@@ -84,7 +96,7 @@ export function ParametersPanel({
             step={0.01}
             value={alpha}
             onChange={(e) => onAlphaChange(e.target.valueAsNumber)}
-            disabled={alphaLocked}
+            disabled={alphaLocked || disabled}
             className="input-slider w-full"
             style={{ "--slider-value": alpha / 0.5 } as React.CSSProperties}
           />
@@ -116,7 +128,7 @@ export function ParametersPanel({
             step={0.01}
             value={gamma}
             onChange={(e) => onGammaChange(e.target.valueAsNumber)}
-            disabled={gammaLocked}
+            disabled={gammaLocked || disabled}
             className="input-slider w-full"
             style={{ "--slider-value": gamma } as React.CSSProperties}
           />

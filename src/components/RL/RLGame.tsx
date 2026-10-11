@@ -1235,9 +1235,11 @@ interface RLGameProps {
   gamma?: number;
   /** Reports the login token (or null after logout) so the layout can sync level progress to the account. */
   onAuthTokenChange?: (token: string | null) => void;
+  /** Lets the layout lock its global sliders while Comparison Mode (own per-rover sliders) is active. */
+  onComparisonActiveChange?: (active: boolean) => void;
 }
 
-export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAuthTokenChange }: RLGameProps = {}) {
+export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAuthTokenChange, onComparisonActiveChange }: RLGameProps = {}) {
   const { levelMode, currentLevel, onLevelSolved } = useLevel();
   const unlockedFeatures = levelMode ? getUnlockedFeatures(currentLevel as LevelNumber) : null;
 
@@ -1267,6 +1269,9 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   });
   const { language, setLanguage, isEnglish, translate } = useLanguage();
   const [mode, setMode] = useState<Mode>("playground");
+  useEffect(() => {
+    onComparisonActiveChange?.(mode === "comparison");
+  }, [mode, onComparisonActiveChange]);
   const [tileSize, setTileSize] = useState<TileSizeOption>(LIB_DEFAULT_TILE_OPTION);
   const [levelKey, setLevelKey] = useState<LevelKey>("level1");
   const [placementMode, setPlacementModeState] = useState<PlaceableTile>("obstacle");
