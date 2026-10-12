@@ -65,7 +65,7 @@ export function GuideDemo({ world, initial, dials = [], consumeRewards = true, t
   const [fast, setFast] = useState(false);
   const [visible, setVisible] = useState(true);
   const holder = useRef<HTMLDivElement>(null);
-  const tileSize = useTileSize(world.size, 56, 96);
+  const tileSize = useTileSize(world.size, 56, (w) => (w < 1024 ? 140 : 96));
 
   const shortest = useMemo(() => shortestPathLength(worldToState(world).grid, world.agent, world.goal), [world]);
 

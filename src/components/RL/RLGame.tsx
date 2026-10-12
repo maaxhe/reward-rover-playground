@@ -2149,10 +2149,13 @@ const handleActiveBonusClick = useCallback(() => {
   // Nebeneinander (ab lg): zwei Seitenspalten à min. 260 px, 2×24 px Abstand, ~80 px Rahmen um das Feld.
   const SIDE_COLUMN_MIN = 260;
   const sideBySide = layoutWidth > 0 && typeof window !== "undefined" && window.innerWidth >= 1024;
+  // Phones (stacked): the board must fit the screen width completely, minus card padding (2×24) and board frame (2×16 + border).
   const gridPixelTarget = sideBySide
     ? Math.max(280, Math.min(GRID_PIXEL_TARGET[tileSize], layoutWidth - 2 * SIDE_COLUMN_MIN - 48 - 80))
-    : GRID_PIXEL_TARGET[tileSize];
-  const tileSizePx = Math.max(24, Math.floor(gridPixelTarget / Math.max(gridSize, 1)));
+    : layoutWidth > 0
+      ? Math.min(GRID_PIXEL_TARGET[tileSize], Math.max(150, layoutWidth - 48 - 36 - 8))
+      : GRID_PIXEL_TARGET[tileSize];
+  const tileSizePx = Math.max(sideBySide ? 24 : 12, Math.floor(gridPixelTarget / Math.max(gridSize, 1)));
   const TILE_GAP = 3;
   const gridPixelDimension = tileSizePx * gridSize + TILE_GAP * (gridSize - 1);
 
@@ -3797,9 +3800,9 @@ const handleActiveBonusClick = useCallback(() => {
 
           <div className="order-1 lg:order-2 w-full overflow-x-hidden">
           <Card
-            style={{ height: `${cardHeight}px` }}
+            style={{ ["--board-height" as string]: `${cardHeight}px` }}
             className={cn(
-              "flex flex-col rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm w-full lg:w-fit mx-auto overflow-y-auto transition-colors duration-200 hover:border-primary/30",
+              "flex flex-col rounded-3xl border border-border bg-card/95 p-4 sm:p-6 shadow-medium text-foreground backdrop-blur-sm w-full h-auto lg:h-[var(--board-height)] lg:w-fit mx-auto overflow-x-hidden overflow-y-auto transition-colors duration-200 hover:border-primary/30",
               mode === "comparison" && "pointer-events-none opacity-40 grayscale",
             )}
           >
@@ -3815,10 +3818,9 @@ const handleActiveBonusClick = useCallback(() => {
               tabIndex={0}
               role="application"
               aria-label={translate("Reward Rover Spielfeld", "Reward Rover playfield")}
-              className="rounded-2xl border border-border/50 bg-background/80 p-4 shadow-soft focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow w-full max-w-full mx-auto"
+              className="rounded-2xl border border-border/50 bg-background/80 p-4 shadow-soft focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow w-full max-w-full mx-auto select-none"
               style={{
                 maxWidth: gridPixelDimension + 40,
-                aspectRatio: "1 / 1",
               }}
               onMouseDown={() => gridRef.current?.focus()}
             >

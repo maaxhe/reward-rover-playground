@@ -84,7 +84,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             </button>
           ))}
         </nav>
-        <div ref={scroller} className="min-w-0 flex-1 space-y-16 overflow-y-auto px-5 py-8 sm:px-10 sm:py-10">
+        <div ref={scroller} className="min-w-0 flex-1 space-y-16 overflow-y-auto overflow-x-hidden px-5 py-8 sm:px-10 sm:py-10">
           <header className="space-y-3">
             <DialogTitle className="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
               {t("Wie ein Rover lernt, ohne dass ihm jemand den Weg zeigt", "How a rover learns without anyone showing it the way")}

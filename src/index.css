@@ -89,6 +89,11 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
     font-family: "Bricolage Grotesque Variable", system-ui, sans-serif;
     font-optical-sizing: auto;
+    overflow-x: clip;
+  }
+
+  html {
+    overflow-x: clip;
   }
 }
 
