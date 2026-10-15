@@ -21,7 +21,7 @@ export function GameLegend({ translate, showPortal = true }: Props) {
   ];
 
   return (
-    <Card className="mt-6 rounded-lg border-border/40 bg-card/60 p-5">
+    <Card className="rounded-lg border-border/40 bg-card/60 p-5">
       <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-foreground">
         {translate("Legende", "Legend")}
       </h3>

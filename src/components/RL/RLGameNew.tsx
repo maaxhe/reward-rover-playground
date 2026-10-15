@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { RLGame } from "./RLGame";
@@ -16,23 +17,76 @@ import type { LevelNumber } from "@/lib/levelProgression";
 import { api } from "@/lib/api";
 
 /** Static info cards fold away on phones (tap to open) and stay fully visible on larger screens. */
-function MobileFold({ title, children }: { title: string; children: ReactNode }) {
+/** Collapsible sidebar card on every screen size. `summary` stays visible while folded. */
+function Fold({
+  title,
+  summary,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string;
+  summary?: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
   return (
-    <>
-      <details className="group mt-4 rounded-lg border border-border/40 bg-card/60 md:hidden">
-        <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-semibold uppercase tracking-wide text-foreground">
-          {title}
-          <span className="text-muted-foreground transition-transform group-open:rotate-180" aria-hidden>▾</span>
-        </summary>
-        <div className="px-2 pb-2">{children}</div>
-      </details>
-      <div className="hidden md:block">{children}</div>
-    </>
+    <div className="mt-4 rounded-lg border border-border/40 bg-card/60">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold uppercase tracking-wide text-foreground"
+      >
+        <span>{title}</span>
+        <span className="flex items-center gap-2 normal-case tracking-normal">
+          {!open && summary && <span className="text-xs font-medium text-muted-foreground">{summary}</span>}
+          <span className={cn("text-muted-foreground transition-transform", open && "rotate-180")} aria-hidden>▾</span>
+        </span>
+      </button>
+      {open && <div className="px-2 pb-2">{children}</div>}
+    </div>
   );
 }
 
+const FOLD_INTRO_KEY = "rr-fold-intro";
+/** The cards stay open this long on the first visit so the explanation can be read, then fold away. */
+const FOLD_INTRO_MS = 15_000;
+
 export function RLGameNew() {
   const { translate } = useLanguage();
+  // First visit of a session: Level and Legend start open with an explanation, then fold away on their own.
+  const [foldIntro, setFoldIntro] = useState(() => {
+    try {
+      return sessionStorage.getItem(FOLD_INTRO_KEY) !== "1";
+    } catch {
+      return true;
+    }
+  });
+  const [folds, setFolds] = useState({ level: foldIntro, unlocks: foldIntro, legend: foldIntro });
+  const touchedFolds = useRef(new Set<string>());
+  const toggleFold = (key: "level" | "unlocks" | "legend") => {
+    touchedFolds.current.add(key);
+    setFolds((f) => ({ ...f, [key]: !f[key] }));
+  };
+  useEffect(() => {
+    if (!foldIntro) return;
+    try {
+      sessionStorage.setItem(FOLD_INTRO_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+    const id = window.setTimeout(() => {
+      setFolds((f) => ({
+        level: touchedFolds.current.has("level") ? f.level : false,
+        unlocks: touchedFolds.current.has("unlocks") ? f.unlocks : false,
+        legend: touchedFolds.current.has("legend") ? f.legend : false,
+      }));
+      setFoldIntro(false);
+    }, FOLD_INTRO_MS);
+    return () => window.clearTimeout(id);
+  }, [foldIntro]);
   const [explorationRate, setExplorationRate] = useState(0.2);
   const [alpha, setAlpha] = useState(0.1);
   const [gamma, setGamma] = useState(0.85);
@@ -186,30 +240,30 @@ export function RLGameNew() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Mode Selector */}
-      <div className="border-b border-border/40 bg-card/30 px-4 md:px-8 py-4 sticky top-0 z-30">
-        <div className="flex flex-wrap items-center gap-3">
-          <Link to="/" className="mr-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
+      <div className="border-b border-border/40 bg-background px-4 md:px-8 py-3 md:py-4 md:sticky md:top-0 z-30">
+        <div className="grid grid-cols-2 items-center gap-2 md:flex md:flex-wrap md:gap-3">
+          <Link to="/" className="col-span-2 mr-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
             ← {translate("Startseite", "Home")}
           </Link>
           <Button
             variant={mode === "levels" ? "default" : "outline"}
             onClick={() => setMode("levels")}
-            className="font-semibold"
+            className="w-full font-semibold md:w-auto"
           >
             {translate("Level-Modus", "Level Mode")}
           </Button>
           <Button
             variant={mode === "free" ? "default" : "outline"}
             onClick={() => (canAccessFreeMode ? setMode("free") : setPwOpen(true))}
-            className="font-semibold"
+            className="w-full font-semibold md:w-auto"
           >
             {translate("Free Mode", "Free Mode")}
             {!canAccessFreeMode && <span className="ml-2 text-xs">🔒</span>}
           </Button>
-          <Button asChild variant="outline" className="ml-auto font-semibold">
+          <Button asChild variant="outline" className="w-full font-semibold md:ml-auto md:w-auto">
             <Link to="/klasse">🏫 {translate("Klassen-Modus", "Classroom")}</Link>
           </Button>
-          <RLGuideButton size="default" variant="default" className="font-semibold" />
+          <RLGuideButton size="default" variant="default" className="w-full font-semibold md:w-auto" />
         </div>
       </div>
 
@@ -257,7 +311,23 @@ export function RLGameNew() {
           )}
           {isLevelMode && (
             <>
-              <LevelProgressBar currentLevel={currentLevel} translate={translate} />
+              {foldIntro && (
+                <p className="mb-3 rounded-lg border border-primary/40 bg-primary/10 p-3 text-xs leading-relaxed text-foreground">
+                  👋{" "}
+                  {translate(
+                    "Kurz erklärt: „Level“ zeigt, wo du gerade bist. „Das schaltest du frei“ zeigt, was du schon benutzen darfst. Die „Legende“ erklärt die Symbole auf dem Spielfeld. Gleich klappen sie zusammen, mit einem Tipp auf den Titel öffnest du sie wieder.",
+                    "Quick tour: “Level” shows where you are. “What you unlock” shows what you may already use. The “Legend” explains the symbols on the board. They fold away in a moment; tap a title to open them again.",
+                  )}
+                </p>
+              )}
+              <Fold
+                title={`${translate("Level", "Level")} ${currentLevel} / 10`}
+                summary={`${Math.round((currentLevel / 10) * 100)}%`}
+                open={folds.level}
+                onToggle={() => toggleFold("level")}
+              >
+                <LevelProgressBar currentLevel={currentLevel} translate={translate} />
+              </Fold>
               <div className="mt-3 flex gap-2">
                 <Button
                   variant="outline"
@@ -293,10 +363,13 @@ export function RLGameNew() {
                       )}
                 </p>
               )}
-              <MobileFold title={translate("Das schaltest du frei", "What you unlock")}>
-                <div className="mt-6 md:mt-6" />
+              <Fold
+                title={translate("Das schaltest du frei", "What you unlock")}
+                open={folds.unlocks}
+                onToggle={() => toggleFold("unlocks")}
+              >
                 <LevelUnlocksCard currentLevel={currentLevel} translate={translate} />
-              </MobileFold>
+              </Fold>
               {!loggedIn && (maxUnlockedLevel > 1 || freeModeUnlocked) && (
                 <button
                   type="button"
@@ -323,9 +396,9 @@ export function RLGameNew() {
             translate={translate}
           />
           <RLGuideButton className="my-4 w-full font-semibold" />
-          <MobileFold title={translate("Legende", "Legend")}>
+          <Fold title={translate("Legende", "Legend")} open={folds.legend} onToggle={() => toggleFold("legend")}>
             <GameLegend translate={translate} showPortal={!isLevelMode || unlockedFeatures.canPlacePortals} />
-          </MobileFold>
+          </Fold>
         </div>
 
         {/* Right Content - Game */}
