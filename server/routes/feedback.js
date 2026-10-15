@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import { Router } from "express";
 import { authenticate } from "../middleware/auth.js";
 import { isAdmin } from "../middleware/isAdmin.js";
+import { sendFeedbackMail } from "../lib/mailer.js";
 
 const router = Router();
 const dataDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "data");
@@ -26,7 +27,9 @@ router.post("/feedback", (req, res) => {
 
   const level = Number.isInteger(req.body?.level) ? req.body.level : null;
   fs.mkdirSync(dataDir, { recursive: true });
-  fs.appendFileSync(file, `${JSON.stringify({ at: new Date(now).toISOString(), level, text })}\n`);
+  const entry = { at: new Date(now).toISOString(), level, text };
+  fs.appendFileSync(file, `${JSON.stringify(entry)}\n`);
+  sendFeedbackMail(entry).catch((err) => console.error("feedback mail failed:", err.message));
   return res.status(201).json({ ok: true });
 });
 
