@@ -159,9 +159,9 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   const [showRandomStatsCard, setShowRandomStatsCard] = useState(false);
   const [showPlaygroundStatsCard, setShowPlaygroundStatsCard] = useState(false);
   // On phones the console and settings start folded, so the board is not buried under a wall of controls.
-  const isDesktopAtStart = typeof window === "undefined" || window.innerWidth >= 1024;
+  const isDesktopAtStart = typeof window === "undefined" || window.innerWidth >= 1280;
   const [showConsolePanel, setShowConsolePanel] = useState(isDesktopAtStart);
-  const [showSettingsPanel, setShowSettingsPanel] = useState(isDesktopAtStart);
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [isReplaying, setIsReplaying] = useState(false);
   const [replayEpisode, setReplayEpisode] = useState<EpisodeStats | null>(null);
   const [replayStep, setReplayStep] = useState(0);
@@ -522,6 +522,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
     if (!highlightTarget) return;
     // Fold-out panels that contain the highlighted element (phones start folded).
     if (["settings", "policy", "autorestart", "gridsize"].includes(highlightTarget)) setShowSettingsPanel(true);
+    if (["explore", "alpha", "gamma", "start"].includes(highlightTarget)) setShowConsolePanel(true);
     if (highlightTarget.startsWith("tool-")) setShowConsolePanel(true);
     const find = () => Array.from(document.querySelectorAll<HTMLElement>(`[data-tutorial="${highlightTarget}"]`));
     find().forEach((el) => el.classList.add("tutorial-spotlight"));
@@ -2148,7 +2149,7 @@ const handleActiveBonusClick = useCallback(() => {
   const gridSize = activeGrid.length;
   // Nebeneinander (ab lg): zwei Seitenspalten à min. 260 px, 2×24 px Abstand, ~80 px Rahmen um das Feld.
   const SIDE_COLUMN_MIN = 260;
-  const sideBySide = layoutWidth > 0 && typeof window !== "undefined" && window.innerWidth >= 1024;
+  const sideBySide = layoutWidth > 0 && typeof window !== "undefined" && window.innerWidth >= 1280;
   // Phones (stacked): the board must fit the screen width completely, minus card padding (2×24) and board frame (2×16 + border).
   const gridPixelTarget = sideBySide
     ? Math.max(280, Math.min(GRID_PIXEL_TARGET[tileSize], layoutWidth - 2 * SIDE_COLUMN_MIN - 48 - 80))
@@ -2166,10 +2167,10 @@ const handleActiveBonusClick = useCallback(() => {
 
   // Grid-Layout: Bei größeren Feldern wird die Playground-Spalte breiter
   const gridCols = tileSize === 's'
-    ? 'lg:grid-cols-[minmax(260px,1fr)_auto_minmax(260px,1fr)]'
+    ? 'xl:grid-cols-[minmax(260px,1fr)_auto_minmax(260px,1fr)]'
     : tileSize === 'm'
-    ? 'lg:grid-cols-[minmax(260px,0.7fr)_auto_minmax(260px,0.7fr)]'
-    : 'lg:grid-cols-[minmax(260px,0.5fr)_auto_minmax(260px,0.5fr)]';
+    ? 'xl:grid-cols-[minmax(260px,0.7fr)_auto_minmax(260px,0.7fr)]'
+    : 'xl:grid-cols-[minmax(260px,0.5fr)_auto_minmax(260px,0.5fr)]';
 
   const leftComparisonGridSize = comparisonState.left.grid.length;
   const rightComparisonGridSize = comparisonState.right.grid.length;
@@ -2377,7 +2378,7 @@ const handleActiveBonusClick = useCallback(() => {
         <DialogContent
           hideOverlay
           onInteractOutside={(e) => e.preventDefault()}
-          className="max-w-2xl top-auto bottom-24 lg:bottom-4 translate-y-0 data-[state=open]:slide-in-from-top-0 data-[state=closed]:slide-out-to-top-0 shadow-2xl border-primary/40"
+          className="max-w-2xl top-auto bottom-24 xl:bottom-4 translate-y-0 data-[state=open]:slide-in-from-top-0 data-[state=closed]:slide-out-to-top-0 shadow-2xl border-primary/40"
         >
           <DialogHeader>
             <div className="flex items-center justify-between">
@@ -2439,7 +2440,7 @@ const handleActiveBonusClick = useCallback(() => {
         <DialogContent
           hideOverlay
           onInteractOutside={(e) => e.preventDefault()}
-          className="max-w-xl top-auto bottom-24 lg:bottom-4 translate-y-0 data-[state=open]:slide-in-from-top-0 data-[state=closed]:slide-out-to-top-0 shadow-2xl border-primary/40"
+          className="max-w-xl top-auto bottom-24 xl:bottom-4 translate-y-0 data-[state=open]:slide-in-from-top-0 data-[state=closed]:slide-out-to-top-0 shadow-2xl border-primary/40"
         >
           <DialogHeader>
             <DialogTitle className="text-xl font-bold">
@@ -2581,13 +2582,13 @@ const handleActiveBonusClick = useCallback(() => {
       <div className="bg-[var(--gradient-main)] pb-12">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 pt-6">
         {/* Hero Section */}
-        <div className="rounded-3xl border border-border bg-card/95 p-8 ">
-          <div className="flex items-center gap-3 mb-4">
+        <div className={cn("rounded-3xl border border-border bg-card/95", levelMode ? "p-4 sm:p-5" : "p-8")}>
+          <div className={cn("flex items-center gap-3", levelMode ? "mb-2" : "mb-4")}>
             <Target className="h-8 w-8 text-primary" />
             <h1 className="text-4xl md:text-5xl font-bold gradient-text">Reward Rover</h1>
           </div>
 
-          <p className="text-xl text-muted-foreground leading-relaxed mb-6 max-w-4xl">
+          <p className={cn("text-xl text-muted-foreground leading-relaxed mb-6 max-w-4xl", levelMode && "hidden")}>
             {isEnglish ? (
               <>
                 Experience <strong className="text-foreground gradient-text">reinforcement learning</strong> across three modes.
@@ -2601,7 +2602,7 @@ const handleActiveBonusClick = useCallback(() => {
             )}
           </p>
 
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className={cn("flex flex-wrap items-center justify-between gap-4", levelMode ? "mb-0" : "mb-6")}>
             <div className="flex flex-wrap items-center gap-3">
               <Button
                 variant="outline"
@@ -2744,14 +2745,9 @@ const handleActiveBonusClick = useCallback(() => {
               level={currentLevel as LevelNumber}
               status={objectiveStatus}
               translate={translate}
+              episodes={playgroundState.episodeHistory.length}
+              onShowHelp={coachSlides.length > 0 ? () => setCoachStep(0) : null}
             />
-            {coachSlides.length > 0 && coachStep === null && (
-              <div className="flex justify-end">
-                <Button variant="outline" size="sm" onClick={() => setCoachStep(0)}>
-                  💡 {translate("Hilfe zu diesem Level zeigen", "Show help for this level")}
-                </Button>
-              </div>
-            )}
           </>
         )}
 
@@ -3569,17 +3565,17 @@ const handleActiveBonusClick = useCallback(() => {
           </Card>
         )}
 
-        <div className="relative pb-24 lg:pb-0" ref={layoutRef}>
+        <div className="relative pb-24 xl:pb-0" ref={layoutRef}>
           <div
-            className={cn("flex flex-col gap-6 lg:grid lg:items-stretch transition-opacity", gridCols)}
+            className={cn("flex flex-col gap-6 xl:grid xl:items-stretch transition-opacity", gridCols)}
             aria-disabled={mode === "comparison"}
           >
-          <div className="relative order-2 lg:order-1">
+          <div className="relative order-2 xl:order-1">
             <Card
               ref={consoleScrollRef}
               className={cn(
                 "flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm overflow-y-auto transition-all duration-200 hover:border-primary/30",
-                "h-auto lg:min-h-[var(--console-height)]",
+                "h-auto", showConsolePanel && "xl:min-h-[var(--console-height)]",
                 mode === "comparison" && "pointer-events-none opacity-40 grayscale",
               )}
               style={{
@@ -3588,7 +3584,7 @@ const handleActiveBonusClick = useCallback(() => {
             >
               <button
                 onClick={() => setShowConsolePanel(!showConsolePanel)}
-                className="flex items-center justify-between w-full text-left lg:pointer-events-none"
+                className="flex items-center justify-between w-full text-left"
               >
                 <h2 className="text-xl font-bold flex items-center gap-2">
                   <Gamepad2 className="h-6 w-6 text-primary" />
@@ -3596,7 +3592,7 @@ const handleActiveBonusClick = useCallback(() => {
                     {translate("Konsole", "Console")}
                   </span>
                 </h2>
-                <ChevronDown className={cn("h-5 w-5 transition-transform lg:hidden", showConsolePanel && "rotate-180")} />
+                <ChevronDown className={cn("h-5 w-5 transition-transform", showConsolePanel && "rotate-180")} />
               </button>
               {showConsolePanel && (
               <>
@@ -3798,11 +3794,11 @@ const handleActiveBonusClick = useCallback(() => {
           <ScrollIndicator containerRef={consoleScrollRef} />
           </div>
 
-          <div className="order-1 lg:order-2 w-full overflow-x-hidden">
+          <div className="order-1 xl:order-2 w-full overflow-x-hidden">
           <Card
             style={{ ["--board-height" as string]: `${cardHeight}px` }}
             className={cn(
-              "flex flex-col rounded-3xl border border-border bg-card/95 p-4 sm:p-6 shadow-medium text-foreground backdrop-blur-sm w-full h-auto lg:h-[var(--board-height)] lg:w-fit mx-auto overflow-x-hidden overflow-y-auto transition-colors duration-200 hover:border-primary/30",
+              "flex flex-col rounded-3xl border border-border bg-card/95 p-4 sm:p-6 shadow-medium text-foreground backdrop-blur-sm w-full h-auto xl:h-[var(--board-height)] xl:w-fit mx-auto overflow-x-hidden overflow-y-auto transition-colors duration-200 hover:border-primary/30",
               mode === "comparison" && "pointer-events-none opacity-40 grayscale",
             )}
           >
@@ -3921,7 +3917,7 @@ const handleActiveBonusClick = useCallback(() => {
             </div>
 
             {mode === "playground" && !levelMode && (
-              <div className="mt-4 space-y-4 hidden lg:block">
+              <div className="mt-4 space-y-4 hidden xl:block">
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold text-foreground">
                     {translate("Umgebung speichern", "Save environment")}
@@ -3958,7 +3954,7 @@ const handleActiveBonusClick = useCallback(() => {
           </Card>
 
           {/* Mobile action bar: pinned to the bottom of the screen, so Start is always in reach (phones only) */}
-          <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-border bg-background/95 p-3 backdrop-blur lg:hidden">
+          <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-border bg-background/95 p-3 backdrop-blur xl:hidden">
             {(() => {
               const playground = mode === "playground";
               const running = playground ? playgroundState.isRunning : randomState.isRunning;
@@ -3989,13 +3985,13 @@ const handleActiveBonusClick = useCallback(() => {
           </div>
           </div>
 
-          <div className="relative order-3 lg:order-3">
+          <div className="relative order-3 xl:order-3">
             <Card
               ref={settingsScrollRef}
               data-tutorial="settings"
               className={cn(
                 "flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm overflow-y-auto transition-all duration-200 hover:border-primary/30",
-                "h-auto lg:min-h-[var(--settings-height)]"
+                "h-auto", showSettingsPanel && "xl:min-h-[var(--settings-height)]"
               )}
               style={{
                 ["--settings-height" as string]: `${cardHeight}px`,
@@ -4003,12 +3999,12 @@ const handleActiveBonusClick = useCallback(() => {
             >
               <button
                 onClick={() => setShowSettingsPanel(!showSettingsPanel)}
-                className="flex items-center justify-between w-full text-left lg:pointer-events-none"
+                className="flex items-center justify-between w-full text-left"
               >
                 <h2 className="text-xl font-bold gradient-text">
                   {translate("Einstellungen", "Settings")}
                 </h2>
-                <ChevronDown className={cn("h-5 w-5 transition-transform lg:hidden", showSettingsPanel && "rotate-180")} />
+                <ChevronDown className={cn("h-5 w-5 transition-transform", showSettingsPanel && "rotate-180")} />
               </button>
 
             {showSettingsPanel && (
@@ -4211,7 +4207,7 @@ const handleActiveBonusClick = useCallback(() => {
 
             {/* Saved environments are Free Mode only: loading one in a level would replace the level world. */}
             {!levelMode && (
-              <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-3 hidden lg:block">
+              <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-3 hidden xl:block">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-foreground">
                     {translate("Meine Umgebungen", "My environments")}

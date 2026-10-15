@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { getLevelConfig } from "@/lib/levelProgression";
 import { LEVEL_OBJECTIVES, type ObjectiveStatus } from "@/lib/levelObjectives";
 import type { LevelNumber } from "@/lib/levelProgression";
@@ -8,11 +10,34 @@ interface Props {
   level: LevelNumber;
   status: ObjectiveStatus;
   translate: (de: string, en: string) => string;
+  /** Number of finished episodes; used to notice when the player makes no progress. */
+  episodes: number;
+  /** Replays the step-by-step help popups of this level (null when the level has none). */
+  onShowHelp: (() => void) | null;
 }
 
-export function LevelObjectivePanel({ level, status, translate }: Props) {
+/** After this long without a new finished episode the tip button starts nudging. */
+const STUCK_AFTER_MS = 60_000;
+
+export function LevelObjectivePanel({ level, status, translate, episodes, onShowHelp }: Props) {
   const config = getLevelConfig(level);
   const hint = LEVEL_OBJECTIVES[level].hint;
+  const [hintOpen, setHintOpen] = useState(false);
+  const [stuck, setStuck] = useState(false);
+
+  // The tip stays tucked away until needed; a new level starts fresh.
+  useEffect(() => {
+    setHintOpen(false);
+    setStuck(false);
+  }, [level]);
+
+  // Stuck = unsolved and no new episode for a minute. Any progress resets the timer.
+  useEffect(() => {
+    setStuck(false);
+    if (status.solved) return;
+    const id = window.setTimeout(() => setStuck(true), STUCK_AFTER_MS);
+    return () => window.clearTimeout(id);
+  }, [level, episodes, status.solved]);
 
   return (
     <Card
@@ -61,7 +86,35 @@ export function LevelObjectivePanel({ level, status, translate }: Props) {
           </li>
         ))}
       </ul>
-      <p className="text-xs leading-relaxed text-amber-900/80 dark:text-amber-100/80">💡 {translate(hint.de, hint.en)}</p>
+      {!status.solved && (
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={stuck && !hintOpen ? "default" : "outline"}
+              className={cn(stuck && !hintOpen && "animate-pulse")}
+              onClick={() => setHintOpen((open) => !open)}
+              aria-expanded={hintOpen}
+            >
+              💡{" "}
+              {hintOpen
+                ? translate("Tipp verbergen", "Hide tip")
+                : stuck
+                  ? translate("Du hängst fest? Tipp holen", "Stuck? Get a tip")
+                  : translate("Tipp", "Tip")}
+            </Button>
+            {onShowHelp && (
+              <Button type="button" size="sm" variant="outline" onClick={onShowHelp}>
+                {translate("Schritt für Schritt zeigen", "Show me step by step")}
+              </Button>
+            )}
+          </div>
+          {hintOpen && (
+            <p className="text-sm leading-relaxed text-amber-900 dark:text-amber-100">{translate(hint.de, hint.en)}</p>
+          )}
+        </div>
+      )}
     </Card>
   );
 }

@@ -1,5 +1,5 @@
 import { useRef, useState, type ReactNode } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { RealRobots } from "@/components/RL/RealRobots";
 import { GuideDemo } from "@/components/RL/GuideDemo";
@@ -69,7 +69,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
   const go = (id: string) => scroller.current?.querySelector(`#guide-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[94vh] w-[96vw] max-w-6xl gap-0 overflow-hidden rounded-3xl p-0">
+      <DialogContent className="flex h-[94dvh] max-h-[94vh] w-[96vw] max-w-6xl gap-0 overflow-hidden rounded-3xl p-0">
         <nav className="hidden w-52 flex-shrink-0 flex-col gap-1 border-r border-border bg-secondary/30 p-5 pt-10 lg:flex" aria-label={t("Kapitel", "Chapters")}>
           <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">{t("Kapitel", "Chapters")}</p>
           {CHAPTERS.map((c, i) => (
@@ -84,7 +84,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             </button>
           ))}
         </nav>
-        <div ref={scroller} className="min-w-0 flex-1 space-y-16 overflow-y-auto overflow-x-hidden px-5 py-8 sm:px-10 sm:py-10">
+        <div ref={scroller} className="min-w-0 flex-1 space-y-16 overflow-y-auto overflow-x-hidden px-5 pb-28 pt-8 sm:px-10 sm:pb-28 sm:pt-10">
           <header className="space-y-3">
             <DialogTitle className="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
               {t("Wie ein Rover lernt, ohne dass ihm jemand den Weg zeigt", "How a rover learns without anyone showing it the way")}
@@ -296,6 +296,14 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
               <li>{t("Setze γ auf 0 und platziere eine Belohnung am Rand. Wird der Rover zum Naschkater?", "Set γ to 0 and put a reward on the side. Does the rover turn into a sweet tooth?")}</li>
             </ol>
           </Section>
+        </div>
+        {/* Always-visible way out, also on iPads where the corner X is easy to miss. */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-background via-background/90 to-transparent px-4 pb-4 pt-10">
+          <DialogClose asChild>
+            <Button type="button" size="lg" className="pointer-events-auto min-w-48 rounded-full font-bold shadow-lg">
+              {t("Schließen und loslegen", "Close and start playing")}
+            </Button>
+          </DialogClose>
         </div>
       </DialogContent>
     </Dialog>
