@@ -85,7 +85,7 @@ const ClassroomHost = () => {
               {room.round > 1 ? ` · Runde ${room.round}` : ""}{room.levelId ? ` · Level ${room.levelId}` : ""}
               </p>
               <Button asChild variant="outline" size="sm" className="mt-3">
-                <a href={`/klasse/beamer/${room.code}`} target="_blank" rel="noopener noreferrer">📽 Beamer-Ansicht öffnen</a>
+                <a href={`/klasse/beamer/${room.code}`} target="_blank" rel="noopener noreferrer">Beamer-Ansicht öffnen</a>
               </Button>
             </div>
           </Card>
@@ -110,12 +110,12 @@ const ClassroomHost = () => {
             )}
             {room.phase === "finished" && (
               <>
-                <span className="basis-full text-xl font-bold">🏁 Beendet – tippe auf einen Namen für den Replay</span>
+                <span className="basis-full text-xl font-bold">Beendet – tippe auf einen Namen für den Replay</span>
                 <Button disabled={busy} onClick={() => act(() => competitionApi.restart(code, hostKey, false))}>
                   ↻ Nochmal – gleiche Welt
                 </Button>
                 <Button variant="secondary" disabled={busy} onClick={() => act(() => competitionApi.restart(code, hostKey, true))}>
-                  🎲 Nochmal – neue Welt
+                  Nochmal – neue Welt
                 </Button>
                 <Button variant="outline" onClick={() => downloadCsv(`reward-rover-${room.code}-runde-${room.round}.csv`, roundCsv(room.leaderboard, room.totals))}>
                   ⬇ CSV

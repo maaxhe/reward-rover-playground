@@ -387,7 +387,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
         "IMPORTANT: Arrow keys do NOT control the rover directly! They only give short-term directional hints. The rover still makes its own decisions and keeps learning."
       ),
       bullets: [
-        translate("⚠️ Der Rover trifft weiterhin eigene Entscheidungen", "⚠️ The rover still makes its own decisions"),
+        translate("Der Rover trifft weiterhin eigene Entscheidungen", "The rover still makes its own decisions"),
         translate("Der Impuls wirkt nur beim Drücken der Taste", "The hint only works while pressing the key"),
         translate("Der Lernprozess läuft weiter", "The learning process continues"),
       ],
@@ -402,7 +402,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
     },
     {
       target: "settings",
-      title: translate("Die Einstellungen ⚙️", "The settings ⚙️"),
+      title: translate("Die Einstellungen", "The settings"),
       content: translate(
         "Hier schaltest du Anzeigen und Verhalten ein und aus: Policy-Pfeile, Q-Werte, Heatmap, Auto-Restart und die Feldgröße. Auf dem Handy klappst du sie mit dem Pfeil oben auf.",
         "Here you switch displays and behaviour on and off: policy arrows, Q-values, heatmap, auto-restart and the grid size. On a phone, unfold them with the arrow at the top."
@@ -410,7 +410,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
     },
     {
       target: "policy",
-      title: translate("Policy-Pfeile ➡️", "Policy arrows ➡️"),
+      title: translate("Policy-Pfeile", "Policy arrows"),
       content: translate(
         "Die Policy ist die Strategie des Rovers. Jeder Pfeil zeigt, in welche Richtung er auf diesem Feld nach seinem bisherigen Wissen gehen würde. Mit jeder Runde zeigen die Pfeile besser den Weg zum Ziel. Mit diesem Schalter blendest du sie ein oder aus.",
         "The policy is the rover's strategy. Each arrow shows which way it would go from that tile based on what it has learned. With every run the arrows trace the way to the goal better. This switch shows or hides them."
@@ -418,7 +418,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
     },
     {
       target: "autorestart",
-      title: translate("Auto-Restart 🔁", "Auto-restart 🔁"),
+      title: translate("Auto-Restart", "Auto-restart"),
       content: translate(
         "Ist dieser Schalter an, startet der Rover nach jedem Ziel von selbst neu und lernt ohne Klicken weiter. Hier kannst du es ein- und ausschalten.",
         "When this switch is on, the rover restarts by itself after every goal and keeps learning without clicking. Turn it on or off here."
@@ -1592,7 +1592,7 @@ const handleActiveBonusClick = useCallback(() => {
       }));
 
       toast({
-        title: translate("Replay Started", "🎬 Replay started"),
+        title: translate("Replay Started", "Replay started"),
         description: translate(
           `Zeige beste Episode: ${bestEpisode.steps} Schritte, ${numberFormatter.format(bestEpisode.reward)} Reward`,
           `Showing best episode: ${bestEpisode.steps} steps, ${numberFormatter.format(bestEpisode.reward)} reward`
@@ -2254,11 +2254,11 @@ const handleActiveBonusClick = useCallback(() => {
   };
 
   const randomHud = mode === "random" && (
-    <Card className="rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm transition-colors duration-200 hover:border-primary/30">
+    <Card className="rounded-xl border border-border bg-card/95 p-6 text-foreground">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="space-y-3">
           <h3 className="text-lg font-bold gradient-text">
-            {translate("🎲 Zufallsmodus", "🎲 Random Mode")}
+            {translate("Zufallsmodus", "Random Mode")}
           </h3>
           <p className="text-base text-muted-foreground max-w-2xl leading-relaxed">
             {translate(
@@ -2309,7 +2309,7 @@ const handleActiveBonusClick = useCallback(() => {
             {translate("Episode", "Episode")} {randomState.episode}
           </Badge>
           <Badge variant="secondary" className="bg-foreground/10 text-foreground border-foreground/15">
-            👣 {randomState.currentSteps}
+            {randomState.currentSteps} {translate("Schritte", "steps")}
           </Badge>
           <Badge
             variant="secondary"
@@ -2326,7 +2326,7 @@ const handleActiveBonusClick = useCallback(() => {
           <Badge variant="secondary">🧱 {randomObstacleCount}</Badge>
         </div>
       </div>
-      <div className="mt-4 rounded-2xl border border-border/40 bg-background/70">
+      <div className="mt-4 rounded-lg border border-border/40 bg-background/70">
         <button
           type="button"
           onClick={() => setShowRandomStatsCard((prev) => !prev)}
@@ -2582,7 +2582,7 @@ const handleActiveBonusClick = useCallback(() => {
       <div className="bg-[var(--gradient-main)] pb-12">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 pt-6">
         {/* Hero Section */}
-        <div className={cn("rounded-3xl border border-border bg-card/95", levelMode ? "p-4 sm:p-5" : "p-8")}>
+        <div className={cn("rounded-xl border border-border bg-card/95", levelMode ? "p-4 sm:p-5" : "p-8")}>
           <div className={cn("flex items-center gap-3", levelMode ? "mb-2" : "mb-4")}>
             <Target className="h-8 w-8 text-primary" />
             <h1 className="text-4xl md:text-5xl font-bold gradient-text">Reward Rover</h1>
@@ -2661,11 +2661,11 @@ const handleActiveBonusClick = useCallback(() => {
           <Collapsible open={showIntro} onOpenChange={setShowIntro}>
             <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
               <div className="grid md:grid-cols-2 gap-6 pt-3">
-                <Card className="rounded-2xl border border-border bg-secondary/40 p-5 shadow-soft transform transition-transform transition-colors duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/10 hover:shadow-sm">
+                <Card className="rounded-lg border border-border bg-secondary/40 p-5 shadow-soft ">
                   <h3 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
                     {translate(
                       "Exploration vs. Exploitation",
-                      "🎯 Exploration vs. Exploitation",
+                      "Exploration vs. Exploitation",
                     )}
                   </h3>
                   <p className="text-base text-muted-foreground leading-relaxed">
@@ -2690,9 +2690,9 @@ const handleActiveBonusClick = useCallback(() => {
                     )}
                   </p>
                 </Card>
-                <Card className="rounded-2xl border border-border bg-secondary/40 p-5 shadow-soft transform transition-transform transition-colors duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/10 hover:shadow-sm">
+                <Card className="rounded-lg border border-border bg-secondary/40 p-5 shadow-soft ">
                   <h3 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
-                    {translate("Three Modes to Explore", "🚀 Three modes to explore")}
+                    {translate("Three Modes to Explore", "Three modes to explore")}
                   </h3>
                   <div className="text-base text-muted-foreground leading-relaxed space-y-2">
                     <p>
@@ -2732,7 +2732,7 @@ const handleActiveBonusClick = useCallback(() => {
                   onClick={() => setRlDialogOpen(true)}
                   className="text-xs"
                 >
-                  📖 {translate("Erklärung: Wie lernt der Rover?", "Guide: How does the rover learn?")}
+                  {translate("Erklärung: Wie lernt der Rover?", "Guide: How does the rover learn?")}
                 </Button>
               </div>
             </CollapsibleContent>
@@ -2812,7 +2812,7 @@ const handleActiveBonusClick = useCallback(() => {
                       size="sm"
                       className="w-full justify-between rounded-xl border border-border/40 bg-background/60 font-semibold text-base"
                     >
-                      <span>{translate("🎯 Preset-Levels", "🎯 Preset Levels")}</span>
+                      <span>{translate("Preset-Levels", "Preset Levels")}</span>
                       <ChevronDown
                         className={cn("h-4 w-4 transition-transform duration-200", comparisonPresetsOpen ? "rotate-180" : "")}
                       />
@@ -2845,7 +2845,7 @@ const handleActiveBonusClick = useCallback(() => {
               </Card>
               <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4">
                 <Label className="text-base font-semibold text-foreground">
-                  {translate("🚀 Geschwindigkeit", "🚀 Speed")}
+                  {translate("Geschwindigkeit", "Speed")}
                 </Label>
                 <div className="mt-2 grid grid-cols-4 gap-2">
                   {SIMULATION_SPEEDS.map((option) => (
@@ -2864,7 +2864,7 @@ const handleActiveBonusClick = useCallback(() => {
             </div>
             <div className="grid gap-4 md:grid-cols-2">
             {/* Left Rover */}
-            <Card className="rounded-3xl border border-border bg-card/95 p-4 shadow-medium text-foreground backdrop-blur-sm max-h-[calc(100vh-12rem)] overflow-y-auto">
+            <Card className="rounded-xl border border-border bg-card/95 p-4 text-foreground max-h-[calc(100vh-12rem)] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-primary">{comparisonState.left.name}</h2>
                 <Button
@@ -3121,7 +3121,7 @@ const handleActiveBonusClick = useCallback(() => {
             </Card>
 
             {/* Right Rover */}
-            <Card className="rounded-3xl border border-border bg-card/95 p-4 shadow-medium text-foreground backdrop-blur-sm max-h-[calc(100vh-12rem)] overflow-y-auto">
+            <Card className="rounded-xl border border-border bg-card/95 p-4 text-foreground max-h-[calc(100vh-12rem)] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-primary">{comparisonState.right.name}</h2>
                 <Button
@@ -3376,11 +3376,11 @@ const handleActiveBonusClick = useCallback(() => {
                 </div>
               </div>
             </Card>
-            <Card className="md:col-span-2 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm">
+            <Card className="md:col-span-2 rounded-xl border border-border bg-card/95 p-6 text-foreground">
               <div className="flex flex-col gap-4">
                 <div>
                   <h3 className="text-lg font-semibold text-foreground">
-                    {translate("🔍 Move-Vergleich", "🔍 Move comparison")}
+                    {translate("Move-Vergleich", "Move comparison")}
                   </h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">
                     {moveComparisonMessage}
@@ -3480,7 +3480,7 @@ const handleActiveBonusClick = useCallback(() => {
                   )}
                 </p>
                 <p className="text-sm text-primary font-semibold">
-                  💡 {celebration.fact}
+                  {celebration.fact}
                 </p>
                 <div className="flex flex-wrap justify-center gap-3 pt-2">
                   <Badge variant="secondary" className="px-4 py-2 text-sm font-semibold">
@@ -3523,7 +3523,7 @@ const handleActiveBonusClick = useCallback(() => {
 
         {randomHud}
         {mode === "playground" && (
-          <Card className="rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm transition-colors duration-200 hover:border-primary/30">
+          <Card className="rounded-xl border border-border bg-card/95 p-6 text-foreground">
             <button
               type="button"
               onClick={() => setShowPlaygroundStatsCard((prev) => !prev)}
@@ -3574,7 +3574,7 @@ const handleActiveBonusClick = useCallback(() => {
             <Card
               ref={consoleScrollRef}
               className={cn(
-                "flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm overflow-y-auto transition-all duration-200 hover:border-primary/30",
+                "flex flex-col gap-4 rounded-xl border border-border bg-card/95 p-6 text-foreground overflow-y-auto",
                 "h-auto", showConsolePanel && "xl:min-h-[var(--console-height)]",
                 mode === "comparison" && "pointer-events-none opacity-40 grayscale",
               )}
@@ -3598,7 +3598,7 @@ const handleActiveBonusClick = useCallback(() => {
               <>
             {mode === "playground" && (
               <Badge variant="secondary" className="self-start bg-foreground/10 text-foreground border-foreground/15 font-semibold">
-                👣 {playgroundState.currentSteps}
+                {playgroundState.currentSteps} {translate("Schritte", "steps")}
               </Badge>
             )}
 
@@ -3668,7 +3668,7 @@ const handleActiveBonusClick = useCallback(() => {
               <Card className="rounded-lg border border-border/40 bg-card/50 p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-bold text-foreground">
-                    {translate("⚡ Live-Challenge", "⚡ Live challenge")}
+                    {translate("Live-Challenge", "Live challenge")}
                   </h3>
                   <Badge variant="outline" className="text-sm font-semibold">
                     {translate("wechsel alle 10s", "rotates every 10s")}
@@ -3798,13 +3798,13 @@ const handleActiveBonusClick = useCallback(() => {
           <Card
             style={{ ["--board-height" as string]: `${cardHeight}px` }}
             className={cn(
-              "flex flex-col rounded-3xl border border-border bg-card/95 p-4 sm:p-6 shadow-medium text-foreground backdrop-blur-sm w-full h-auto xl:h-[var(--board-height)] xl:w-fit mx-auto overflow-x-hidden overflow-y-auto transition-colors duration-200 hover:border-primary/30",
+              "flex flex-col rounded-xl border border-border bg-card/95 p-4 sm:p-6 text-foreground w-full h-auto xl:h-[var(--board-height)] xl:w-fit mx-auto overflow-x-hidden overflow-y-auto",
               mode === "comparison" && "pointer-events-none opacity-40 grayscale",
             )}
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-2xl font-bold gradient-text">
-                {translate("🎮 Playground", "🎮 Playground")}
+                {translate("Playground", "Playground")}
               </h2>
             </div>
 
@@ -3814,7 +3814,7 @@ const handleActiveBonusClick = useCallback(() => {
               tabIndex={0}
               role="application"
               aria-label={translate("Reward Rover Spielfeld", "Reward Rover playfield")}
-              className="rounded-2xl border border-border/50 bg-background/80 p-4 shadow-soft focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow w-full max-w-full mx-auto select-none"
+              className="rounded-lg border border-border/50 bg-background/80 p-4 shadow-soft focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow w-full max-w-full mx-auto select-none"
               style={{
                 maxWidth: gridPixelDimension + 40,
               }}
@@ -3954,7 +3954,7 @@ const handleActiveBonusClick = useCallback(() => {
           </Card>
 
           {/* Mobile action bar: pinned to the bottom of the screen, so Start is always in reach (phones only) */}
-          <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-border bg-background/95 p-3 backdrop-blur xl:hidden">
+          <div className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-border bg-background/95 p-3 xl:hidden">
             {(() => {
               const playground = mode === "playground";
               const running = playground ? playgroundState.isRunning : randomState.isRunning;
@@ -3990,7 +3990,7 @@ const handleActiveBonusClick = useCallback(() => {
               ref={settingsScrollRef}
               data-tutorial="settings"
               className={cn(
-                "flex flex-col gap-4 rounded-3xl border border-border bg-card/95 p-6 shadow-medium text-foreground backdrop-blur-sm overflow-y-auto transition-all duration-200 hover:border-primary/30",
+                "flex flex-col gap-4 rounded-xl border border-border bg-card/95 p-6 text-foreground overflow-y-auto",
                 "h-auto", showSettingsPanel && "xl:min-h-[var(--settings-height)]"
               )}
               style={{
@@ -4166,7 +4166,7 @@ const handleActiveBonusClick = useCallback(() => {
 
             <Card data-tutorial="gridsize" className="rounded-lg border border-border/40 bg-secondary/20 p-4">
               <h3 className="text-lg font-bold text-foreground mb-1">
-                {translate("📏 Feld-Größe", "📏 Grid size")}
+                {translate("Feld-Größe", "Grid size")}
               </h3>
               <p className="text-sm text-muted-foreground mb-3">
                 {translate(
@@ -4272,7 +4272,7 @@ const handleActiveBonusClick = useCallback(() => {
                     onClick={() => setSettingGoal(!settingGoal)}
                     className="text-xs font-semibold h-auto py-2"
                   >
-                    {settingGoal ? translate("Abbrechen", "Cancel") : translate("🎯 Ziel versetzen", "🎯 Move goal")}
+                    {settingGoal ? translate("Abbrechen", "Cancel") : translate("Ziel versetzen", "Move goal")}
                   </Button>
                   <Button
                     variant={confirmClear ? "destructive" : "outline"}
@@ -4287,7 +4287,7 @@ const handleActiveBonusClick = useCallback(() => {
                     }}
                     className="text-xs font-semibold h-auto py-2"
                   >
-                    {confirmClear ? translate("Wirklich leeren?", "Really clear?") : translate("🗑 Umgebung leeren", "🗑 Clear world")}
+                    {confirmClear ? translate("Wirklich leeren?", "Really clear?") : translate("Umgebung leeren", "Clear world")}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -4340,7 +4340,7 @@ const handleActiveBonusClick = useCallback(() => {
               <>
                 <Card className="rounded-lg border border-border/40 bg-card/50 p-4 space-y-3">
                   <h3 className="text-base font-bold text-foreground">
-                    {translate("🎲 Zufallsmodus-Einstellungen", "🎲 Random mode settings")}
+                    {translate("Zufallsmodus-Einstellungen", "Random mode settings")}
                   </h3>
                   <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 w-fit">
                     {levelName}
@@ -4387,7 +4387,7 @@ const handleActiveBonusClick = useCallback(() => {
             {mode === "random" && (
               <Card className="rounded-lg border border-border/40 bg-card/50 p-4">
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  💡 <strong className="text-foreground">Level:</strong>{" "}
+                  <strong className="text-foreground">Level:</strong>{" "}
                   {translate(
                     "Höhere Level vergrößern das Feld und erhöhen die Dichte von Hindernissen, Belohnungen und Strafen – eine echte Herausforderung!",
                     "Higher levels expand the grid and increase the density of walls, rewards, and penalties – a serious challenge!",
@@ -4404,7 +4404,7 @@ const handleActiveBonusClick = useCallback(() => {
         </div>
           {mode === "comparison" && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-4">
-              <div className="max-w-xl rounded-3xl border border-dashed border-border/70 bg-background/90 px-6 py-4 text-center text-sm font-semibold text-muted-foreground shadow-inner">
+              <div className="max-w-xl rounded-xl border border-dashed border-border/70 bg-background/90 px-6 py-4 text-center text-sm font-semibold text-muted-foreground shadow-inner">
                 {translate(
                   "Vergleichsmodus aktiv: Platzierungen wirken auf beide Spielfelder.",
                   "Comparison mode active: placements sync across both boards.",

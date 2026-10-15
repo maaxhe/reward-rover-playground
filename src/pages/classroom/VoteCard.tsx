@@ -64,7 +64,7 @@ export const PlayerVoteCard = ({ code, session, vote, onVoted }: { code: string;
   return (
     <Card className="space-y-4 rounded-lg border-primary/40 bg-card/60 p-4">
       <div>
-        <h2 className="text-lg font-bold">🗳 Stimmt ab!</h2>
+        <h2 className="text-lg font-bold">Stimmt ab!</h2>
         <p className="text-sm text-muted-foreground">Wie lange sollen wir trainieren und wie viele Episoden darf jede:r nutzen? Du kannst deine Stimme ändern, bis die Lehrkraft entscheidet.</p>
       </div>
       <OptionRow
@@ -120,7 +120,7 @@ export const HostVoteCard = ({
   return (
     <Card className="space-y-4 rounded-lg border-border/40 bg-card/60 p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-bold">🗳 Abstimmung</h2>
+        <h2 className="text-lg font-bold">Abstimmung</h2>
         {vote.open ? (
           <div className="flex flex-wrap gap-2">
             <Button size="sm" disabled={busy || vote.voters === 0} onClick={() => run(async () => { await competitionApi.applyVote(code, hostKey); })}>

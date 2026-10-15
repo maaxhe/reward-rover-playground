@@ -335,7 +335,7 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
             <h2 className="text-sm font-semibold uppercase tracking-wide">Test-Lauf</h2>
             <p>
               Dein Rover jetzt (ohne Zufall):{" "}
-              <b>{preview.totalReward} Pkt</b> · {preview.reachedGoal ? `🎯 ${preview.steps} Schritte` : `⏱ Zeitlimit (${preview.steps} Schritte) erreicht – Ziel nicht gefunden`}
+              <b>{preview.totalReward} Pkt</b> · {preview.reachedGoal ? `${preview.steps} Schritte` : `⏱ Zeitlimit (${preview.steps} Schritte) erreicht – Ziel nicht gefunden`}
             </p>
             {serverResult && (
               <p className="text-muted-foreground">
@@ -370,7 +370,7 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 
 const StatusBadge = ({ phase, remainingMs, paused }: { phase: string; remainingMs: number; paused: boolean }) => {
   if (phase === "lobby") return <span className="rounded-full bg-secondary px-3 py-1 text-sm font-semibold">Lobby</span>;
-  if (phase === "finished" || remainingMs <= 0) return <span className="rounded-full bg-secondary px-3 py-1 text-sm font-semibold">🏁 Beendet</span>;
+  if (phase === "finished" || remainingMs <= 0) return <span className="rounded-full bg-secondary px-3 py-1 text-sm font-semibold">Beendet</span>;
   return <span className="rounded-full bg-primary/15 px-3 py-1 text-sm font-bold tabular-nums text-primary">{paused ? "⏸ Pause" : "⏱"} {formatCountdown(remainingMs)}</span>;
 };
 

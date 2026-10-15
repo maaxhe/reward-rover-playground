@@ -97,16 +97,15 @@ export function LevelObjectivePanel({ level, status, translate, episodes, onShow
               onClick={() => setHintOpen((open) => !open)}
               aria-expanded={hintOpen}
             >
-              💡{" "}
               {hintOpen
                 ? translate("Tipp verbergen", "Hide tip")
                 : stuck
-                  ? translate("Du hängst fest? Tipp holen", "Stuck? Get a tip")
+                  ? translate("Komme nicht weiter? Tipp", "Stuck? Get a tip")
                   : translate("Tipp", "Tip")}
             </Button>
             {onShowHelp && (
               <Button type="button" size="sm" variant="outline" onClick={onShowHelp}>
-                {translate("Schritt für Schritt zeigen", "Show me step by step")}
+                {translate("Schritt für Schritt erklären", "Walk me through it")}
               </Button>
             )}
           </div>

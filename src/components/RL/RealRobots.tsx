@@ -178,11 +178,11 @@ export function RealRobotsCard() {
     <div className="rounded-lg border border-border/40 bg-card/60 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-sm font-semibold uppercase tracking-wide">{t("Und in echt?", "And in real life?")}</h2>
+          <h2 className="text-sm font-semibold">{t("Und in echt?", "And in real life?")}</h2>
           <p className="text-sm text-muted-foreground">{t("Echte Roboter lernen nach demselben Prinzip.", "Real robots learn by the same principle.")}</p>
         </div>
         <Button variant="outline" className="h-11" onClick={() => setOpen((o) => !o)}>
-          🤖 {open ? t("Zuklappen", "Close") : t("Echte Roboter ansehen", "See real robots")}
+          {open ? t("Zuklappen", "Close") : t("Echte Roboter ansehen", "See real robots")}
         </Button>
       </div>
       {open && <RealRobots className="mt-4" />}

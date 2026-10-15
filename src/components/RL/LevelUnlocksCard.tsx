@@ -49,7 +49,7 @@ export function LevelUnlocksCard({ currentLevel, translate }: LevelUnlocksCardPr
 
   return (
     <Card className="p-5 bg-card/60 border-border/40 rounded-lg">
-      <h3 className="text-sm font-semibold mb-4 uppercase tracking-wide text-foreground">
+      <h3 className="text-sm font-semibold mb-4 text-foreground">
         {translate("Freigeschaltet", "Unlocked")}
       </h3>
 

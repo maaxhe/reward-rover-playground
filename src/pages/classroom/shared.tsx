@@ -9,7 +9,7 @@ import type { LeaderboardRow, ParamSummary, TotalsRow } from "@/lib/competition/
 export const ClassroomShell = ({ children, wide = false }: { children: ReactNode; wide?: boolean }) => (
   <LanguageProvider>
     <div className="min-h-screen bg-background text-foreground [touch-action:manipulation]">
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm">
+      <header className="border-b border-border bg-card/50">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link to="/klasse" className="text-xl font-bold gradient-text">
             Reward Rover · Klassen-Challenge
@@ -50,7 +50,7 @@ export const formatParams = (p: ParamSummary) =>
 /** Overall standings over all rounds (shown from round 2 on). */
 export const TotalsCard = ({ totals, meId }: { totals: TotalsRow[]; meId?: string }) => (
   <Card className="overflow-hidden rounded-lg border-border/40 bg-card/60">
-    <h2 className="px-4 pt-3 text-sm font-semibold uppercase tracking-wide">Gesamtwertung</h2>
+    <h2 className="px-4 pt-3 text-sm font-semibold">Gesamtwertung</h2>
     <p className="px-4 pb-2 text-xs text-muted-foreground">Rangpunkte pro Runde: Platz 1 = 10, Platz 2 = 8, Platz 3 = 6 …</p>
     <ol className="divide-y divide-border/40">
       {totals.map((row) => (
@@ -103,7 +103,7 @@ export const Leaderboard = ({ rows, meId, onSelect, selectedId, onKick }: Leader
             {row.submitted ? (
               <span className="text-right text-sm tabular-nums">
                 <span className="font-bold">{row.totalReward}</span> Pkt ·{" "}
-                {row.reachedGoal ? `🎯 ${row.steps} Schritte` : "kein Ziel"}
+                {row.reachedGoal ? `${row.steps} Schritte` : "kein Ziel"}
               </span>
             ) : (
               <span className="text-sm text-muted-foreground">trainiert noch…</span>

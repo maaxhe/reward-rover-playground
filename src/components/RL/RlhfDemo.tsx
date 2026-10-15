@@ -90,7 +90,7 @@ export function RlhfDemo({ translate: t }: { translate: (de: string, en: string)
   ];
 
   return (
-    <div className="space-y-5 rounded-2xl border border-border bg-secondary/30 p-5">
+    <div className="space-y-5 rounded-lg border border-border bg-secondary/30 p-5">
       <ol className="grid gap-2 sm:grid-cols-4">
         {steps.map((s, i) => (
           <li key={s.de} className="flex items-center gap-3 rounded-xl bg-background/60 p-3 text-sm font-semibold">

@@ -39,7 +39,7 @@ export function ParametersPanel({
       className={cn("p-5 bg-card/60 border-border/40 rounded-lg transition-opacity", disabled && "pointer-events-none opacity-40 grayscale")}
       aria-disabled={disabled}
     >
-      <h3 className="text-sm font-semibold mb-4 uppercase tracking-wide text-foreground">
+      <h3 className="text-sm font-semibold mb-4 text-foreground">
         {translate("Lernparameter", "Learning Parameters")}
       </h3>
       {disabled && (

@@ -53,7 +53,7 @@ const Section = ({ id, title, children }: { id: string; title: string; children:
 );
 
 const Dial = ({ symbol, name, line, tip }: { symbol: string; name: string; line: string; tip: string }) => (
-  <div className="grid gap-x-5 gap-y-1 rounded-2xl border border-border bg-secondary/40 p-5 sm:grid-cols-[4.5rem_1fr]">
+  <div className="grid gap-x-5 gap-y-1 rounded-lg border border-border bg-secondary/40 p-5 sm:grid-cols-[4.5rem_1fr]">
     <div className="text-5xl font-extrabold leading-none text-primary">{symbol}</div>
     <div className="space-y-1">
       <h4 className="text-xl font-bold text-foreground">{name}</h4>
@@ -69,7 +69,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
   const go = (id: string) => scroller.current?.querySelector(`#guide-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[94dvh] max-h-[94vh] w-[96vw] max-w-6xl gap-0 overflow-hidden rounded-3xl p-0">
+      <DialogContent className="flex h-[94dvh] max-h-[94vh] w-[96vw] max-w-6xl gap-0 overflow-hidden rounded-xl p-0">
         <nav className="hidden w-52 flex-shrink-0 flex-col gap-1 border-r border-border bg-secondary/30 p-5 pt-10 lg:flex" aria-label={t("Kapitel", "Chapters")}>
           <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">{t("Kapitel", "Chapters")}</p>
           {CHAPTERS.map((c, i) => (
@@ -104,7 +104,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
                 "The rover gets no map and no instructions. It can only take steps and then notice whether it paid off. Candy on a tile earns points, a trap costs points, and every step costs a little time.",
               )}
             </p>
-            <div className="flex flex-wrap items-center gap-4 rounded-2xl bg-secondary/40 p-4 text-base">
+            <div className="flex flex-wrap items-center gap-4 rounded-lg bg-secondary/40 p-4 text-base">
               <span className="flex items-center gap-3"><Shape kind="rr-candy" /> {t("gibt Punkte", "earns points")}</span>
               <span className="flex items-center gap-3"><Shape kind="rr-trap" /> {t("kostet Punkte", "costs points")}</span>
               <span className="flex items-center gap-3"><Shape kind="rr-goal" /> {t("das Ziel, die größte Belohnung", "the goal, the biggest reward")}</span>
@@ -243,7 +243,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
                 "After every step the rover updates its memory with a single rule. In words: new value = old value + learning rate × (what I got + foresight × the best that can still come from there − old value).",
               )}
             </p>
-            <pre className="overflow-x-auto rounded-2xl border border-border bg-secondary/40 p-5 text-lg text-foreground">
+            <pre className="overflow-x-auto rounded-lg border border-border bg-secondary/40 p-5 text-lg text-foreground">
               Q(s, a) ← Q(s, a) + α · [ r + γ · maxₐ′ Q(s′, a′) − Q(s, a) ]
             </pre>
             <p className="text-base text-muted-foreground">
@@ -318,7 +318,7 @@ export function RLGuideButton({ className, variant = "outline", size = "sm", com
   return (
     <>
       <Button type="button" variant={variant} size={size} className={className} data-tutorial="guide" onClick={() => setOpen(true)}>
-        📖 {compact ? translate("Erklärung", "Guide") : translate("Wie lernt der Rover? Erklärung", "How does the rover learn? Guide")}
+        {compact ? translate("Erklärung", "Guide") : translate("Wie lernt der Rover? Erklärung", "How does the rover learn? Guide")}
       </Button>
       <RLGuideDialog open={open} onOpenChange={setOpen} translate={translate} />
     </>

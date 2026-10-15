@@ -19,7 +19,7 @@ export function GameLayout({
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Professional Header */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-border bg-card/50 sticky top-0 z-50">
         <div className="max-w-full mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

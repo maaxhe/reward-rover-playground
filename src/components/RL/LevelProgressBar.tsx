@@ -49,7 +49,7 @@ export function LevelProgressBar({ currentLevel, translate }: LevelProgressBarPr
       {currentLevel === 10 && (
         <div className="mt-4 p-3 rounded-lg bg-primary/10 border border-primary/30">
           <p className="text-xs font-semibold text-primary">
-            🎉 {translate("Alle Level abgeschlossen!", "All levels completed!")}
+            {translate("Alle Level abgeschlossen!", "All levels completed!")}
           </p>
         </div>
       )}

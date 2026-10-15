@@ -100,7 +100,7 @@ const ClassroomHome = () => {
     <ClassroomShell>
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="space-y-4 rounded-lg border-border/40 bg-card/60 p-5">
-          <h2 className="text-xl font-bold">🎮 Mitspielen</h2>
+          <h2 className="text-xl font-bold">Mitspielen</h2>
           <p className="text-sm text-muted-foreground">
             Gib den Raum-Code deiner Lehrkraft ein und wähle einen Spielernamen. Dafür brauchst du keinen Account.
           </p>
@@ -126,7 +126,7 @@ const ClassroomHome = () => {
         </Card>
 
         <Card className="space-y-4 rounded-lg border-border/40 bg-card/60 p-5">
-          <h2 className="text-xl font-bold">🧑‍🏫 Raum erstellen (Lehrkraft)</h2>
+          <h2 className="text-xl font-bold">Raum erstellen (Lehrkraft)</h2>
           <p className="text-sm text-muted-foreground">
             Alle trainieren ihren Rover auf derselben Welt. Am Ende zählt ein fairer Test-Lauf, den der Server nachrechnet. Die Welt stellst du danach in der Lobby ein.
           </p>

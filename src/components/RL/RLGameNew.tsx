@@ -37,10 +37,10 @@ function Fold({
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold uppercase tracking-wide text-foreground"
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold text-foreground"
       >
         <span>{title}</span>
-        <span className="flex items-center gap-2 normal-case tracking-normal">
+        <span className="flex items-center gap-2">
           {!open && summary && <span className="text-xs font-medium text-muted-foreground">{summary}</span>}
           <span className={cn("text-muted-foreground transition-transform", open && "rotate-180")} aria-hidden>▾</span>
         </span>
@@ -261,7 +261,7 @@ export function RLGameNew() {
             {!canAccessFreeMode && <span className="ml-2 text-xs">🔒</span>}
           </Button>
           <Button asChild variant="outline" className="w-full font-semibold md:ml-auto md:w-auto">
-            <Link to="/klasse">🏫 {translate("Klassen-Modus", "Classroom")}</Link>
+            <Link to="/klasse">{translate("Klassen-Modus", "Classroom")}</Link>
           </Button>
           <RLGuideButton size="default" variant="default" className="w-full font-semibold md:w-auto" />
         </div>
@@ -313,10 +313,9 @@ export function RLGameNew() {
             <>
               {foldIntro && (
                 <p className="mb-3 rounded-lg border border-primary/40 bg-primary/10 p-3 text-xs leading-relaxed text-foreground">
-                  👋{" "}
                   {translate(
-                    "Kurz erklärt: „Level“ zeigt, wo du gerade bist. „Das schaltest du frei“ zeigt, was du schon benutzen darfst. Die „Legende“ erklärt die Symbole auf dem Spielfeld. Gleich klappen sie zusammen, mit einem Tipp auf den Titel öffnest du sie wieder.",
-                    "Quick tour: “Level” shows where you are. “What you unlock” shows what you may already use. The “Legend” explains the symbols on the board. They fold away in a moment; tap a title to open them again.",
+                    "Hier links steht, in welchem Level du bist, was du schon benutzen darfst und was die Symbole auf dem Feld bedeuten. In ein paar Sekunden klappt das zusammen. Tipp auf den Titel, dann ist es wieder da.",
+                    "On the left you see which level you're in, what you can already use and what the symbols on the board mean. This folds up in a few seconds. Tap a title to bring it back.",
                   )}
                 </p>
               )}

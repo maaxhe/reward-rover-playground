@@ -107,8 +107,7 @@ export const PlaygroundControls = ({
             onClick={isReplaying ? onStopReplay : onReplay}
             className="w-full font-semibold"
           >
-            {isReplaying ? "⏹️" : "🎬"}
-            <span className="ml-2">{isReplaying ? translate("Stop", "Stop") : translate("Replay", "Replay")}</span>
+            <span>{isReplaying ? translate("Stop", "Stop") : translate("Replay", "Replay")}</span>
           </Button>
         )}
       </div>
@@ -401,7 +400,7 @@ export const ControlBar = ({
   if (levelMode) return null;
 
   return (
-    <div className="rounded-lg border border-border/40 bg-card/60 p-4 backdrop-blur-sm text-foreground">
+    <div className="rounded-lg border border-border/40 bg-card/60 p-4 text-foreground">
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Button
           variant={mode === "playground" ? "default" : "outline"}

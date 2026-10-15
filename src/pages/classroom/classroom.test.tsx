@@ -112,7 +112,7 @@ describe("classroom pages", () => {
       return roomPayload({ phase: "lobby", trainingEndsAt: 0, round: 2, vote, totals: [{ id: "a", name: "Anna", total: 10, rank: 1, rounds: [10] }] });
     });
     render(<MemoryRouter initialEntries={["/klasse/play/1234"]}><Routes><Route path="/klasse/play/:code" element={<ClassroomPlay />} /></Routes></MemoryRouter>);
-    await waitFor(() => expect(screen.getByText("🗳 Stimmt ab!")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Stimmt ab!")).toBeTruthy());
     fireEvent.click(screen.getByText("8 Min"));
     await waitFor(() => expect(votes).toEqual([expect.objectContaining({ minutes: 8 })]));
     expect(screen.getByText("Gesamtwertung")).toBeTruthy();
@@ -141,8 +141,8 @@ describe("classroom pages", () => {
     expect(screen.getByText("▶ Training starten")).toBeTruthy();
     // QR code pointing at the join link with the room code prefilled
     expect(screen.getByLabelText(/QR-Code zum Beitreten.*klasse\?code=1234/)).toBeTruthy();
-    expect(screen.getByText("⚙ Einstellungen")).toBeTruthy();
-    expect(screen.getByText("🎲 Welt neu würfeln")).toBeTruthy();
+    expect(screen.getByText("Einstellungen")).toBeTruthy();
+    expect(screen.getByText("Welt neu würfeln")).toBeTruthy();
     await act(async () => {});
   });
 
@@ -160,7 +160,7 @@ describe("classroom pages", () => {
     await waitFor(() => expect(calls.some((c) => c.url.endsWith("/settings") && c.body.levelId === 3 && (c.body.customWorld as { size: number }).size === 6)).toBe(true));
     fireEvent.click(screen.getByText("Abstimmung freigeben"));
     await waitFor(() => expect(calls.some((c) => c.url.endsWith("/vote/open") && c.body.open === true)).toBe(true));
-    expect(screen.getByText("📽 Beamer-Ansicht öffnen")).toBeTruthy();
+    expect(screen.getByText("Beamer-Ansicht öffnen")).toBeTruthy();
   });
 
   it("host can restart a finished round (same or new world)", async () => {
@@ -171,11 +171,11 @@ describe("classroom pages", () => {
       return roomPayload({ phase: "finished" });
     });
     render(<MemoryRouter initialEntries={["/klasse/host/1234"]}><Routes><Route path="/klasse/host/:code" element={<ClassroomHost />} /></Routes></MemoryRouter>);
-    await waitFor(() => expect(screen.getByText("🎲 Nochmal – neue Welt")).toBeTruthy());
-    expect(screen.queryByText("⚙ Einstellungen")).toBeNull();
+    await waitFor(() => expect(screen.getByText("Nochmal – neue Welt")).toBeTruthy());
+    expect(screen.queryByText("Einstellungen")).toBeNull();
     fireEvent.click(screen.getByText("↻ Nochmal – gleiche Welt"));
     await waitFor(() => expect(calls.some((c) => c.url.endsWith("/restart") && (c.body as { newWorld: boolean }).newWorld === false)).toBe(true));
-    fireEvent.click(screen.getByText("🎲 Nochmal – neue Welt"));
+    fireEvent.click(screen.getByText("Nochmal – neue Welt"));
     await waitFor(() => expect(calls.some((c) => c.url.endsWith("/restart") && (c.body as { newWorld: boolean }).newWorld === true)).toBe(true));
   });
 });

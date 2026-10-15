@@ -90,7 +90,7 @@ export const SettingsPanel = ({ code, hostKey, settings, seed, levelId = null, o
   return (
     <Card className="space-y-4 rounded-lg border-border/40 bg-card/60 p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-bold">⚙ Einstellungen</h2>
+        <h2 className="text-lg font-bold">Einstellungen</h2>
         <Button
           variant="secondary"
           size="sm"
@@ -99,7 +99,7 @@ export const SettingsPanel = ({ code, hostKey, settings, seed, levelId = null, o
             apply({ ...shown, reroll: true });
           }}
         >
-          🎲 Welt neu würfeln
+          Welt neu würfeln
         </Button>
       </div>
 

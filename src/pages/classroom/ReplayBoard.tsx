@@ -56,7 +56,7 @@ export const ReplayBoard = ({ world, replay, tileSize: fixedTileSize, loop = fal
     <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className={compact ? "truncate text-xl font-bold" : "text-lg font-bold"}>
-          {replay.name} · {replay.totalReward} Pkt {replay.reachedGoal ? `· 🎯 ${replay.steps} Schritte` : `· ⏱ Zeitlimit nach ${replay.steps} Schritten`}
+          {replay.name} · {replay.totalReward} Pkt {replay.reachedGoal ? `· ${replay.steps} Schritte` : `· ⏱ Zeitlimit nach ${replay.steps} Schritten`}
         </h3>
         {!compact && (
           <Button

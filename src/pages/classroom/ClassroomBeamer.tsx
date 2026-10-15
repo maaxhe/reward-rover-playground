@@ -66,13 +66,13 @@ const ClassroomBeamer = () => {
           {room.levelId ? <span className="ml-3 text-xl font-semibold text-muted-foreground lg:text-2xl">Level {room.levelId}: {levelLabel(room.levelId)}</span> : null}
         </h1>
         {room.phase === "training" && <span className="text-5xl font-extrabold tabular-nums text-primary lg:text-7xl">{room.pausedAt ? "⏸" : "⏱"} {formatCountdown(remainingMs)}</span>}
-        {finished && <span className="text-4xl font-extrabold lg:text-5xl">🏁 Beendet</span>}
+        {finished && <span className="text-4xl font-extrabold lg:text-5xl">Beendet</span>}
         {room.phase === "lobby" && <span className="text-3xl font-bold lg:text-4xl">Gleich geht's los</span>}
       </header>
 
       {room.phase === "lobby" ? (
         <div className="flex flex-wrap items-center gap-10">
-          <div className="rounded-2xl bg-white p-5 shadow-lg">
+          <div className="rounded-lg bg-white p-5 shadow-lg">
             <QRCodeSVG value={joinUrl} size={Math.min(360, Math.round(window.innerHeight * 0.5))} level="M" marginSize={0} aria-label={`QR-Code zum Beitreten: ${joinUrl}`} />
           </div>
           <div className="min-w-0 flex-1 space-y-4">
@@ -102,7 +102,7 @@ const ClassroomBeamer = () => {
                   {row.submitted ? (
                     <span className="text-right text-2xl tabular-nums">
                       <span className="font-extrabold">{row.totalReward}</span> Pkt
-                      <span className="block text-base text-muted-foreground">{row.reachedGoal ? `🎯 ${row.steps} Schritte` : "kein Ziel"}</span>
+                      <span className="block text-base text-muted-foreground">{row.reachedGoal ? `${row.steps} Schritte` : "kein Ziel"}</span>
                     </span>
                   ) : (
                     <span className="text-xl text-muted-foreground">trainiert noch…</span>

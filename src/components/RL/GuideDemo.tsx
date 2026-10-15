@@ -43,9 +43,9 @@ const reducedMotion = () =>
 const Nudge = ({ text }: { text: string }) => (
   <p
     role="note"
-    className="tutorial-spotlight relative z-0 rounded-2xl border border-primary/60 bg-primary/10 px-4 py-3 text-base font-semibold leading-6 text-foreground"
+    className="tutorial-spotlight relative z-0 rounded-lg border border-primary/60 bg-primary/10 px-4 py-3 text-base font-semibold leading-6 text-foreground"
   >
-    👉 {text}
+    {text}
   </p>
 );
 
@@ -114,7 +114,7 @@ export function GuideDemo({ world, initial, dials = [], consumeRewards = true, t
   const walkable = view.grid.flat().filter((c) => c.type !== "obstacle").length;
 
   return (
-    <div ref={holder} className="rounded-3xl border border-border bg-card/60 p-4 sm:p-6">
+    <div ref={holder} className="rounded-xl border border-border bg-card/60 p-4 sm:p-6">
       <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start">
         <div className="flex-shrink-0">
           <CompetitionBoard
