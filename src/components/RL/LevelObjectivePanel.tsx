@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getLevelConfig } from "@/lib/levelProgression";
 import { LEVEL_OBJECTIVES, type ObjectiveStatus } from "@/lib/levelObjectives";
@@ -40,48 +39,18 @@ export function LevelObjectivePanel({ level, status, translate, episodes, onShow
   }, [level, episodes, status.solved]);
 
   return (
-    <Card
+    <section
       data-tutorial="objective"
-      className={cn(
-        "space-y-3 border-2 p-4 shadow-md",
-        status.solved
-          ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/15"
-          : "border-amber-400 bg-amber-50 dark:border-amber-500/70 dark:bg-amber-500/10",
-      )}
+      className={cn("space-y-3 border-l-4 py-1 pl-4", status.solved ? "border-emerald-500" : "border-primary")}
     >
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="font-bold text-amber-900 dark:text-amber-300">
-          {translate(`Aufgabe für Level ${level}`, `Task for level ${level}`)}
-          <span className="ml-2 text-sm font-medium text-foreground/70">
-            {translate(config.name, config.nameEn)}
-          </span>
-        </h3>
-        {status.solved && (
-          <span className="rounded-full bg-emerald-600 px-3 py-0.5 text-sm font-bold text-white">
-            {translate("Geschafft!", "Solved!")}
-          </span>
-        )}
-      </div>
-      <ul className="grid gap-2 sm:grid-cols-2">
+      <h3 className="font-semibold text-foreground">
+        {translate(`Level ${level}: ${config.name}`, `Level ${level}: ${config.nameEn}`)}
+        {status.solved && <span className="ml-2 text-sm font-medium text-emerald-500">{translate("gelöst", "solved")}</span>}
+      </h3>
+      <ul className="space-y-1.5">
         {status.requirements.map((req) => (
-          <li
-            key={req.id}
-            className={cn(
-              "flex items-start gap-3 rounded-lg border-2 px-3 py-2.5 text-sm font-medium shadow-sm transition-colors",
-              req.done
-                ? "border-emerald-500 bg-emerald-100 text-emerald-950 dark:bg-emerald-500/20 dark:text-emerald-50"
-                : "border-amber-400 bg-amber-100 text-amber-950 dark:border-amber-500/60 dark:bg-amber-500/15 dark:text-amber-50",
-            )}
-          >
-            <span
-              aria-hidden
-              className={cn(
-                "mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold",
-                req.done ? "border-emerald-600 bg-emerald-600 text-white" : "border-amber-500",
-              )}
-            >
-              {req.done ? "✓" : ""}
-            </span>
+          <li key={req.id} className={cn("flex items-start gap-2 text-sm", req.done ? "text-muted-foreground line-through" : "text-foreground")}>
+            <span aria-hidden className="mt-0.5 w-4 flex-shrink-0 text-center">{req.done ? "✓" : "○"}</span>
             <span>{translate(req.de, req.en)}</span>
           </li>
         ))}
@@ -110,10 +79,10 @@ export function LevelObjectivePanel({ level, status, translate, episodes, onShow
             )}
           </div>
           {hintOpen && (
-            <p className="text-sm leading-relaxed text-amber-900 dark:text-amber-100">{translate(hint.de, hint.en)}</p>
+            <p className="text-sm leading-relaxed text-foreground/80">{translate(hint.de, hint.en)}</p>
           )}
         </div>
       )}
-    </Card>
+    </section>
   );
 }

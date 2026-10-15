@@ -13,27 +13,12 @@ export function LevelProgressBar({ currentLevel, translate }: LevelProgressBarPr
   const progress = (currentLevel / totalLevels) * 100;
 
   return (
-    <Card className="p-5 bg-card/60 border-border/40 rounded-lg">
+    <Card className="border-0 bg-transparent p-0 shadow-none">
       {/* Level Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-sm font-semibold text-foreground">
-            {translate("Level", "Level")} {currentLevel} / {totalLevels}
-          </h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            {currentLevel <= 5 ? config.name : config.nameEn}
-          </p>
-        </div>
-        <div className="text-right">
-          <div className="text-2xl font-bold text-primary">{progress.toFixed(0)}%</div>
-          <p className="text-xs text-muted-foreground">
-            {translate("Fortschritt", "Progress")}
-          </p>
-        </div>
-      </div>
+      <p className="mb-3 text-sm text-foreground">{currentLevel <= 5 ? config.name : config.nameEn}</p>
 
       {/* Progress Bar */}
-      <div className="w-full bg-background/60 rounded-full h-3 overflow-hidden border border-border/40 mb-4">
+      <div className="w-full bg-background/60 rounded-full h-2 overflow-hidden mb-3">
         <div
           className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full transition-all duration-500"
           style={{ width: `${progress}%` }}

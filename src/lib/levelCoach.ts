@@ -27,17 +27,17 @@ const objective: CoachSlide = {
   target: "objective",
   title: { de: "Deine Aufgabe", en: "Your task" },
   text: {
-    de: "Hier steht, was du in diesem Level schaffen musst. Die Haken zeigen dir, was schon erledigt ist.",
-    en: "This is what you have to achieve in this level. The ticks show what is already done.",
+    de: "Das hier musst du in diesem Level schaffen. Was schon klappt, bekommt einen Haken.",
+    en: "This is what you need to do in this level. Anything you've done gets a tick.",
   },
 };
 
 const start: CoachSlide = {
   target: "start",
-  title: { de: "Rover starten ▶️", en: "Start the rover ▶️" },
+  title: { de: "Rover starten", en: "Start the rover" },
   text: {
-    de: "Klicke auf Start. Der Rover läuft los und lernt von Runde zu Runde, bis er den kürzesten Weg zum Ziel kennt.",
-    en: "Click Start. The rover sets off and learns run after run until it knows the shortest way to the goal.",
+    de: "Drück auf Start. Der Rover läuft los, am Anfang ziemlich planlos. Mit jeder Runde merkt er sich mehr, bis er den kürzesten Weg kennt.",
+    en: "Hit Start. The rover sets off, pretty cluelessly at first. Every run it remembers a bit more, until it knows the shortest way.",
   },
 };
 
@@ -45,26 +45,26 @@ const explore: CoachSlide = {
   target: "explore",
   title: { de: "Neugier ε (Exploration)", en: "Curiosity ε (exploration)" },
   text: {
-    de: "Dieser Regler heißt in der Fachsprache „Exploration“, hier sagen wir Neugier. Stell dir ein Restaurant vor: Bestellst du immer dein Lieblingsgericht (wenig Neugier) oder probierst du mal etwas Neues (viel Neugier)? Zu niedrig: der Rover bleibt bei seinem ersten Weg. Zu hoch: er läuft weiter zufällig. Probier etwas dazwischen.",
-    en: "In technical terms this slider is called “exploration”, here we say curiosity. Think of a restaurant: do you always order your favourite (little curiosity) or try something new (lots of curiosity)? Too low: the rover sticks to its first path. Too high: it keeps wandering randomly. Try something in between.",
+    de: "Das ist die Neugier (Fachwort: Exploration). Wie im Restaurant: Nimmst du immer dein Lieblingsessen oder probierst du auch mal was Neues? Bei zu wenig Neugier bleibt der Rover auf seinem ersten Weg kleben. Bei zu viel läuft er nur noch rum. Such dir was in der Mitte.",
+    en: "This is curiosity (the technical word is exploration). Like in a restaurant: do you always order your favourite, or try something new now and then? With too little, the rover sticks to its first path. With too much, it just wanders. Pick something in the middle.",
   },
 };
 
 const policy: CoachSlide = {
   target: "policy",
-  title: { de: "Policy-Pfeile ➡️", en: "Policy arrows ➡️" },
+  title: { de: "Policy-Pfeile", en: "Policy arrows" },
   text: {
-    de: "Die Policy ist die Strategie des Rovers. Jeder Pfeil zeigt, in welche Richtung er auf diesem Feld nach seinem bisherigen Wissen gehen würde. Mit jeder Runde zeigen sie besser den Weg zum Ziel. Hier kannst du sie ein- und ausschalten.",
-    en: "The policy is the rover's strategy. Each arrow shows which way it would go from that tile based on what it has learned. With every run they trace the way to the goal better. Switch them on or off here.",
+    de: "Die Pfeile zeigen, wohin der Rover auf dem jeweiligen Feld gehen würde, so wie er es bisher gelernt hat. Je länger er übt, desto besser zeigen sie zum Ziel. Hier kannst du sie an- und ausmachen.",
+    en: "The arrows show where the rover would go from each tile, based on what it has learned so far. The more it practises, the better they point to the goal. Switch them on or off here.",
   },
 };
 
 const autorestart: CoachSlide = {
   target: "autorestart",
-  title: { de: "Auto-Restart 🔁", en: "Auto-restart 🔁" },
+  title: { de: "Auto-Restart", en: "Auto-restart" },
   text: {
-    de: "Ist dieser Schalter an, startet der Rover nach jedem Ziel von selbst neu und lernt ohne Klicken weiter. Hier schaltest du es ein und aus.",
-    en: "When this switch is on, the rover restarts by itself after every goal and keeps learning without clicking. Turn it on or off here.",
+    de: "Ist das an, fängt der Rover nach jedem Ziel von selbst wieder an. Du musst nicht jedes Mal klicken.",
+    en: "When this is on, the rover starts over by itself after every goal. No clicking needed.",
   },
 };
 
@@ -72,8 +72,8 @@ const startAndGoal: CoachSlide = {
   target: "board",
   title: { de: "Start und Ziel", en: "Start and goal" },
   text: {
-    de: "Der Rover startet unten links, das Ziel ist oben rechts. Dazwischen liegen Mauern, Belohnungen und Strafen. Du musst hier nichts mehr bauen: Stelle die Regler passend ein und schau, wie er seinen Weg findet.",
-    en: "The rover starts at the bottom left, the goal is at the top right. In between are walls, rewards and penalties. You do not have to build anything here: set the dials well and watch it find its way.",
+    de: "Der Rover startet unten links, das Ziel ist oben rechts. Dazwischen liegen Mauern, Belohnungen und Strafen. Bauen musst du hier nichts. Dreh an den Reglern und schau, ob er den Weg findet.",
+    en: "The rover starts bottom left, the goal is top right. In between: walls, rewards and penalties. You don't have to build anything. Turn the dials and see if it finds the way.",
   },
 };
 
@@ -81,8 +81,8 @@ const placeOnBoard = (tool: string, toolEn: string): CoachSlide => ({
   target: "board",
   title: { de: "Aufs Feld klicken", en: "Click on the board" },
   text: {
-    de: `Klicke jetzt auf ein freies Feld im Spielfeld, um dort ${tool} zu setzen. Du kannst auch mit gedrückter Maustaste über mehrere Felder ziehen. Ein zweiter Klick auf dasselbe Feld nimmt es wieder weg.`,
-    en: `Now click an empty tile on the board to place ${toolEn} there. You can also hold the mouse button and drag across several tiles. Clicking the same tile again removes it.`,
+    de: `Tipp jetzt auf ein freies Feld, um ${tool} zu setzen. Du kannst auch über mehrere Felder ziehen. Nochmal auf dasselbe Feld tippen nimmt es wieder weg.`,
+    en: `Now tap an empty tile to place ${toolEn}. You can also drag across several tiles. Tapping the same tile again removes it.`,
   },
 });
 
@@ -90,8 +90,8 @@ const guide: CoachSlide = {
   target: "guide",
   title: { de: "Wie lernt der Rover? 📖", en: "How does the rover learn? 📖" },
   text: {
-    de: "Klicke auf diesen Button, wenn du verstehen willst, was hinter dem Lernen steckt. Die Erklärung ist kurz, anschaulich und hat kleine Rover zum Ausprobieren. Du kannst sie jederzeit wieder öffnen.",
-    en: "Click this button if you want to understand what is behind the learning. The guide is short, visual and has little rovers to play with. You can reopen it any time.",
+    de: "Wenn du wissen willst, wie der Rover überhaupt lernt: Hier ist die Erklärung, mit kleinen Rovern zum Ausprobieren. Du kannst sie jederzeit wieder aufmachen.",
+    en: "Want to know how the rover learns at all? This is the explanation, with little rovers to play with. You can open it again any time.",
   },
 };
 
@@ -103,8 +103,8 @@ export const LEVEL_COACH: Record<LevelNumber, CoachSlide[]> = {
       target: "alpha",
       title: { de: "Lernrate (α)", en: "Learning rate (α)" },
       text: {
-        de: "Ziehe den Regler für die Lernrate auf mindestens 0,5. Je höher α, desto stärker überschreibt neue Erfahrung das alte Wissen.",
-        en: "Drag the learning rate slider to at least 0.5. The higher α, the more new experience overwrites old knowledge.",
+        de: "Zieh die Lernrate auf mindestens 0,5. Je höher α, desto schneller vergisst der Rover Altes zugunsten von Neuem.",
+        en: "Drag the learning rate to at least 0.5. The higher α, the faster the rover drops old knowledge for new.",
       },
     },
     start,
@@ -115,8 +115,8 @@ export const LEVEL_COACH: Record<LevelNumber, CoachSlide[]> = {
       target: "gamma",
       title: { de: "Weitsicht γ (Diskontfaktor)", en: "Foresight γ (discount factor)" },
       text: {
-        de: "Weitsicht und „Discount-Faktor“ sind dasselbe: Dieser Regler bestimmt, wie weit der Rover vorausdenkt. Stelle γ auf mindestens 0,9. Dann denkt der Rover weit voraus und wählt den Weg zum Ziel statt der kleinen Belohnung am Rand.",
-        en: "Foresight and “discount factor” are the same thing: this dial decides how far ahead the rover thinks. Set γ to at least 0.9. The rover then thinks far ahead and picks the path to the goal over the small reward on the side.",
+        de: "Weitsicht und „Discount-Faktor“ sind dasselbe. Der Regler sagt, wie weit der Rover vorausdenkt. Stell γ auf mindestens 0,9, dann geht er lieber zum Ziel als zur kleinen Belohnung am Rand.",
+        en: "Foresight and “discount factor” are the same thing. The dial says how far ahead the rover thinks. Set γ to at least 0.9 and it will go for the goal instead of the small reward on the side.",
       },
     },
     start,
@@ -127,8 +127,8 @@ export const LEVEL_COACH: Record<LevelNumber, CoachSlide[]> = {
       target: "tool-reward",
       title: { de: "Werkzeug: Belohnung", en: "Tool: Reward" },
       text: {
-        de: "Wähle zuerst das Werkzeug „Belohnung“ im Platzierungs-Modus.",
-        en: "First pick the “Reward” tool in the placement mode.",
+        de: "Such dir zuerst das Werkzeug „Belohnung“ aus.",
+        en: "First pick the “Reward” tool.",
       },
     },
     placeOnBoard("eine Belohnung", "a reward"),
@@ -140,8 +140,8 @@ export const LEVEL_COACH: Record<LevelNumber, CoachSlide[]> = {
       target: "tool-punishment",
       title: { de: "Werkzeug: Strafe", en: "Tool: Penalty" },
       text: {
-        de: "Hier wählst du aus, was du setzt: Klicke im Platzierungs-Modus auf den Knopf „Strafe“. Danach tippst du aufs Spielfeld.",
-        en: "This is where you choose what to place: click the “Penalty” button in the placement mode. Then tap the board.",
+        de: "Hier wählst du, was du setzt. Tipp auf „Strafe“ und danach aufs Spielfeld.",
+        en: "This is where you choose what to place. Tap “Penalty”, then tap the board.",
       },
     },
     placeOnBoard("eine Strafe, am besten auf den kürzesten Weg,", "a penalty, ideally on the shortest path,"),
@@ -153,8 +153,8 @@ export const LEVEL_COACH: Record<LevelNumber, CoachSlide[]> = {
       target: "tool-obstacle",
       title: { de: "Werkzeug: Mauer", en: "Tool: Wall" },
       text: {
-        de: "Wähle zuerst das Werkzeug „Mauer“ im Platzierungs-Modus.",
-        en: "First pick the “Wall” tool in the placement mode.",
+        de: "Such dir zuerst das Werkzeug „Mauer“ aus.",
+        en: "First pick the “Wall” tool.",
       },
     },
     placeOnBoard("zwei Mauern", "two walls"),
@@ -166,8 +166,8 @@ export const LEVEL_COACH: Record<LevelNumber, CoachSlide[]> = {
       target: "gridsize",
       title: { de: "Feld-Größe ändern", en: "Change the grid size" },
       text: {
-        de: "Klicke hier auf eine andere Größe, zum Beispiel „Mittel“. Dann entsteht ein neues Feld und der Rover fängt von vorn an.",
-        en: "Click another size here, for example “Medium”. A new board appears and the rover starts from scratch.",
+        de: "Tipp hier auf eine andere Größe, zum Beispiel „Mittel“. Das Feld wird neu gebaut und der Rover fängt von vorn an.",
+        en: "Tap another size here, for example “Medium”. The board is rebuilt and the rover starts from scratch.",
       },
     },
     start,
@@ -178,8 +178,8 @@ export const LEVEL_COACH: Record<LevelNumber, CoachSlide[]> = {
       target: "tool-portal",
       title: { de: "Werkzeug: Portal", en: "Tool: Portal" },
       text: {
-        de: "Wähle zuerst das Werkzeug „Portal“. Portale kommen immer als Paar: Wer in das eine hineinläuft, kommt am anderen heraus.",
-        en: "First pick the “Portal” tool. Portals come in pairs: step into one and you come out of the other.",
+        de: "Such dir zuerst das Werkzeug „Portal“ aus. Portale gibt es nur als Paar. Wer in das eine läuft, kommt beim anderen wieder raus.",
+        en: "First pick the “Portal” tool. Portals come in pairs. Walk into one and you come out of the other.",
       },
     },
     placeOnBoard("ein Portal (dann das zweite, damit es ein Paar wird)", "a portal (then the second one to make a pair)"),
@@ -193,16 +193,16 @@ export const LEVEL_COACH: Record<LevelNumber, CoachSlide[]> = {
       target: "alpha",
       title: { de: "Lernrate (α)", en: "Learning rate (α)" },
       text: {
-        de: "Zu viel α macht den Rover sprunghaft, zu wenig macht ihn langsam. Hier kannst du nachjustieren.",
-        en: "Too much α makes the rover erratic, too little makes it slow. Fine-tune it here.",
+        de: "Zu viel α und der Rover wird hektisch, zu wenig und er braucht ewig. Probier aus, was passt.",
+        en: "Too much α and the rover gets jumpy, too little and it takes forever. Try what works.",
       },
     },
     {
       target: "gamma",
       title: { de: "Weitsicht γ (Diskontfaktor)", en: "Foresight γ (discount factor)" },
       text: {
-        de: "Ein hohes γ lässt ihn weit vorausplanen. Für kurze, direkte Wege reicht oft ein hoher Wert.",
-        en: "A high γ makes it plan far ahead. For short, direct routes a high value usually works.",
+        de: "Ein hohes γ lässt ihn weit vorausplanen. Meistens ist hoch hier eine gute Wahl.",
+        en: "A high γ makes it plan far ahead. High is usually a good pick here.",
       },
     },
     start,
@@ -215,8 +215,8 @@ export const LEVEL_COACH: Record<LevelNumber, CoachSlide[]> = {
       target: "alpha",
       title: { de: "Alle Regler gehören dir", en: "All the knobs are yours" },
       text: {
-        de: "Für die Meisterprüfung kombinierst du Neugier, Lernrate und Weitsicht. Beobachte nach jedem Lauf, ob die Schritte weniger werden, und drehe dann gezielt nach.",
-        en: "For the master test you combine curiosity, learning rate and foresight. After each run check whether the steps shrink, then adjust deliberately.",
+        de: "Jetzt kommt alles zusammen: Neugier, Lernrate, Weitsicht. Schau nach jedem Lauf, ob die Schritte weniger werden, und dreh dann nur an einem Regler.",
+        en: "Now it all comes together: curiosity, learning rate, foresight. After each run check whether the steps go down, then change just one dial.",
       },
     },
     start,

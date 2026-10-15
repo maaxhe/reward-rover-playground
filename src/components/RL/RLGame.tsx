@@ -6,7 +6,8 @@ import { getUnlockedFeatures } from "@/lib/levelProgression";
 import { SIMULATION_SPEEDS, type SimulationSpeed } from "@/lib/rl/simulation";
 import { CELEBRATION_FACTS } from "@/lib/rl/celebrationFacts";
 import { PRESET_LEVELS, type GridConfig, type PresetLevel } from "@/lib/rl/presets";
-import { evaluateObjective } from "@/lib/levelObjectives";
+import { evaluateObjective, shortestPathLength } from "@/lib/levelObjectives";
+import { RoverSays } from "./RoverSays";
 import { LevelObjectivePanel } from "./LevelObjectivePanel";
 import { RLGuideDialog } from "./RLGuideDialog";
 import { ControlBar, PlaygroundControls, RandomControls, ScrollIndicator } from "./RLGameControls";
@@ -367,61 +368,61 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
       target: "board",
       title: translate("Willkommen bei Reward Rover", "Welcome to Reward Rover"),
       content: translate(
-        "Entdecke, wie Reinforcement Learning funktioniert! Der Rover lernt eigenständig, welche Wege zum Ziel führen.",
-        "Discover how reinforcement learning works! The rover learns on its own which paths lead to the goal."
+        "Hier lernt ein kleiner Roboter von ganz allein, wie er zum Ziel kommt. Du siehst zu und drehst an den Reglern.",
+        "A little robot learns on its own how to reach the goal. You watch and turn the dials."
       ),
     },
     {
       target: "start",
-      title: translate("Der Start-Button ▶️", "The Start Button ▶️"),
+      title: translate("Start", "Start"),
       content: translate(
-        "Drücke den Start-Button im linken Panel, um den Lernprozess zu starten. Der Rover beginnt dann, das Spielfeld zu erkunden.",
-        "Press the Start button in the left panel to begin the learning process. The rover will then start exploring the playfield."
+        "Mit Start geht es los. Der Rover kennt das Feld noch nicht und probiert einfach.",
+        "Start sets it off. The rover doesn't know the board yet and just tries things."
       ),
     },
     {
       target: "board",
-      title: translate("Pfeiltasten = Impulse geben! ⌨️", "Arrow Keys = Give Hints! ⌨️"),
+      title: translate("Pfeiltasten geben nur einen Schubs", "Arrow keys only nudge"),
       content: translate(
-        "WICHTIG: Die Pfeiltasten steuern den Rover NICHT direkt! Sie geben ihm nur kurzfristige Impulse in eine Richtung. Der Rover entscheidet weiterhin selbst und lernt dabei.",
-        "IMPORTANT: Arrow keys do NOT control the rover directly! They only give short-term directional hints. The rover still makes its own decisions and keeps learning."
+        "Mit den Pfeiltasten steuerst du den Rover nicht. Du schubst ihn nur kurz in eine Richtung. Entscheiden und lernen tut er selbst.",
+        "The arrow keys don't steer the rover. They just nudge it in one direction for a moment. It still decides and learns on its own."
       ),
       bullets: [
-        translate("Der Rover trifft weiterhin eigene Entscheidungen", "The rover still makes its own decisions"),
-        translate("Der Impuls wirkt nur beim Drücken der Taste", "The hint only works while pressing the key"),
-        translate("Der Lernprozess läuft weiter", "The learning process continues"),
+        translate("Der Rover entscheidet weiter selbst", "The rover still decides for itself"),
+        translate("Der Schubs wirkt nur, solange du drückst", "The nudge only works while you hold the key"),
+        translate("Er lernt dabei weiter", "It keeps learning"),
       ],
     },
     {
       target: "tools",
-      title: translate("Gestalte das Spielfeld", "Design the Playfield"),
+      title: translate("Bau das Feld um", "Rebuild the board"),
       content: translate(
-        "Nutze die Platzierungs-Tools links, um Hindernisse, Belohnungen oder Strafen zu platzieren. Experimentiere und beobachte, wie der Rover lernt!",
-        "Use the placement tools on the left to place obstacles, rewards, or penalties. Experiment and watch how the rover learns!"
+        "Mit den Werkzeugen setzt du Mauern, Belohnungen oder Strafen aufs Feld. Bau was um und schau, was der Rover dann macht.",
+        "The tools let you put walls, rewards or penalties on the board. Change something and see what the rover does."
       ),
     },
     {
       target: "settings",
       title: translate("Die Einstellungen", "The settings"),
       content: translate(
-        "Hier schaltest du Anzeigen und Verhalten ein und aus: Policy-Pfeile, Q-Werte, Heatmap, Auto-Restart und die Feldgröße. Auf dem Handy klappst du sie mit dem Pfeil oben auf.",
-        "Here you switch displays and behaviour on and off: policy arrows, Q-values, heatmap, auto-restart and the grid size. On a phone, unfold them with the arrow at the top."
+        "Hier stellst du ein, was du sehen willst: Pfeile, Q-Werte, Heatmap, Auto-Restart und die Feldgröße. Zum Aufklappen auf den Titel tippen.",
+        "Here you choose what you want to see: arrows, Q-values, heatmap, auto-restart and the grid size. Tap the title to open it."
       ),
     },
     {
       target: "policy",
       title: translate("Policy-Pfeile", "Policy arrows"),
       content: translate(
-        "Die Policy ist die Strategie des Rovers. Jeder Pfeil zeigt, in welche Richtung er auf diesem Feld nach seinem bisherigen Wissen gehen würde. Mit jeder Runde zeigen die Pfeile besser den Weg zum Ziel. Mit diesem Schalter blendest du sie ein oder aus.",
-        "The policy is the rover's strategy. Each arrow shows which way it would go from that tile based on what it has learned. With every run the arrows trace the way to the goal better. This switch shows or hides them."
+        "Jeder Pfeil zeigt, wohin der Rover auf dem Feld gehen würde, so wie er es bisher gelernt hat. Je länger er übt, desto besser zeigen sie zum Ziel.",
+        "Each arrow shows where the rover would go from that tile, based on what it has learned so far. The more it practises, the better they point to the goal."
       ),
     },
     {
       target: "autorestart",
       title: translate("Auto-Restart", "Auto-restart"),
       content: translate(
-        "Ist dieser Schalter an, startet der Rover nach jedem Ziel von selbst neu und lernt ohne Klicken weiter. Hier kannst du es ein- und ausschalten.",
-        "When this switch is on, the rover restarts by itself after every goal and keeps learning without clicking. Turn it on or off here."
+        "Ist das an, fängt der Rover nach jedem Ziel von selbst wieder an. Du musst nicht jedes Mal klicken.",
+        "When this is on, the rover starts over by itself after every goal. No clicking needed."
       ),
     },
   ], [translate]);
@@ -3423,13 +3424,28 @@ const handleActiveBonusClick = useCallback(() => {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
             <Card className="relative w-full max-w-md border-primary/40 bg-card p-8 text-center shadow-sm">
               <div className="space-y-4">
-                <h2 className="text-3xl font-black text-primary">
-                  {translate("Level geschafft!", "Level solved!")}
+                <h2 className="text-2xl font-bold text-foreground">
+                  {translate(`Level ${levelSolvedDialog} gelöst`, `Level ${levelSolvedDialog} solved`)}
                 </h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  {levelSolvedDialog >= 10
-                    ? translate("Du hast alle Level gemeistert. Der Free Mode ist freigeschaltet!", "You mastered every level. Free Mode is unlocked!")
-                    : translate(`Der Rover hat gelernt, das Ziel zuverlässig zu finden. Level ${levelSolvedDialog + 1} ist freigeschaltet.`, `The rover learned to find the goal reliably. Level ${levelSolvedDialog + 1} is unlocked.`)}
+                  {(() => {
+                    const hist = playgroundState.episodeHistory;
+                    const lastRun = hist[hist.length - 1];
+                    const best = shortestPathLength(playgroundState.grid, playgroundState.spawn, playgroundState.goal);
+                    const facts =
+                      lastRun && Number.isFinite(best)
+                        ? translate(
+                            `Der Rover hat ${hist.length} Runden gebraucht. Im letzten Lauf waren es ${lastRun.steps} Schritte, der kürzeste Weg hat ${best}. `,
+                            `The rover needed ${hist.length} runs. The last one took ${lastRun.steps} steps, the shortest path is ${best}. `,
+                          )
+                        : "";
+                    return (
+                      facts +
+                      (levelSolvedDialog >= 10
+                        ? translate("Das war das letzte Level. Der Free Mode ist offen.", "That was the last level. Free Mode is open.")
+                        : translate(`Level ${levelSolvedDialog + 1} ist jetzt offen.`, `Level ${levelSolvedDialog + 1} is open now.`))
+                    );
+                  })()}
                 </p>
                 <div className="flex flex-wrap justify-center gap-3 pt-2">
                   {levelSolvedDialog < 10 && (
@@ -3461,13 +3477,11 @@ const handleActiveBonusClick = useCallback(() => {
         {celebration && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 px-4">
             <Card className="relative w-full max-w-xl overflow-hidden border-primary/40 bg-card/95 p-8 text-center shadow-sm">
-              <div className="absolute -top-10 -left-10 h-32 w-32 rounded-full bg-primary/30 blur-3xl" />
-              <div className="absolute -bottom-12 -right-12 h-36 w-36 rounded-full bg-accent/30 blur-3xl" />
               <div className="relative space-y-4">
-                <h2 className="text-3xl md:text-4xl font-black text-primary drop-shadow">
+                <h2 className="text-3xl font-bold text-foreground">
                   {translate("Glückwunsch!", "Congratulations!")}
                 </h2>
-                <p className="text-sm uppercase tracking-wide text-primary/80">
+                <p className="text-sm text-muted-foreground">
                   {translate("Mission", "Mission")} #{celebration.rank}
                 </p>
                 <h3 className="text-lg font-semibold text-foreground">
@@ -3802,10 +3816,17 @@ const handleActiveBonusClick = useCallback(() => {
               mode === "comparison" && "pointer-events-none opacity-40 grayscale",
             )}
           >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold gradient-text">
+            <div className="mb-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+              <h2 className="text-2xl font-bold text-foreground">
                 {translate("Playground", "Playground")}
               </h2>
+              {mode === "playground" && (
+                <RoverSays
+                  history={playgroundState.episodeHistory}
+                  shortest={shortestPathLength(playgroundState.grid, playgroundState.spawn, playgroundState.goal)}
+                  translate={translate}
+                />
+              )}
             </div>
 
             <div

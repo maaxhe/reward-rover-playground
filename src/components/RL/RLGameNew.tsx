@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect, useRef, type ReactNode } from "react"
 import { Link } from "react-router-dom";
 import { RLGame } from "./RLGame";
 import { ParametersPanel } from "./ParametersPanel";
+import { FeedbackNote } from "./FeedbackNote";
 import { LevelProgressBar } from "./LevelProgressBar";
 import { LevelUnlocksCard } from "./LevelUnlocksCard";
 import { GameLegend } from "./GameLegend";
@@ -32,12 +33,12 @@ function Fold({
   children: ReactNode;
 }) {
   return (
-    <div className="mt-4 rounded-lg border border-border/40 bg-card/60">
+    <div className="mt-3 border-t border-border/60">
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold text-foreground"
+        className="flex w-full items-center justify-between gap-3 py-3 text-left text-sm font-semibold text-foreground"
       >
         <span>{title}</span>
         <span className="flex items-center gap-2">
@@ -45,7 +46,7 @@ function Fold({
           <span className={cn("text-muted-foreground transition-transform", open && "rotate-180")} aria-hidden>▾</span>
         </span>
       </button>
-      {open && <div className="px-2 pb-2">{children}</div>}
+      {open && <div className="pb-3">{children}</div>}
     </div>
   );
 }
@@ -312,7 +313,7 @@ export function RLGameNew() {
           {isLevelMode && (
             <>
               {foldIntro && (
-                <p className="mb-3 rounded-lg border border-primary/40 bg-primary/10 p-3 text-xs leading-relaxed text-foreground">
+                <p className="mb-3 border-l-2 border-primary pl-3 text-xs leading-relaxed text-foreground/90">
                   {translate(
                     "Hier links steht, in welchem Level du bist, was du schon benutzen darfst und was die Symbole auf dem Feld bedeuten. In ein paar Sekunden klappt das zusammen. Tipp auf den Titel, dann ist es wieder da.",
                     "On the left you see which level you're in, what you can already use and what the symbols on the board mean. This folds up in a few seconds. Tap a title to bring it back.",
@@ -398,6 +399,7 @@ export function RLGameNew() {
           <Fold title={translate("Legende", "Legend")} open={folds.legend} onToggle={() => toggleFold("legend")}>
             <GameLegend translate={translate} showPortal={!isLevelMode || unlockedFeatures.canPlacePortals} />
           </Fold>
+          <FeedbackNote level={isLevelMode ? currentLevel : undefined} translate={translate} />
         </div>
 
         {/* Right Content - Game */}

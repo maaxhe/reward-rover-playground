@@ -11,6 +11,7 @@ import { authenticate, getJwtSecret } from "./middleware/auth.js";
 import { isAdmin } from "./middleware/isAdmin.js";
 import dailyRoutes from "./routes/daily.js";
 import roomRoutes from "./routes/rooms.js";
+import feedbackRoutes from "./routes/feedback.js";
 
 dotenv.config();
 
@@ -287,6 +288,7 @@ app.delete(`${API_PREFIX}/admin/templates/:id`, authenticate, isAdmin, (req, res
 
 app.use(API_PREFIX, dailyRoutes);
 app.use(API_PREFIX, roomRoutes);
+app.use(API_PREFIX, feedbackRoutes);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

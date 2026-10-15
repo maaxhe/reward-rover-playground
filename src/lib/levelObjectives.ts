@@ -23,8 +23,8 @@ export const LEVEL_OBJECTIVES: Record<LevelNumber, LevelObjective> = {
     efficientEpisodes: 2,
     stepFactor: 3.5,
     hint: {
-      de: "Anfangs läuft der Rover fast blind. Mit jeder Runde merkt er sich bessere Wege. Probiere die Neugier (ε) aus: zu niedrig und er probiert nichts Neues, zu hoch und er läuft weiter zufällig.",
-      en: "At first the rover moves almost blindly. Each run it remembers better paths. Try the curiosity (ε, also called exploration rate): too low and it never tries anything new, too high and it keeps wandering randomly.",
+      de: "Am Anfang läuft der Rover fast blind. Mit jeder Runde merkt er sich bessere Wege. Spiel mal mit der Neugier (ε): zu wenig und er probiert nichts Neues, zu viel und er läuft nur noch rum.",
+      en: "At first the rover moves almost blindly. Each run it remembers better paths. Play with curiosity (ε): too little and it never tries anything new, too much and it just wanders.",
     },
   },
   2: {
@@ -32,8 +32,8 @@ export const LEVEL_OBJECTIVES: Record<LevelNumber, LevelObjective> = {
     stepFactor: 2.5,
     minAlpha: 0.5,
     hint: {
-      de: "Alpha ist die Lernrate: Wie stark überschreibt neue Erfahrung das alte Wissen? Bei hohem α lernt der Rover schnell, bei niedrigem vorsichtig. Vergleiche die Anzahl der Episoden.",
-      en: "Alpha is the learning rate: how strongly does new experience overwrite old knowledge? A high α learns fast, a low α learns cautiously. Compare the number of episodes.",
+      de: "Alpha ist die Lernrate: Wie stark zählt Neues gegenüber dem, was der Rover schon weiß? Hohes α heißt schnell lernen, niedriges heißt vorsichtig. Vergleich mal, wie viele Runden er braucht.",
+      en: "Alpha is the learning rate: how much does new experience count against what the rover already knows? High α learns fast, low α learns carefully. Compare how many runs it needs.",
     },
   },
   3: {
@@ -41,8 +41,8 @@ export const LEVEL_OBJECTIVES: Record<LevelNumber, LevelObjective> = {
     stepFactor: 2,
     minGamma: 0.9,
     hint: {
-      de: "Gamma (Weitsicht, auch Diskontfaktor genannt) bestimmt, wie sehr der Rover an die Zukunft denkt. Bei hohem γ lohnt sich der Weg zum Ziel mehr als die kleine Belohnung am Rand. Setze γ auf mindestens 0,9.",
-      en: "Gamma (foresight, also called discount factor) decides how much the rover cares about the future. With a high γ the path to the goal is worth more than the small reward on the side. Set γ to at least 0.9.",
+      de: "Gamma (Weitsicht, auch Diskontfaktor) sagt, wie sehr der Rover an später denkt. Bei hohem γ ist ihm der Weg zum Ziel mehr wert als die kleine Belohnung am Rand. Stell γ auf mindestens 0,9.",
+      en: "Gamma (foresight, also called discount factor) says how much the rover thinks about later. With a high γ the way to the goal is worth more to it than the small reward on the side. Set γ to at least 0.9.",
     },
   },
   4: {
@@ -50,7 +50,7 @@ export const LEVEL_OBJECTIVES: Record<LevelNumber, LevelObjective> = {
     stepFactor: 2,
     build: { tile: "reward", extra: 1 },
     hint: {
-      de: "Platziere mindestens eine eigene Belohnung. Der Rover wird davon angezogen. Schau in die Q-Werte: Wo wird der Weg besonders hell?",
+      de: "Setz mindestens eine eigene Belohnung. Der Rover wird davon angezogen. Schau in die Q-Werte: Wo leuchtet der Weg hell?",
       en: "Place at least one reward of your own. The rover is drawn to it. Look at the Q-values: where does the path light up?",
     },
   },
@@ -59,8 +59,8 @@ export const LEVEL_OBJECTIVES: Record<LevelNumber, LevelObjective> = {
     stepFactor: 2,
     build: { tile: "punishment", extra: 1 },
     hint: {
-      de: "Platziere mindestens eine eigene Strafe, zum Beispiel direkt auf dem kürzesten Weg. Der Rover muss einen Umweg lernen.",
-      en: "Place at least one penalty of your own, for example right on the shortest path. The rover has to learn a detour.",
+      de: "Setz mindestens eine eigene Strafe, am besten mitten auf den kürzesten Weg. Dann muss der Rover einen Umweg lernen.",
+      en: "Place at least one penalty of your own, ideally right on the shortest path. Then the rover has to learn a detour.",
     },
   },
   6: {
@@ -68,8 +68,8 @@ export const LEVEL_OBJECTIVES: Record<LevelNumber, LevelObjective> = {
     stepFactor: 2,
     build: { tile: "obstacle", extra: 2 },
     hint: {
-      de: "Baue mindestens zwei zusätzliche Mauern. Lass einen Weg zum Ziel offen, sonst kann der Rover nie ankommen.",
-      en: "Build at least two extra walls. Leave a path to the goal open, or the rover can never arrive.",
+      de: "Bau mindestens zwei Mauern dazu. Einen Weg zum Ziel musst du offen lassen, sonst kommt der Rover nie an.",
+      en: "Build at least two more walls. Leave one path to the goal open, or the rover can never get there.",
     },
   },
   7: {
@@ -77,8 +77,8 @@ export const LEVEL_OBJECTIVES: Record<LevelNumber, LevelObjective> = {
     stepFactor: 2,
     resizeGrid: true,
     hint: {
-      de: "Ändere die Gittergröße. Je größer das Feld, desto mehr Zustände muss der Rover erkunden und desto länger dauert das Lernen.",
-      en: "Change the grid size. The bigger the field, the more states the rover has to explore and the longer learning takes.",
+      de: "Ändere die Feldgröße. Je größer das Feld, desto mehr muss der Rover ausprobieren und desto länger dauert es.",
+      en: "Change the grid size. The bigger the field, the more the rover has to try out and the longer it takes.",
     },
   },
   8: {
@@ -86,24 +86,24 @@ export const LEVEL_OBJECTIVES: Record<LevelNumber, LevelObjective> = {
     stepFactor: 2.5,
     build: { tile: "portal", extra: 2 },
     hint: {
-      de: "Platziere ein weiteres Portalpaar. Portale sind Abkürzungen, die der Rover nur durch Ausprobieren findet.",
-      en: "Place another portal pair. Portals are shortcuts the rover can only find by trying.",
+      de: "Setz ein weiteres Portalpaar. Portale sind Abkürzungen, die der Rover nur durch Ausprobieren findet.",
+      en: "Place another portal pair. Portals are shortcuts the rover only finds by trying.",
     },
   },
   9: {
     efficientEpisodes: 3,
     stepFactor: 2.5,
     hint: {
-      de: "Der Rover startet unten links, das Ziel ist oben rechts. Jetzt zählt Effizienz: Die letzten drei Läufe müssen nah am kürzesten Weg liegen. Passe Neugier, Lernrate und Weitsicht an.",
-      en: "The rover starts at the bottom left, the goal is at the top right. Efficiency counts now: the last three runs must be close to the shortest path. Tune curiosity, learning rate and foresight.",
+      de: "Der Rover startet unten links, das Ziel ist oben rechts. Jetzt geht es um den kurzen Weg: Die letzten drei Läufe müssen nah am Optimum liegen. Stell Neugier, Lernrate und Weitsicht passend ein.",
+      en: "The rover starts bottom left, the goal is top right. Now it's about short routes: the last three runs must be close to the best possible. Set curiosity, learning rate and foresight to fit.",
     },
   },
   10: {
     efficientEpisodes: 4,
     stepFactor: 1.75,
     hint: {
-      de: "Meisterprüfung: Vier Läufe in Folge fast auf dem optimalen Weg. Danach kennst du alle Stellschrauben und der Free Mode wartet.",
-      en: "Master test: four runs in a row almost on the optimal path. After that you know every knob, and Free Mode awaits.",
+      de: "Letzte Aufgabe: Vier Läufe hintereinander fast auf dem besten Weg. Danach kennst du alle Regler und der Free Mode ist offen.",
+      en: "Last task: four runs in a row almost on the best path. After that you know every dial and Free Mode is open.",
     },
   },
 };
@@ -206,7 +206,7 @@ export function evaluateObjective(args: {
     requirements.push({
       id: "gamma",
       done: gamma >= objective.minGamma,
-      de: `Weitsicht γ (Diskontfaktor) auf mindestens ${objective.minGamma} stellen`,
+      de: `Weitsicht γ auf mindestens ${objective.minGamma} stellen`,
       en: `Set foresight γ (discount factor) to at least ${objective.minGamma}`,
     });
   }
@@ -218,7 +218,7 @@ export function evaluateObjective(args: {
     requirements.push({
       id: "build",
       done: placed >= extra,
-      de: `${extra} zusätzliche ${label.de[extra === 1 ? 0 : 1]} platzieren (${Math.min(placed, extra)}/${extra})`,
+      de: `${extra} ${label.de[extra === 1 ? 0 : 1]} zusätzlich setzen (${Math.min(placed, extra)}/${extra})`,
       en: `Place ${extra} extra ${label.en[extra === 1 ? 0 : 1]} (${Math.min(placed, extra)}/${extra})`,
     });
   }
@@ -226,7 +226,7 @@ export function evaluateObjective(args: {
     requirements.push({
       id: "resize",
       done: grid.length !== world.size,
-      de: "Die Gittergröße ändern",
+      de: "Die Feldgröße ändern",
       en: "Change the grid size",
     });
   }
@@ -235,7 +235,7 @@ export function evaluateObjective(args: {
     done: efficientStreak >= objective.efficientEpisodes,
     de: Number.isFinite(shortest)
       ? `${objective.efficientEpisodes} Läufe in Folge mit höchstens ${stepLimit} Schritten (${Math.min(efficientStreak, objective.efficientEpisodes)}/${objective.efficientEpisodes})`
-      : "Es gibt keinen Weg zum Ziel. Entferne eine Mauer.",
+      : "Der Rover kommt nicht zum Ziel. Nimm eine Mauer weg.",
     en: Number.isFinite(shortest)
       ? `${objective.efficientEpisodes} runs in a row with at most ${stepLimit} steps (${Math.min(efficientStreak, objective.efficientEpisodes)}/${objective.efficientEpisodes})`
       : "There is no path to the goal. Remove a wall.",

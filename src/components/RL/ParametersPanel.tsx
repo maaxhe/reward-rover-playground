@@ -36,7 +36,7 @@ export function ParametersPanel({
 
   return (
     <Card
-      className={cn("p-5 bg-card/60 border-border/40 rounded-lg transition-opacity", disabled && "pointer-events-none opacity-40 grayscale")}
+      className={cn("border-0 border-t border-border/60 bg-transparent p-0 pt-4 shadow-none rounded-none transition-opacity", disabled && "pointer-events-none opacity-40 grayscale")}
       aria-disabled={disabled}
     >
       <h3 className="text-sm font-semibold mb-4 text-foreground">

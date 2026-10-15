@@ -123,7 +123,7 @@ All colors MUST be HSL.
 
   /* Professional text styling */
   .gradient-text {
-    color: hsl(var(--primary));
+    color: hsl(var(--foreground));
     font-weight: 600;
   }
 

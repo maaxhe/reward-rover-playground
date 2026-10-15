@@ -48,10 +48,7 @@ export function LevelUnlocksCard({ currentLevel, translate }: LevelUnlocksCardPr
   ];
 
   return (
-    <Card className="p-5 bg-card/60 border-border/40 rounded-lg">
-      <h3 className="text-sm font-semibold mb-4 text-foreground">
-        {translate("Freigeschaltet", "Unlocked")}
-      </h3>
+    <Card className="border-0 bg-transparent p-0 shadow-none">
 
       <div className="space-y-2">
         {features.map(([key, label]) => {
@@ -59,10 +56,8 @@ export function LevelUnlocksCard({ currentLevel, translate }: LevelUnlocksCardPr
           return (
             <div
               key={key}
-              className={`flex items-center gap-3 text-xs py-2 px-2 rounded ${
-                isUnlocked
-                  ? "bg-primary/10 text-foreground"
-                  : "bg-background/40 text-muted-foreground"
+              className={`flex items-center gap-3 text-xs py-1 ${
+                isUnlocked ? "text-foreground" : "text-muted-foreground/70"
               }`}
             >
               {isUnlocked ? (
