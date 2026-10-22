@@ -32,6 +32,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import type { Position, PlaygroundState, ComparisonRoverState } from "@/lib/rl/types";
 import { runComparisonRoverStep } from "@/lib/rl/comparisonStep";
 import { getBestActionDirection } from "@/lib/rl/qLearning";
+import { solveValues } from "@/lib/rl/valueIteration";
 import { createEmptyGrid, cloneGrid } from "@/lib/rl/gridUtils";
 import { getEpisodeTitle, GOAL_REWARD, DEFAULT_TILE_OPTION as LIB_DEFAULT_TILE_OPTION } from "@/lib/rl/constants";
 import {
@@ -133,6 +134,8 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   const [showLeaderboard, setShowLeaderboard] = useState(true);
   const [showStatistics, setShowStatistics] = useState(true);
   const [showActions, setShowActions] = useState(true);
+  const [showPlanner, setShowPlanner] = useState(false);
+  const [showPlannerInfo, setShowPlannerInfo] = useState(false);
   // Level Mode has fixed rules: rewards stay on the board and pay less on every repeat hit (see rewardDecay).
   // Only Free Mode lets the player choose whether eaten tiles disappear.
   const [consumeRewardsSetting, setConsumeRewards] = useState(false);
@@ -2147,6 +2150,13 @@ const handleActiveBonusClick = useCallback(() => {
 
   const activeGrid = mode === "playground" ? playgroundState.grid : randomState.grid;
   const activeQTable = mode === "playground" ? playgroundState.qTable : randomState.qTable;
+
+  // Value iteration needs the whole map and ignores teleports, so it only plans single-goal boards without portals.
+  const plannerAvailable = mode === "playground" && !activeGrid.some((row) => row.some((c) => c.type === "portal"));
+  const plannedValues = useMemo(
+    () => (showPlanner && plannerAvailable ? solveValues(playgroundState.grid, playgroundState.goal, gamma).values : null),
+    [showPlanner, plannerAvailable, playgroundState.grid, playgroundState.goal, gamma],
+  );
   const gridSize = activeGrid.length;
   // Nebeneinander (ab lg): zwei Seitenspalten à min. 260 px, 2×24 px Abstand, ~80 px Rahmen um das Feld.
   const SIDE_COLUMN_MIN = 260;
@@ -3892,6 +3902,7 @@ const handleActiveBonusClick = useCallback(() => {
                         onMouseDown={mode === "playground" || (mode === "random" && challengeMode) ? handleMouseDown : undefined}
                         onMouseEnter={(mode === "playground" || (mode === "random" && challengeMode)) && isDragging ? () => handleTilePlacement(x, y) : undefined}
                         rewardAnimation={rewardAnimation && rewardAnimation.x === x && rewardAnimation.y === y ? rewardAnimation.type : null}
+                        plannedValue={plannedValues ? plannedValues[y][x] : undefined}
                       />
                     );
                   })
@@ -4122,6 +4133,37 @@ const handleActiveBonusClick = useCallback(() => {
                         {translate(
                           "Färbt Felder basierend auf Besuchshäufigkeit ein.",
                           "Colors tiles based on visit frequency.",
+                        )}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <Label htmlFor="show-planner-settings" className="text-xs font-semibold leading-tight">
+                          {translate("Planer-Werte (Value Iteration)", "Planner values (value iteration)")}
+                        </Label>
+                        <button
+                          onClick={() => setShowPlannerInfo(!showPlannerInfo)}
+                          className="text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+                          aria-label="Toggle info"
+                        >
+                          <Info className="h-3 w-3" />
+                        </button>
+                      </div>
+                      <Switch
+                        id="show-planner-settings"
+                        checked={showPlanner}
+                        disabled={!plannerAvailable || (levelMode && !unlockedFeatures?.canAdjustGamma)}
+                        onCheckedChange={setShowPlanner}
+                        aria-label={translate("Planer-Werte umschalten", "Toggle planner values")}
+                      />
+                    </div>
+                    {showPlannerInfo && (
+                      <p className="text-xs text-muted-foreground leading-relaxed pl-1 animate-in fade-in duration-200">
+                        {translate(
+                          "Zeigt die „wahren“ Werte, die ein Planer mit Kartenwissen sofort berechnen würde (blaue Zahl unten links, goldene Felder gut, blaue schlecht). Vergleiche sie mit den Q-Werten des Rovers: Mit jeder Runde nähert er sich ihnen an. Ändere γ und sieh, wie weit das Ziel zu spüren ist. Mit Portalen nicht verfügbar; ab Level 3.",
+                          "Shows the “true” values a planner with the map would compute right away (blue number bottom left, gold tiles good, blue ones bad). Compare them with the rover's Q-values: with every run it gets closer. Change γ and see how far the goal can be felt. Not available with portals; from level 3.",
                         )}
                       </p>
                     )}

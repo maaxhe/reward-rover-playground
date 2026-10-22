@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { RealRobots } from "@/components/RL/RealRobots";
 import { GuideDemo } from "@/components/RL/GuideDemo";
 import { RlhfDemo } from "@/components/RL/RlhfDemo";
+import { ValueIterationDemo } from "@/components/RL/ValueIterationDemo";
 import { DEMO_WORLD } from "@/components/landing/LiveRover";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { CompetitionWorld } from "@/lib/competition/world";
@@ -28,6 +29,7 @@ const CHAPTERS = [
   { id: "epsilon", de: "ε Neugier", en: "ε Curiosity" },
   { id: "alpha", de: "α Lernrate", en: "α Learning rate" },
   { id: "gamma", de: "γ Weitsicht", en: "γ Foresight" },
+  { id: "planen", de: "Planen statt Probieren", en: "Planning, not trying" },
   { id: "formel", de: "Die Formel", en: "The formula" },
   { id: "llm", de: "KI-Chat & RLHF", en: "AI chat & RLHF" },
   { id: "alltag", de: "Im Alltag", en: "Real life" },
@@ -234,6 +236,28 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
                     : t("Dreh γ langsam hoch und beobachte, wie weit die Pfeile in Richtung Ziel wachsen. Mit „Von vorn“ startest du neu.", "Slowly raise γ and watch how far the arrows grow towards the goal. “Start over” resets.")
               }
             />
+          </Section>
+
+          <Section id="planen" title={t("Planen statt Probieren: Value Iteration", "Planning instead of trying: value iteration")}>
+            <p>
+              {t(
+                "Bisher hat der Rover die Karte nicht gekannt und alles durch Laufen herausgefunden. Stell dir nun einen Planer vor, dem jemand die Karte gegeben hat. Er muss nirgends hinlaufen. Er rechnet nur: Wie viel ist jedes Feld wert, wenn ich von dort aus das Beste daraus mache?",
+                "So far the rover did not know the map and found everything out by walking. Now imagine a planner who was handed the map. It does not have to walk anywhere. It just computes: how much is each tile worth if I make the best of it from there?",
+              )}
+            </p>
+            <p>
+              {t(
+                "Dafür geht er das ganze Feld immer wieder durch. Beim ersten Durchgang kennt er nur das Feld direkt neben dem Ziel. Beim zweiten auch dessen Nachbarn, und so wandert der Wert des Ziels Feld für Feld rückwärts. Bei jedem Schritt zurück verliert er etwas, nämlich den Faktor γ. Darum siehst du hier besonders gut, was die Weitsicht tut.",
+                "To do that it sweeps over the whole board again and again. On the first sweep it only knows the tile next to the goal. On the second also that tile's neighbours, and so the goal's value travels back tile by tile. Every step back costs it a bit, namely the factor γ. That is why you can see here so clearly what foresight does.",
+              )}
+            </p>
+            <ValueIterationDemo translate={t} />
+            <p className="text-base text-muted-foreground">
+              {t(
+                "Die goldenen Felder sind gute Nachrichten, die blauen schlechte. Die Zahl ist der Wert des Feldes, der goldene Rand zeigt den Weg, den der Planer vom Start aus nehmen würde. Der Rover aus den anderen Kapiteln kommt zum selben Ergebnis, aber ohne Karte und deshalb langsamer: Seine Q-Werte nähern sich dieser Landkarte erst mit jeder Runde an.",
+                "The golden tiles are good news, the blue ones bad. The number is the tile's value, the golden outline shows the way the planner would take from the start. The rover from the other chapters reaches the same result, but without a map and therefore more slowly: its Q-values only approach this landscape with every run.",
+              )}
+            </p>
           </Section>
 
           <Section id="formel" title={t("Was bei jedem Schritt passiert", "What happens on every step")}>

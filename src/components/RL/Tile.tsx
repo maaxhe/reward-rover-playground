@@ -1,5 +1,6 @@
 import { memo, ReactNode, useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { formatPlanned, valueTint } from "./valueTint";
 
 export type TileType = "empty" | "obstacle" | "reward" | "punishment" | "goal" | "portal";
 
@@ -30,6 +31,8 @@ export interface TileProps {
   bestAction?: string; // "up", "down", "left", "right"
   showActions?: boolean;
   rewardAnimation?: "reward" | "punishment" | null;
+  /** Value Iteration overlay: what a planner with the full map would give this tile. */
+  plannedValue?: number;
 }
 
 const TileComponent = ({
@@ -52,6 +55,7 @@ const TileComponent = ({
   bestAction,
   showActions = false,
   rewardAnimation,
+  plannedValue,
 }: TileProps) => {
   // Pfeil-Symbol basierend auf bester Aktion
   const getArrowIcon = (action?: string) => {
@@ -133,6 +137,18 @@ const TileComponent = ({
           }}
         />
       )}
+      {plannedValue !== undefined && type !== "obstacle" && type !== "goal" && (
+        <>
+          <div className="absolute inset-0 pointer-events-none" style={{ backgroundColor: valueTint(plannedValue), borderRadius: tileSize > 32 ? "6px" : "4px" }} />
+          <span
+            className="absolute bottom-0.5 left-0.5 rounded px-1 font-bold tabular-nums leading-none text-white"
+            style={{ fontSize: tileSize > 40 ? "0.7rem" : "0.55rem", background: "rgba(40, 70, 150, 0.75)" }}
+            title="V*"
+          >
+            {formatPlanned(plannedValue)}
+          </span>
+        </>
+      )}
       {showValues && <span className={badgeClass}>{displayValue}</span>}
       {/* Aktions-Pfeil */}
       {showActions && bestAction && visits > 0 && !isAgent && type !== "obstacle" && type !== "portal" && type !== "goal" && (
@@ -194,6 +210,7 @@ const areEqual = (prev: TileProps, next: TileProps) => {
   if (Math.round(prev.value * 100) !== Math.round(next.value * 100)) return false;
   if (prev.showAgent !== next.showAgent) return false;
   if (prev.rewardAnimation !== next.rewardAnimation) return false;
+  if (prev.plannedValue !== next.plannedValue) return false;
   if (!!prev.onMouseEnter !== !!next.onMouseEnter) return false;
   if (!!prev.onMouseDown !== !!next.onMouseDown) return false;
   if (!!prev.onClick !== !!next.onClick) return false;
