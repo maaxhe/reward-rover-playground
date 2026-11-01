@@ -33,6 +33,10 @@ export interface EpisodeStats {
   stage?: number;
   timeLimit?: number;
   timeUsed?: number;
+  /** Learning settings this episode ran with (for the training curves). */
+  epsilon?: number;
+  alpha?: number;
+  gamma?: number;
 }
 
 export interface PlaygroundState {

@@ -13,6 +13,7 @@ import type { Language, Mode } from "@/lib/rl/types";
 import { SIMULATION_SPEEDS, type SimulationSpeed } from "@/lib/rl/simulation";
 import type { PlaceableTile, PlaygroundState, RandomModeState } from "./RLGame";
 import { RewardHistoryChart } from "./RewardHistoryChart";
+import { TrainingInsights } from "./TrainingInsights";
 import { ChevronDown, ChevronUp, Pause, Play, RotateCcw, Undo2 } from "lucide-react";
 
 type PlaygroundControlsProps = {
@@ -228,6 +229,10 @@ export const PlaygroundControls = ({
           <div className="pt-2">
             <h4 className="mb-2 text-xs font-bold text-foreground">{translate("Reward-Verlauf", "Reward History")}</h4>
             <RewardHistoryChart history={state.episodeHistory} translate={translate} />
+          </div>
+          <div className="pt-3">
+            <h4 className="mb-2 text-xs font-bold text-foreground">{translate("Lernkurve & Einstellungen", "Learning curve & settings")}</h4>
+            <TrainingInsights history={state.episodeHistory} translate={translate} />
           </div>
         </div>)}
       </Card>

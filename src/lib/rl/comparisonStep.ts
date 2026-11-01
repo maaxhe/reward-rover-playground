@@ -9,6 +9,7 @@ import {
 } from "./qLearning";
 import { teleportThroughPortal, withPortalCooldowns, decrementPortalCooldowns, isPortalOnCooldown } from "./portalUtils";
 import { cloneGrid } from "./gridUtils";
+import { MAX_EPISODE_HISTORY } from "./playgroundStep";
 import { recordConsumedTile, restoreConsumedTiles } from "./consumedTiles";
 import type { ComparisonRoverState, EpisodeStats } from "./types";
 
@@ -76,8 +77,11 @@ export const runComparisonRoverStep = (
       reward: state.totalReward + reward,
       success: true,
       mode: "playground",
+      epsilon: state.explorationRate,
+      alpha: state.alpha,
+      gamma: state.gamma,
     };
-    const newHistory = [...state.episodeHistory.slice(-19), episodeStat];
+    const newHistory = [...state.episodeHistory.slice(-(MAX_EPISODE_HISTORY - 1)), episodeStat];
 
     return {
       ...state,

@@ -11,8 +11,21 @@ const H = 110;
 const PAD = { l: 26, r: 8, t: 8, b: 18 };
 
 /** Step chart of ε, α and γ over the training episodes (values are held until the next change). */
-export const ParamTimeline = ({ log }: { log: ParamLog }) => {
-  const lastEpisode = Math.max(1, log[log.length - 1][0] + 1);
+export const ParamTimeline = ({
+  log,
+  labels,
+  lastEpisode: lastEpisodeProp,
+  ariaLabel,
+}: {
+  log: ParamLog;
+  /** Legend texts for ε, α, γ; defaults to German. */
+  labels?: [string, string, string];
+  /** Right edge of the x axis; defaults to just past the last change. */
+  lastEpisode?: number;
+  ariaLabel?: string;
+}) => {
+  const lastEpisode = Math.max(1, lastEpisodeProp ?? log[log.length - 1][0] + 1);
+  const series = SERIES.map((s, i) => ({ ...s, label: labels?.[i] ?? s.label }));
   const x = (episode: number) => PAD.l + (episode / lastEpisode) * (W - PAD.l - PAD.r);
   const y = (value: number) => PAD.t + (1 - value) * (H - PAD.t - PAD.b);
 
@@ -31,7 +44,7 @@ export const ParamTimeline = ({ log }: { log: ParamLog }) => {
         viewBox={`0 0 ${W} ${H}`}
         className="w-full max-w-sm"
         role="img"
-        aria-label={`Verlauf der Lernparameter über ${lastEpisode} Episoden, ${log.length - 1} Änderungen`}
+        aria-label={ariaLabel ?? `Verlauf der Lernparameter über ${lastEpisode} Episoden, ${log.length - 1} Änderungen`}
       >
         {[0, 0.5, 1].map((v) => (
           <g key={v}>
@@ -45,12 +58,12 @@ export const ParamTimeline = ({ log }: { log: ParamLog }) => {
         <text x={W - PAD.r} y={H - 4} textAnchor="end" fontSize={9} fill="currentColor" fillOpacity={0.6}>
           Episode {lastEpisode}
         </text>
-        {SERIES.map((s) => (
+        {series.map((s) => (
           <path key={s.key} d={pathFor(s.key)} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" />
         ))}
       </svg>
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
-        {SERIES.map((s) => (
+        {series.map((s) => (
           <span key={s.key} className="inline-flex items-center gap-1">
             <span className="inline-block h-2 w-4 rounded-full" style={{ background: s.color }} />
             {s.label}

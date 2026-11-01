@@ -5,7 +5,7 @@ import type { LevelNumber } from "@/lib/levelProgression";
 import { TileType } from "./Tile";
 import type { Position, TileState as LibTileState, PlaygroundState, ComparisonRoverState } from "@/lib/rl/types";
 import { recordConsumedTile, restoreConsumedTiles, type ConsumedTile } from "@/lib/rl/consumedTiles";
-import { stepPlayground } from "@/lib/rl/playgroundStep";
+import { MAX_EPISODE_HISTORY, stepPlayground } from "@/lib/rl/playgroundStep";
 import { type QTable, chooseAction, getTileReward, getQValue, setQValue, getDisplayQValue, getMaxQValue, posToActionIndex } from "@/lib/rl/qLearning";
 import { teleportThroughPortal, decrementPortalCooldowns, withPortalCooldowns, isPortalOnCooldown } from "@/lib/rl/portalUtils";
 import { createEmptyGrid, cloneGrid, calculateItemCount, manhattanDistance } from "@/lib/rl/gridUtils";
@@ -356,6 +356,10 @@ export interface EpisodeStats {
   stage?: number;
   timeLimit?: number;
   timeUsed?: number;
+  /** Learning settings this episode ran with (for the training curves). */
+  epsilon?: number;
+  alpha?: number;
+  gamma?: number;
 }
 
 export interface RandomModeState {
@@ -585,8 +589,11 @@ export const runRandomModeStep = (
       stage: isSpeedrun ? state.speedrun.stage : undefined,
       timeLimit: isSpeedrun ? state.speedrun.timeLimit : undefined,
       timeUsed,
+      epsilon: explorationRate,
+      alpha,
+      gamma,
     };
-    const newHistory = [...state.episodeHistory.slice(-19), episodeStat];
+    const newHistory = [...state.episodeHistory.slice(-(MAX_EPISODE_HISTORY - 1)), episodeStat];
 
     if (isSpeedrun) {
       const nextStage = Math.min(state.speedrun.stage + 1, SPEEDRUN_STAGES.length - 1);

@@ -17,7 +17,7 @@ import { cloneGrid } from "./gridUtils";
 import { recordConsumedTile, restoreConsumedTiles } from "./consumedTiles";
 import type { EpisodeStats, PlaygroundState, Position } from "./types";
 
-export const MAX_EPISODE_HISTORY = 20;
+export const MAX_EPISODE_HISTORY = 200;
 
 /** Each repeat hit of a reward/punishment tile in one episode pays this fraction of the previous hit. */
 export const REWARD_DECAY_FACTOR = 0.5;
@@ -129,6 +129,9 @@ export const stepPlayground = (state: PlaygroundState, params: PlaygroundParams)
       reward: state.totalReward + reward,
       success: true,
       mode: "playground",
+      epsilon: params.explorationRate,
+      alpha: params.alpha,
+      gamma: params.gamma,
     };
     return {
       nextState: {

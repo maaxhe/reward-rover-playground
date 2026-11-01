@@ -18,6 +18,8 @@ interface Props {
   emptyText: string;
   tooltip: (p: Point) => string;
   tableHeaders: [string, string];
+  /** Optional second, smoothed line drawn over the raw one (same x values). */
+  overlay?: { data: Point[]; label: string };
 }
 
 const W = 320;
@@ -25,7 +27,7 @@ const H = 130;
 const PAD = { l: 34, r: 12, t: 10, b: 22 };
 
 /** One-series line chart: 2 px line, hairline grid, hover crosshair + tooltip, and a table view. */
-export function LineChart({ title, ariaLabel, data, xLabel, yFormat = String, reference, emptyText, tooltip, tableHeaders }: Props) {
+export function LineChart({ title, ariaLabel, data, xLabel, yFormat = String, reference, emptyText, tooltip, tableHeaders, overlay }: Props) {
   const id = useId();
   const [hover, setHover] = useState<number | null>(null);
 
@@ -62,6 +64,9 @@ export function LineChart({ title, ariaLabel, data, xLabel, yFormat = String, re
   const { sx, sy, ticks, xMin, xMax } = geometry;
   const path = data.map((d, i) => `${i === 0 ? "M" : "L"}${sx(d.x).toFixed(1)},${sy(d.y).toFixed(1)}`).join(" ");
   const last = data[data.length - 1];
+  const overlayPath = overlay?.data.length
+    ? overlay.data.map((d, i) => `${i === 0 ? "M" : "L"}${sx(d.x).toFixed(1)},${sy(d.y).toFixed(1)}`).join(" ")
+    : null;
   const active = hover !== null ? data[hover] : null;
 
   const onMove = (event: React.PointerEvent<SVGSVGElement>) => {
@@ -111,7 +116,18 @@ export function LineChart({ title, ariaLabel, data, xLabel, yFormat = String, re
           <text x={W - PAD.r} y={H - 6} textAnchor="end" className="fill-muted-foreground" fontSize={9}>{xMax}</text>
           <text x={(PAD.l + W - PAD.r) / 2} y={H - 6} textAnchor="middle" className="fill-muted-foreground" fontSize={9}>{xLabel}</text>
 
-          <path d={path} fill="none" className="stroke-primary" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+          <path
+            d={path}
+            fill="none"
+            className="stroke-primary"
+            strokeWidth={overlayPath ? 1 : 2}
+            strokeOpacity={overlayPath ? 0.45 : 1}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+          {overlayPath && (
+            <path d={overlayPath} fill="none" className="stroke-primary" strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
+          )}
 
           {/* current value: direct label at the line's end */}
           <circle cx={sx(last.x)} cy={sy(last.y)} r={4.5} className="fill-primary stroke-card" strokeWidth={2} />
@@ -138,6 +154,12 @@ export function LineChart({ title, ariaLabel, data, xLabel, yFormat = String, re
           </div>
         )}
       </div>
+      {overlay && (
+        <p className="flex items-center gap-1 text-xs text-muted-foreground">
+          <span className="inline-block h-0.5 w-4 rounded-full bg-primary" />
+          {overlay.label}
+        </p>
+      )}
       <details className="text-xs text-muted-foreground">
         <summary className="cursor-pointer">Als Tabelle anzeigen</summary>
         <table className="mt-1 w-full" aria-describedby={id}>
