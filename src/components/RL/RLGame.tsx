@@ -14,6 +14,8 @@ import { ControlBar, PlaygroundControls, RandomControls, ScrollIndicator } from 
 import type { LevelNumber } from "@/lib/levelProgression";
 import { LEVEL_COACH } from "@/lib/levelCoach";
 import { RewardHistoryChart } from "./RewardHistoryChart";
+import { TrainingInsights } from "./TrainingInsights";
+import { CollapsibleTile, setAllTiles } from "./CollapsibleTile";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -132,7 +134,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   const [showValues, setShowValues] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(true);
-  const [showStatistics, setShowStatistics] = useState(true);
+  const [showStatistics, setShowStatistics] = useState(false);
   const [showActions, setShowActions] = useState(true);
   const [showPlanner, setShowPlanner] = useState(false);
   const [showPlannerInfo, setShowPlannerInfo] = useState(false);
@@ -141,7 +143,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   const [consumeRewardsSetting, setConsumeRewards] = useState(false);
   const consumeRewards = levelMode ? false : consumeRewardsSetting;
   const [isAutoRestartEnabled, setIsAutoRestartEnabled] = useState(false);
-  const [showRewardHistory, setShowRewardHistory] = useState(true);
+  const [showRewardHistory, setShowRewardHistory] = useState(false);
   const [showQValuesInfo, setShowQValuesInfo] = useState(false);
   const [showHeatmapInfo, setShowHeatmapInfo] = useState(false);
   const [showConsumeRewardsInfo, setShowConsumeRewardsInfo] = useState(false);
@@ -3683,6 +3685,9 @@ const handleActiveBonusClick = useCallback(() => {
                     <div className="mt-3">
                       <RewardHistoryChart history={randomState.episodeHistory} translate={translate} />
                     </div>
+                    <div className="mt-4">
+                      <TrainingInsights history={randomState.episodeHistory} translate={translate} />
+                    </div>
                   </CollapsibleContent>
                 </Card>
               </Collapsible>
@@ -4038,14 +4043,21 @@ const handleActiveBonusClick = useCallback(() => {
                 </h2>
                 <ChevronDown className={cn("h-5 w-5 transition-transform", showSettingsPanel && "rotate-180")} />
               </button>
+              {showSettingsPanel && (
+                <div className="flex gap-2 text-xs">
+                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2" onClick={() => setAllTiles("collapse")}>
+                    {translate("Alle zuklappen", "Collapse all")}
+                  </Button>
+                  <Button type="button" variant="ghost" size="sm" className="h-7 px-2" onClick={() => setAllTiles("expand")}>
+                    {translate("Alle aufklappen", "Expand all")}
+                  </Button>
+                </div>
+              )}
 
             {showSettingsPanel && (
             <>
-            <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-4">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <h3 className="text-lg font-bold text-foreground">
-                  {translate("Anzeige & Auto-Restart", "Display & auto-restart")}
-                </h3>
+            <CollapsibleTile id="display" title={translate("Anzeige & Auto-Restart", "Display & auto-restart")} defaultOpen={true}>
+              <div className="flex flex-wrap items-start justify-end gap-4">
                 <div className="flex flex-col items-end gap-3">
                   <div data-tutorial="policy" className="space-y-1 rounded-md">
                     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
@@ -4225,12 +4237,9 @@ const handleActiveBonusClick = useCallback(() => {
                   </div>
                 </div>
               </div>
-            </Card>
+            </CollapsibleTile>
 
-            <Card data-tutorial="gridsize" className="rounded-lg border border-border/40 bg-secondary/20 p-4">
-              <h3 className="text-lg font-bold text-foreground mb-1">
-                {translate("Feld-Größe", "Grid size")}
-              </h3>
+            <CollapsibleTile id="grid-size" title={translate("Feld-Größe", "Grid size")} defaultOpen={false} data-tutorial="gridsize">
               <p className="text-sm text-muted-foreground mb-3">
                 {translate(
                   "Legt fest, wie viele Felder das Spielfeld besitzt.",
@@ -4266,21 +4275,15 @@ const handleActiveBonusClick = useCallback(() => {
                   🔒 {translate("Schalte Level 7 frei, um das große Feld zu nutzen.", "Reach level 7 to use the large board.")}
                 </p>
               )}
-            </Card>
+            </CollapsibleTile>
 
             {/* Saved environments are Free Mode only: loading one in a level would replace the level world. */}
             {!levelMode && (
-              <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-3 hidden xl:block">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-foreground">
-                    {translate("Meine Umgebungen", "My environments")}
-                  </h3>
-                  {authUser && (
-                    <Badge variant="secondary" className="bg-foreground/10 text-foreground border-foreground/15">
-                      {savedEnvironments.length}
-                    </Badge>
-                  )}
-                </div>
+              <CollapsibleTile id="environments" title={translate("Meine Umgebungen", "My environments")} defaultOpen={false} className="hidden xl:block" aside={authUser ? (
+                  <Badge variant="secondary" className="bg-foreground/10 text-foreground border-foreground/15">
+                    {savedEnvironments.length}
+                  </Badge>
+                ) : undefined}>
                 {isLoadingEnvs ? (
                   <p className="text-xs text-muted-foreground">
                     {translate("Umgebungen werden geladen…", "Loading environments…")}
@@ -4320,14 +4323,11 @@ const handleActiveBonusClick = useCallback(() => {
                     ))}
                   </div>
                 )}
-              </Card>
+              </CollapsibleTile>
             )}
 
             {mode === "playground" && !levelMode && (
-              <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-3">
-                <h3 className="text-lg font-bold text-foreground">
-                  {translate("Welt bearbeiten", "Edit world")}
-                </h3>
+              <CollapsibleTile id="edit-world" title={translate("Welt bearbeiten", "Edit world")} defaultOpen={true}>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     variant={settingGoal ? "default" : "outline"}
@@ -4361,14 +4361,11 @@ const handleActiveBonusClick = useCallback(() => {
                         "Move the goal or wipe the board. Both reset what the rover has learned.",
                       )}
                 </p>
-              </Card>
+              </CollapsibleTile>
             )}
 
             {mode === "playground" && !levelMode && (
-              <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-3">
-                <h3 className="text-lg font-bold text-foreground">
-                  {translate("Preset-Levels", "Preset levels")}
-                </h3>
+              <CollapsibleTile id="presets" title={translate("Preset-Levels", "Preset levels")} defaultOpen={false}>
                 <p className="text-xs text-muted-foreground">
                   {translate(
                     "Fertige Welten zum Ausprobieren – ersetzt das aktuelle Feld.",
@@ -4396,15 +4393,12 @@ const handleActiveBonusClick = useCallback(() => {
                     </TooltipProvider>
                   ))}
                 </div>
-              </Card>
+              </CollapsibleTile>
             )}
 
             {mode === "random" && (
               <>
-                <Card className="rounded-lg border border-border/40 bg-card/50 p-4 space-y-3">
-                  <h3 className="text-base font-bold text-foreground">
-                    {translate("Zufallsmodus-Einstellungen", "Random mode settings")}
-                  </h3>
+                <CollapsibleTile id="random-settings" title={translate("Zufallsmodus-Einstellungen", "Random mode settings")} defaultOpen={true}>
                   <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 w-fit">
                     {levelName}
                   </Badge>
@@ -4442,7 +4436,7 @@ const handleActiveBonusClick = useCallback(() => {
                       })}
                     </div>
                   </div>
-                </Card>
+                </CollapsibleTile>
 
               </>
             )}
