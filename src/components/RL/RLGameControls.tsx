@@ -41,6 +41,13 @@ type PlaygroundControlsProps = {
   unlockedFeatures: UnlockedFeatures | null;
 };
 
+const TOOLS = [
+  { type: "obstacle", unlock: "canPlaceWalls", de: "Mauer", en: "Wall" },
+  { type: "reward", unlock: "canPlaceRewards", de: "Belohnung", en: "Reward" },
+  { type: "punishment", unlock: "canPlacePunishments", de: "Strafe", en: "Penalty" },
+  { type: "portal", unlock: "canPlacePortals", de: "Portal", en: "Portal" },
+] as const;
+
 export const PlaygroundControls = ({
   state,
   onStart,
@@ -75,50 +82,40 @@ export const PlaygroundControls = ({
           {state.isRunning ? translate("Pause", "Pause") : translate("Start", "Start")}
         </Button>
       </div>
-      <div className="flex gap-2">
-        <Button variant="secondary" size="lg" onClick={onStep} className="flex-1 font-semibold">
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="secondary" onClick={onStep} className="font-semibold">
           {translate("Step", "Step")}
         </Button>
-        <Button variant="outline" size="lg" onClick={onReset} className="flex-1 font-semibold">
+        <Button variant="outline" onClick={onReset} className="font-semibold">
           <RotateCcw className="mr-2 h-4 w-4" />
           {translate("Zurück", "Reset")}
         </Button>
-      </div>
-      <div className="space-y-2">
-        <Button
-          variant="outline"
-          size="lg"
-          onClick={onUndo}
-          disabled={!canUndo}
-          className="w-full font-semibold"
-        >
+        <Button variant="ghost" size="sm" onClick={onUndo} disabled={!canUndo} className="font-medium">
           <Undo2 className="mr-2 h-4 w-4" />
           {translate("Rückgängig", "Undo")}
         </Button>
         {onReplay && onStopReplay && (
           <Button
-            variant={isReplaying ? "destructive" : "secondary"}
-            size="lg"
+            variant={isReplaying ? "destructive" : "ghost"}
+            size="sm"
             onClick={isReplaying ? onStopReplay : onReplay}
-            className="w-full font-semibold"
+            className="font-medium"
           >
-            <span>{isReplaying ? translate("Stop", "Stop") : translate("Replay", "Replay")}</span>
+            {isReplaying ? translate("Stop", "Stop") : translate("Replay", "Replay")}
           </Button>
         )}
       </div>
 
-      <div className="space-y-2">
-        <Label className="text-base font-semibold text-foreground">
-          {translate("Geschwindigkeit", "Speed")}
-        </Label>
-        <div className="grid grid-cols-4 gap-2">
+      <div className="flex items-center justify-between gap-3">
+        <Label className="text-sm font-semibold text-foreground">{translate("Tempo", "Speed")}</Label>
+        <div className="grid flex-1 grid-cols-4 gap-1">
           {SIMULATION_SPEEDS.map((option) => (
             <Button
               key={option.key}
               variant={simulationSpeed === option.key ? "default" : "outline"}
               size="sm"
               onClick={() => onSimulationSpeedChange(option.key)}
-              className="text-xs font-semibold"
+              className="h-7 px-0 text-xs font-semibold"
             >
               {option.label}
             </Button>
@@ -126,68 +123,39 @@ export const PlaygroundControls = ({
         </div>
       </div>
 
-      <div className="space-y-2">
-      <Label className="text-base font-semibold text-foreground">
-        {translate("Platzierungs-Modus", "Placement Mode")}
-      </Label>
-      <div data-tutorial="tools" className="grid grid-cols-2 gap-2">
-        <Button
-          data-tutorial="tool-obstacle"
-          variant={placementMode === "obstacle" ? "default" : "outline"}
-          onClick={() => onPlacementModeChange("obstacle")}
-          disabled={levelMode && !unlockedFeatures?.canPlaceWalls}
-          className="text-sm font-semibold"
-        >
-          {translate("Mauer", "Wall")}
-        </Button>
-        <Button
-          data-tutorial="tool-reward"
-          variant={placementMode === "reward" ? "default" : "outline"}
-          onClick={() => onPlacementModeChange("reward")}
-          disabled={levelMode && !unlockedFeatures?.canPlaceRewards}
-          className="text-sm font-semibold"
-        >
-          {translate("Belohnung", "Reward")}
-        </Button>
-        <Button
-          data-tutorial="tool-punishment"
-          variant={placementMode === "punishment" ? "default" : "outline"}
-          onClick={() => onPlacementModeChange("punishment")}
-          disabled={levelMode && !unlockedFeatures?.canPlacePunishments}
-          className="text-sm font-semibold"
-        >
-          {translate("Strafe", "Penalty")}
-        </Button>
-        <Button
-          data-tutorial="tool-portal"
-          variant={placementMode === "portal" ? "default" : "outline"}
-          onClick={() => onPlacementModeChange("portal")}
-          disabled={levelMode && !unlockedFeatures?.canPlacePortals}
-          className="text-sm font-semibold"
-        >
-          {translate("Portal", "Portal")}
-        </Button>
-      </div>
-    </div>
-
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-      <Badge variant="secondary" className="py-2 justify-center text-sm">
-        <span className="font-semibold">{translate("Episode:", "Episode:")}</span> {state.episode}
-      </Badge>
-      <Badge
-        variant="secondary"
-        className={cn(
-          "py-2 justify-center text-sm",
-          state.totalReward >= 0 ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400",
+      <div data-tutorial="tools" className="space-y-2">
+        {TOOLS.filter((tool) => !levelMode || unlockedFeatures?.[tool.unlock]).length > 0 ? (
+          <>
+            <Label className="text-sm font-semibold text-foreground">{translate("Bauen", "Build")}</Label>
+            <div className="grid grid-cols-2 gap-2">
+              {TOOLS.filter((tool) => !levelMode || unlockedFeatures?.[tool.unlock]).map((tool) => (
+                <Button
+                  key={tool.type}
+                  data-tutorial={`tool-${tool.type}`}
+                  variant={placementMode === tool.type ? "default" : "outline"}
+                  onClick={() => onPlacementModeChange(tool.type)}
+                  className="text-sm font-semibold"
+                >
+                  {translate(tool.de, tool.en)}
+                </Button>
+              ))}
+            </div>
+          </>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            {translate("Mauern, Belohnungen und Strafen schaltest du in höheren Leveln frei.", "Walls, rewards and penalties unlock in higher levels.")}
+          </p>
         )}
-      >
-        <span className="font-semibold">{translate("Reward:", "Reward:")}</span>{" "}
-        {numberFormatter.format(state.totalReward)}
-      </Badge>
-      <Badge variant="secondary" className="py-2 justify-center text-sm">
-        <span className="font-semibold">{translate("Steps:", "Steps:")}</span> {state.currentSteps}
-      </Badge>
-    </div>
+      </div>
+
+      <p className="flex flex-wrap gap-x-3 text-xs tabular-nums text-muted-foreground">
+        <span>{translate("Episode", "Episode")} <b className="text-foreground">{state.episode}</b></span>
+        <span>
+          {translate("Reward", "Reward")}{" "}
+          <b className={state.totalReward >= 0 ? "text-green-400" : "text-red-400"}>{numberFormatter.format(state.totalReward)}</b>
+        </span>
+        <span>{translate("Schritte", "Steps")} <b className="text-foreground">{state.currentSteps}</b></span>
+      </p>
 
   </div>
   );

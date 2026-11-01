@@ -436,6 +436,9 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
     setTutorialOpen(false);
     try {
       localStorage.setItem(TUTORIAL_STORAGE_KEY, "true");
+      // The welcome tour already covers what the level 1 hints say, so do not show them on top of it.
+      const seen: number[] = JSON.parse(localStorage.getItem(LEVEL_COACH_STORAGE_KEY) ?? "[]");
+      if (!seen.includes(1)) localStorage.setItem(LEVEL_COACH_STORAGE_KEY, JSON.stringify([...seen, 1]));
     } catch (e) {
       console.warn("Could not save tutorial status", e);
     }
@@ -467,48 +470,10 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
       console.warn("Could not save coach status", e);
     }
   }, [currentLevel]);
-  // Level 1: once per session, show the "How does the rover learn?" guide first, then the hint popups.
-  // "Once per session" = once per browser tab session (sessionStorage), so a reload does not repeat it.
-  const SESSION_KEY = "rr-level1-intro-session";
-  const introSeenThisSession = (() => {
-    try {
-      return sessionStorage.getItem(SESSION_KEY) === "1";
-    } catch {
-      return false;
-    }
-  })();
-  const level1IntroDone = useRef(introSeenThisSession);
-  const level1GuideShown = useRef(introSeenThisSession);
-  const level1GuideSeenOpen = useRef(false);
+  // Hint popups open once, on the first visit of a level. The long guide never opens by itself.
   useEffect(() => {
-    if (!levelMode || currentLevel !== 1 || tutorialOpen || mode !== "playground" || level1GuideShown.current) return;
-    try {
-      // The general tutorial opens in its own effect; wait for it instead of stacking dialogs.
-      if (!localStorage.getItem(TUTORIAL_STORAGE_KEY)) return;
-    } catch {
-      /* ignore */
-    }
-    level1GuideShown.current = true;
-    setRlDialogOpen(true);
-  }, [levelMode, currentLevel, tutorialOpen, mode]);
-  // Hint popups open on the first visit of a level; level 1 shows them once per session, right after the guide.
-  useEffect(() => {
-    if (rlDialogOpen) level1GuideSeenOpen.current = true;
     if (!levelMode || tutorialOpen || rlDialogOpen || mode !== "playground") {
       setCoachStep(null);
-      return;
-    }
-    if (currentLevel === 1) {
-      if (!level1GuideSeenOpen.current) return;
-      if (!level1IntroDone.current) {
-        level1IntroDone.current = true;
-        try {
-          sessionStorage.setItem(SESSION_KEY, "1");
-        } catch {
-          /* ignore */
-        }
-        setCoachStep(0);
-      }
       return;
     }
     try {
@@ -2386,7 +2351,7 @@ const handleActiveBonusClick = useCallback(() => {
   return (
     <>
       {/* Tutorial Dialog */}
-      <Dialog open={tutorialOpen} onOpenChange={setTutorialOpen} modal={false}>
+      <Dialog open={tutorialOpen} onOpenChange={(open) => (open ? setTutorialOpen(true) : closeTutorial())} modal={false}>
         <DialogContent
           hideOverlay
           onInteractOutside={(e) => e.preventDefault()}
