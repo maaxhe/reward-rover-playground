@@ -22,9 +22,6 @@ export function GameLegend({ translate, showPortal = true }: Props) {
 
   return (
     <Card className="border-0 bg-transparent p-0 shadow-none">
-      <h3 className="mb-3 text-sm font-semibold text-foreground">
-        {translate("Legende", "Legend")}
-      </h3>
       <ul className="space-y-2.5">
         {items.map((item) => (
           <li key={item.label} className="flex items-start gap-3">

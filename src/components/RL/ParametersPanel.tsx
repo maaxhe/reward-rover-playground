@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -33,15 +33,29 @@ export function ParametersPanel({
 }: ParametersPanelProps) {
   const alphaLocked = isLevelMode && !canAdjustAlpha;
   const gammaLocked = isLevelMode && !canAdjustGamma;
+  // The explanations are useful once, then just noise; one switch shows or hides all three.
+  const [showHelp, setShowHelp] = useState(false);
 
   return (
     <Card
       className={cn("border-0 border-t border-border/60 bg-transparent p-0 pt-4 shadow-none rounded-none transition-opacity", disabled && "pointer-events-none opacity-40 grayscale")}
       aria-disabled={disabled}
     >
-      <h3 className="text-sm font-semibold mb-4 text-foreground">
-        {translate("Lernparameter", "Learning Parameters")}
-      </h3>
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-foreground">{translate("Lernparameter", "Learning Parameters")}</h3>
+        <button
+          type="button"
+          onClick={() => setShowHelp((v) => !v)}
+          aria-pressed={showHelp}
+          aria-label={translate("Erklärungen ein- oder ausblenden", "Show or hide explanations")}
+          className={cn(
+            "flex h-6 w-6 items-center justify-center rounded-full border text-xs font-bold transition-colors",
+            showHelp ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground hover:text-foreground",
+          )}
+        >
+          ?
+        </button>
+      </div>
       {disabled && (
         <p className="mb-3 text-xs text-muted-foreground">
           {translate("Im Vergleichsmodus stellst du α, γ und ε direkt bei jedem Rover ein.", "In comparison mode you set α, γ and ε on each rover directly.")}
@@ -70,9 +84,9 @@ export function ParametersPanel({
             className="input-slider w-full"
             style={{ "--slider-value": explorationRate } as React.CSSProperties}
           />
-          <p className="text-xs text-muted-foreground">
+          {showHelp && <p className="text-xs text-muted-foreground">
             {translate("Auch „Exploration“ genannt: Wie oft probiert der Rover etwas Neues aus? Wie im Restaurant: Lieblingsgericht oder mal was anderes?", "Also called “exploration”: how often does the rover try something new? Like in a restaurant: your favourite dish or something different?")}
-          </p>
+          </p>}
         </div>
 
         {/* Alpha (Learning Rate) */}
@@ -101,11 +115,13 @@ export function ParametersPanel({
             className="input-slider w-full"
             style={{ "--slider-value": alpha / 0.5 } as React.CSSProperties}
           />
-          <p className="text-xs text-muted-foreground">
-            {alphaLocked
-              ? translate("🔒 Schalte Level 2 frei.", "🔒 Reach level 2 to unlock.")
-              : translate("Wie schnell lernt der Rover?", "How fast does the rover learn?")}
-          </p>
+          {(alphaLocked || showHelp) && (
+            <p className="text-xs text-muted-foreground">
+              {alphaLocked
+                ? translate("🔒 Schalte Level 2 frei.", "🔒 Reach level 2 to unlock.")
+                : translate("Wie schnell lernt der Rover?", "How fast does the rover learn?")}
+            </p>
+          )}
         </div>
 
         {/* Gamma (Discount Factor) */}
@@ -134,14 +150,14 @@ export function ParametersPanel({
             className="input-slider w-full"
             style={{ "--slider-value": gamma } as React.CSSProperties}
           />
-          <p className="text-xs text-muted-foreground">
+          {(gammaLocked || showHelp) && <p className="text-xs text-muted-foreground">
             {gammaLocked
               ? translate("🔒 Schalte Level 3 frei.", "🔒 Reach level 3 to unlock.")
               : translate(
                   "Auch „Discount-Faktor“ genannt (dasselbe!): Denkt der Rover kurz- oder langfristig?",
                   "Also called “discount factor” (the same thing!): does the rover think short or long term?"
                 )}
-          </p>
+          </p>}
         </div>
       </div>
     </Card>

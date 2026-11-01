@@ -133,8 +133,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   const [comparisonSpeed, setComparisonSpeed] = useState<SimulationSpeed>("1x");
   const [showValues, setShowValues] = useState(false);
   const [showHeatmap, setShowHeatmap] = useState(false);
-  const [showLeaderboard, setShowLeaderboard] = useState(true);
-  const [showStatistics, setShowStatistics] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showActions, setShowActions] = useState(true);
   const [showPlanner, setShowPlanner] = useState(false);
   const [showPlannerInfo, setShowPlannerInfo] = useState(false);
@@ -2597,8 +2596,8 @@ const handleActiveBonusClick = useCallback(() => {
         {/* Hero Section */}
         <div className={cn("rounded-xl border border-border bg-card/95", levelMode ? "p-4 sm:p-5" : "p-8")}>
           <div className={cn("flex items-center gap-3", levelMode ? "mb-2" : "mb-4")}>
-            <Target className="h-8 w-8 text-primary" />
-            <h1 className="text-4xl md:text-5xl font-bold gradient-text">Reward Rover</h1>
+            <Target className={cn("text-primary", levelMode ? "h-6 w-6" : "h-8 w-8")} />
+            <h1 className={cn("font-bold gradient-text", levelMode ? "text-2xl md:text-3xl" : "text-4xl md:text-5xl")}>Reward Rover</h1>
           </div>
 
           <p className={cn("text-xl text-muted-foreground leading-relaxed mb-6 max-w-4xl", levelMode && "hidden")}>
@@ -3556,7 +3555,17 @@ const handleActiveBonusClick = useCallback(() => {
               className="flex w-full items-center justify-between text-left text-sm font-semibold text-foreground"
             >
               <span>{translate("Playground-Statistik", "Playground Statistics")}</span>
-              {showPlaygroundStatsCard ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              <span className="flex items-center gap-3">
+                {!showPlaygroundStatsCard && playgroundStatsSummary.count > 0 && (
+                  <span className="text-xs font-normal tabular-nums text-muted-foreground">
+                    {translate(
+                      `${playgroundStatsSummary.count} Episoden · Ø ${formatStepsValue(playgroundStatsSummary.avgSteps)} Schritte`,
+                      `${playgroundStatsSummary.count} episodes · avg. ${formatStepsValue(playgroundStatsSummary.avgSteps)} steps`,
+                    )}
+                  </span>
+                )}
+                {showPlaygroundStatsCard ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </span>
             </button>
             {showPlaygroundStatsCard && (
               <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
@@ -3564,25 +3573,23 @@ const handleActiveBonusClick = useCallback(() => {
                   <p>{translate("Noch keine Daten – starte eine Episode, um Statistiken zu sehen.", "No data yet — run an episode to gather statistics.")}</p>
                 ) : (
                   <>
-                    <div className="flex justify-between">
-                      <span>{translate("Gesamt-Episoden", "Total episodes")}</span>
-                      <span className="font-semibold text-foreground">{playgroundStatsSummary.count}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>{translate("Ø Schritte", "Avg. steps")}</span>
-                      <span className="font-semibold text-foreground">{formatStepsValue(playgroundStatsSummary.avgSteps)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>{translate("Ø Reward", "Avg. reward")}</span>
-                      <span className="font-semibold text-foreground">{formatRewardValue(playgroundStatsSummary.avgReward)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>{translate("Bester Reward", "Best reward")}</span>
-                      <span className="font-semibold text-foreground">{formatRewardValue(playgroundStatsSummary.bestReward)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>{translate("Schnellste Episode", "Fastest episode")}</span>
-                      <span className="font-semibold text-foreground">{formatStepsValue(playgroundStatsSummary.bestSteps)}</span>
+                    <dl className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+                      {[
+                        [translate("Episoden", "Episodes"), String(playgroundStatsSummary.count)],
+                        [translate("Ø Schritte", "Avg. steps"), formatStepsValue(playgroundStatsSummary.avgSteps)],
+                        [translate("Ø Reward", "Avg. reward"), formatRewardValue(playgroundStatsSummary.avgReward)],
+                        [translate("Bester Reward", "Best reward"), formatRewardValue(playgroundStatsSummary.bestReward)],
+                        [translate("Schnellste Episode", "Fastest episode"), formatStepsValue(playgroundStatsSummary.bestSteps)],
+                      ].map(([label, value]) => (
+                        <div key={label} className="rounded-lg border border-border/50 bg-background/60 px-3 py-2">
+                          <dt className="text-xs">{label}</dt>
+                          <dd className="text-lg font-bold tabular-nums text-foreground">{value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                    <div className="mt-3 grid gap-6 lg:grid-cols-2">
+                      <RewardHistoryChart history={playgroundState.episodeHistory} translate={translate} />
+                      <TrainingInsights history={playgroundState.episodeHistory} translate={translate} />
                     </div>
                   </>
                 )}
@@ -3622,11 +3629,6 @@ const handleActiveBonusClick = useCallback(() => {
               </button>
               {showConsolePanel && (
               <>
-            {mode === "playground" && (
-              <Badge variant="secondary" className="self-start bg-foreground/10 text-foreground border-foreground/15 font-semibold">
-                {playgroundState.currentSteps} {translate("Schritte", "steps")}
-              </Badge>
-            )}
 
             {mode === "playground" ? (
               <PlaygroundControls
@@ -3651,8 +3653,6 @@ const handleActiveBonusClick = useCallback(() => {
                 translate={translate}
                 numberFormatter={numberFormatter}
                 language={language}
-                showStatistics={showStatistics}
-                setShowStatistics={setShowStatistics}
                 levelMode={levelMode}
                 unlockedFeatures={unlockedFeatures}
               />

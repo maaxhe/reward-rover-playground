@@ -1,4 +1,5 @@
-import { useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
+import { cn } from "@/lib/utils";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { RealRobots } from "@/components/RL/RealRobots";
@@ -24,15 +25,15 @@ const FORESIGHT_WORLD: CompetitionWorld = {
 };
 
 const CHAPTERS = [
-  { id: "idee", de: "Grundidee", en: "Basic idea" },
-  { id: "restaurant", de: "Restaurant-Problem", en: "Restaurant problem" },
-  { id: "epsilon", de: "ε Neugier", en: "ε Curiosity" },
-  { id: "alpha", de: "α Lernrate", en: "α Learning rate" },
-  { id: "gamma", de: "γ Weitsicht", en: "γ Foresight" },
-  { id: "planen", de: "Planen statt Probieren", en: "Planning, not trying" },
-  { id: "formel", de: "Die Formel", en: "The formula" },
-  { id: "llm", de: "KI-Chat & RLHF", en: "AI chat & RLHF" },
-  { id: "alltag", de: "Im Alltag", en: "Real life" },
+  { id: "idee", need: 0, de: "Grundidee", en: "Basic idea" },
+  { id: "restaurant", need: 1, de: "Restaurant-Problem", en: "Restaurant problem" },
+  { id: "epsilon", need: 1, de: "ε Neugier", en: "ε Curiosity" },
+  { id: "alpha", need: 2, de: "α Lernrate", en: "α Learning rate" },
+  { id: "gamma", need: 3, de: "γ Weitsicht", en: "γ Foresight" },
+  { id: "planen", need: 4, de: "Planen statt Probieren", en: "Planning, not trying" },
+  { id: "formel", need: 4, de: "Die Formel", en: "The formula" },
+  { id: "llm", need: 4, de: "KI-Chat & RLHF", en: "AI chat & RLHF" },
+  { id: "alltag", need: 4, de: "Im Alltag", en: "Real life" },
 ] as const;
 
 interface Props {
@@ -47,12 +48,42 @@ const Shape = ({ kind }: { kind: "rr-rover" | "rr-candy" | "rr-trap" | "rr-goal"
   </span>
 );
 
-const Section = ({ id, title, children }: { id: string; title: string; children: ReactNode }) => (
-  <section id={`guide-${id}`} className="scroll-mt-6 space-y-5">
-    <h3 className="text-3xl font-extrabold tracking-tight text-foreground">{title}</h3>
-    <div className="space-y-5 text-lg leading-8 text-foreground/80">{children}</div>
-  </section>
-);
+const PROGRESS_KEY = "rr:guide:done";
+/** Number of live demos in the guide; finishing all of them unlocks everything. */
+const DEMO_COUNT = 4;
+
+const readProgress = () => {
+  try {
+    return Math.min(DEMO_COUNT, Math.max(0, Number(window.localStorage.getItem(PROGRESS_KEY)) || 0));
+  } catch {
+    return 0;
+  }
+};
+
+const GuideProgress = createContext<{ done: number; t: (de: string, en: string) => string }>({ done: DEMO_COUNT, t: (de) => de });
+
+/** A chapter that stays greyed out until `need` demos above it have been played through. */
+const Section = ({ id, title, need = 0, children }: { id: string; title: string; need?: number; children: ReactNode }) => {
+  const { done, t } = useContext(GuideProgress);
+  const locked = done < need;
+  return (
+    <section id={`guide-${id}`} className="relative scroll-mt-6 space-y-5">
+      <h3 className="text-3xl font-extrabold tracking-tight text-foreground">{title}</h3>
+      {locked && (
+        <p className="rounded-lg border border-dashed border-border bg-secondary/40 px-4 py-3 text-base font-semibold text-muted-foreground">
+          {t("🔒 Spiel zuerst die Demo darüber durch, dann schaltet sich dieser Teil frei.", "🔒 Play the demo above first, then this part unlocks.")}
+        </p>
+      )}
+      <div
+        className={cn("space-y-5 text-lg leading-8 text-foreground/80 transition-[opacity,filter] duration-500", locked && "pointer-events-none select-none opacity-35 grayscale")}
+        aria-hidden={locked || undefined}
+        {...(locked ? { inert: "" } : {})}
+      >
+        {children}
+      </div>
+    </section>
+  );
+};
 
 const Dial = ({ symbol, name, line, tip }: { symbol: string; name: string; line: string; tip: string }) => (
   <div className="grid gap-x-5 gap-y-1 rounded-lg border border-border bg-secondary/40 p-5 sm:grid-cols-[4.5rem_1fr]">
@@ -68,8 +99,22 @@ const Dial = ({ symbol, name, line, tip }: { symbol: string; name: string; line:
 /** The long-form "what is reinforcement learning" guide, written as a short article rather than an accordion. */
 export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
   const scroller = useRef<HTMLDivElement>(null);
+  const [done, setDone] = useState(readProgress);
+  const markDone = useCallback((n: number) => {
+    setDone((prev) => {
+      if (n <= prev) return prev;
+      try {
+        window.localStorage.setItem(PROGRESS_KEY, String(n));
+      } catch {
+        /* progress only lasts for this visit */
+      }
+      return n;
+    });
+  }, []);
+  const unlockAll = () => markDone(DEMO_COUNT);
   const go = (id: string) => scroller.current?.querySelector(`#guide-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   return (
+    <GuideProgress.Provider value={{ done, t }}>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[94dvh] max-h-[94vh] w-[96vw] max-w-6xl gap-0 overflow-hidden rounded-xl p-0">
         <nav className="hidden w-52 flex-shrink-0 flex-col gap-1 border-r border-border bg-secondary/30 p-5 pt-10 lg:flex" aria-label={t("Kapitel", "Chapters")}>
@@ -79,9 +124,10 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
               key={c.id}
               type="button"
               onClick={() => go(c.id)}
-              className="rounded-lg px-3 py-2 text-left text-sm font-semibold text-foreground/80 transition-colors hover:bg-primary/15 hover:text-foreground"
+              disabled={done < c.need}
+              className="rounded-lg px-3 py-2 text-left text-sm font-semibold text-foreground/80 transition-colors hover:bg-primary/15 hover:text-foreground disabled:opacity-40 disabled:hover:bg-transparent"
             >
-              <span className="mr-2 text-muted-foreground">{i + 1}</span>
+              <span className="mr-2 text-muted-foreground">{done < c.need ? "🔒" : i + 1}</span>
               {t(c.de, c.en)}
             </button>
           ))}
@@ -97,6 +143,17 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
                 "Ten minutes of reading, no background needed. The rovers below really run: turn the dials and see what happens right away.",
               )}
             </DialogDescription>
+            {done < DEMO_COUNT && (
+              <p className="flex flex-wrap items-center gap-3 text-base text-muted-foreground">
+                {t(
+                  "Die Kapitel schalten sich frei, wenn du die Demo davor durchgespielt hast.",
+                  "Chapters unlock once you have played the demo before them.",
+                )}
+                <Button type="button" variant="ghost" size="sm" onClick={unlockAll}>
+                  {t("Alles freischalten", "Unlock everything")}
+                </Button>
+              </p>
+            )}
           </header>
 
           <Section id="idee" title={t("Die Grundidee: Ausprobieren und merken", "The basic idea: try things and remember")}>
@@ -118,6 +175,8 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
               )}
             </p>
             <GuideDemo
+              alreadyDone={done >= 1}
+              onComplete={() => markDone(1)}
               world={DEMO_WORLD}
               initial={{ epsilon: 0.25, alpha: 0.4, gamma: 0.95 }}
               nudge={{ de: "Schau zu, wie nach und nach Pfeile erscheinen. Mit „Schneller“ oder „Von vorn“ kannst du das Lernen beschleunigen oder neu starten.", en: "Watch the arrows appear one by one. “Faster” and “Start over” let you speed up or restart the learning." }}
@@ -133,7 +192,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             />
           </Section>
 
-          <Section id="restaurant" title={t("Das Restaurant-Problem", "The restaurant problem")}>
+          <Section need={1} id="restaurant" title={t("Das Restaurant-Problem", "The restaurant problem")}>
             <p>
               {t(
                 "Stell dir vor, du gehst jeden Tag in dasselbe Restaurant. Bestellst du immer dein Lieblingsgericht, bist du auf der sicheren Seite. Probierst du etwas Neues, ist es vielleicht enttäuschend, aber vielleicht ist es dein neues Lieblingsessen.",
@@ -148,7 +207,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             </p>
           </Section>
 
-          <Section id="epsilon" title={t("ε: Wie neugierig ist der Rover?", "ε: How curious is the rover?")}>
+          <Section need={1} id="epsilon" title={t("ε: Wie neugierig ist der Rover?", "ε: How curious is the rover?")}>
             <Dial
               symbol="ε"
               name={t("Neugier (Epsilon, in der Fachsprache „Exploration“)", "Curiosity (epsilon, technically “exploration”)")}
@@ -162,6 +221,8 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
               )}
             />
             <GuideDemo
+              alreadyDone={done >= 2}
+              onComplete={() => markDone(2)}
               world={DEMO_WORLD}
               initial={{ epsilon: 0.8, alpha: 0.5, gamma: 0.95 }}
               nudge={{ de: "Zieh die Neugier ε auf 0 und schau, ob der Rover bei einem schlechten Weg hängen bleibt. Dann auf 1: lernt er noch etwas?", en: "Drag curiosity ε to 0 and see whether the rover gets stuck on a poor path. Then to 1: does it still learn anything?" }}
@@ -179,7 +240,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             />
           </Section>
 
-          <Section id="alpha" title={t("α: Wie schnell lernt der Rover um?", "α: How fast does the rover change its mind?")}>
+          <Section need={2} id="alpha" title={t("α: Wie schnell lernt der Rover um?", "α: How fast does the rover change its mind?")}>
             <Dial
               symbol="α"
               name={t("Lernrate (Alpha)", "Learning rate (alpha)")}
@@ -193,6 +254,8 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
               )}
             />
             <GuideDemo
+              alreadyDone={done >= 3}
+              onComplete={() => markDone(3)}
               world={DEMO_WORLD}
               initial={{ epsilon: 0.2, alpha: 0.05, gamma: 0.95 }}
               nudge={{ de: "Zieh die Lernrate α hoch und runter und vergleiche, wie schnell die Schritte pro Runde sinken.", en: "Drag the learning rate α up and down and compare how fast the steps per run drop." }}
@@ -208,7 +271,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             />
           </Section>
 
-          <Section id="gamma" title={t("γ: Wie weit denkt der Rover voraus?", "γ: How far ahead does the rover think?")}>
+          <Section need={3} id="gamma" title={t("γ: Wie weit denkt der Rover voraus?", "γ: How far ahead does the rover think?")}>
             <Dial
               symbol="γ"
               name={t("Weitsicht (Gamma, auch „Discount-Faktor“)", "Foresight (gamma, also “discount factor”)")}
@@ -222,6 +285,8 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
               )}
             />
             <GuideDemo
+              alreadyDone={done >= 4}
+              onComplete={() => markDone(4)}
               world={FORESIGHT_WORLD}
               initial={{ epsilon: 0.3, alpha: 0.5, gamma: 0.1 }}
               nudge={{ de: "Zieh die Weitsicht γ auf 0 und dann auf 1. Läuft der Rover zum Bonbon oder zum Ziel?", en: "Drag foresight γ to 0 and then to 1. Does the rover go for the candy or for the goal?" }}
@@ -238,7 +303,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             />
           </Section>
 
-          <Section id="planen" title={t("Planen statt Probieren: Value Iteration", "Planning instead of trying: value iteration")}>
+          <Section need={4} id="planen" title={t("Planen statt Probieren: Value Iteration", "Planning instead of trying: value iteration")}>
             <p>
               {t(
                 "Bisher hat der Rover die Karte nicht gekannt und alles durch Laufen herausgefunden. Stell dir nun einen Planer vor, dem jemand die Karte gegeben hat. Er muss nirgends hinlaufen. Er rechnet nur: Wie viel ist jedes Feld wert, wenn ich von dort aus das Beste daraus mache?",
@@ -260,7 +325,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             </p>
           </Section>
 
-          <Section id="formel" title={t("Was bei jedem Schritt passiert", "What happens on every step")}>
+          <Section need={4} id="formel" title={t("Was bei jedem Schritt passiert", "What happens on every step")}>
             <p>
               {t(
                 "Nach jedem Schritt aktualisiert der Rover seine Merkliste mit einer einzigen Regel. In Worten: neuer Wert = alter Wert + Lernrate × (was ich bekommen habe + Weitsicht × das Beste, was von dort aus noch kommt − alter Wert).",
@@ -278,7 +343,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             </p>
           </Section>
 
-          <Section id="llm" title={t("Auch ChatGPT & Co. lernen so: RLHF", "ChatGPT & co. learn like this too: RLHF")}>
+          <Section need={4} id="llm" title={t("Auch ChatGPT & Co. lernen so: RLHF", "ChatGPT & co. learn like this too: RLHF")}>
             <p>
               {t(
                 "Ein Sprachmodell lernt zuerst nur, Text weiterzuschreiben. Damit es auch hilfreich antwortet, kommt ein zweiter Schritt dazu: Menschen vergleichen zwei Antworten und wählen die bessere. Das ist die Belohnung. Das Fachwort dafür ist RLHF, Reinforcement Learning from Human Feedback.",
@@ -300,7 +365,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             </p>
           </Section>
 
-          <Section id="alltag" title={t("Wo du das im Alltag findest", "Where you meet this in real life")}>
+          <Section need={4} id="alltag" title={t("Wo du das im Alltag findest", "Where you meet this in real life")}>
             <ul className="list-disc space-y-2 pl-6 marker:text-primary">
               <li>{t("Spiele-KIs, die durch Millionen Partien gegen sich selbst besser werden.", "Game AIs that improve by playing millions of matches against themselves.")}</li>
               <li>{t("Roboter, die Greifen und Laufen durch Üben lernen, statt jede Bewegung einprogrammiert zu bekommen.", "Robots that learn grasping and walking by practising instead of having every move programmed.")}</li>
@@ -309,11 +374,11 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             </ul>
           </Section>
 
-          <Section id="roboter" title={t("Echte Roboter, gleiches Prinzip", "Real robots, same principle")}>
+          <Section need={4} id="roboter" title={t("Echte Roboter, gleiches Prinzip", "Real robots, same principle")}>
             <RealRobots />
           </Section>
 
-          <Section id="probieren" title={t("Probier das aus", "Try this")}>
+          <Section need={4} id="probieren" title={t("Probier das aus", "Try this")}>
             <ol className="list-decimal space-y-2 pl-6 marker:font-bold marker:text-primary">
               <li>{t("Stelle ε auf 0 und starte. Bleibt der Rover auf einem schlechten Weg hängen?", "Set ε to 0 and start. Does the rover get stuck on a poor path?")}</li>
               <li>{t("Stelle ε auf 1. Lernt er überhaupt etwas?", "Set ε to 1. Does it learn anything at all?")}</li>
@@ -331,6 +396,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
         </div>
       </DialogContent>
     </Dialog>
+    </GuideProgress.Provider>
   );
 }
 

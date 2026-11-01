@@ -27,7 +27,14 @@ interface Props {
   nudge?: { de: string; en: string };
   /** One sentence under the board that reacts to what the rover is doing. */
   caption?: (info: { episode: number; lastSteps: number | null; shortest: number; settings: DemoSettings }) => string;
+  /** Called once when the reader has played the demo through (enough runs, and a dial moved if there are dials). */
+  onComplete?: () => void;
+  /** Already played in an earlier visit: skip the progress line. */
+  alreadyDone?: boolean;
 }
+
+/** Runs the rover must finish before the demo counts as played. */
+export const DEMO_RUNS_NEEDED = 8;
 
 const TICK = { normal: 200, fast: 60 } as const;
 
@@ -53,7 +60,7 @@ const Nudge = ({ text }: { text: string }) => (
  * A live Q-learning rover for the explainer: the real learning step from the game, a few dials,
  * and numbers that show what the dials do. Pauses itself while scrolled out of view.
  */
-export function GuideDemo({ world, initial, dials = [], consumeRewards = true, translate: t, nudge, caption }: Props) {
+export function GuideDemo({ world, initial, dials = [], consumeRewards = true, translate: t, nudge, caption, onComplete, alreadyDone = false }: Props) {
   const [touched, setTouched] = useState(false);
   const fresh = useCallback((): PlaygroundState => ({ ...worldToState(world), isRunning: true }), [world]);
   const stateRef = useRef<PlaygroundState>(fresh());
@@ -108,6 +115,14 @@ export function GuideDemo({ world, initial, dials = [], consumeRewards = true, t
   };
 
   const history = view.episodeHistory;
+  const runsDone = view.episode >= DEMO_RUNS_NEEDED;
+  const needsDial = dials.length > 0 && !touched;
+  const complete = alreadyDone || (runsDone && !needsDial);
+  const completeRef = useRef(onComplete);
+  completeRef.current = onComplete;
+  useEffect(() => {
+    if (complete) completeRef.current?.();
+  }, [complete]);
   const lastSteps = history.length ? history[history.length - 1].steps : null;
   const best = history.length ? Math.min(...history.map((h) => h.steps)) : null;
   const known = Object.keys(view.qTable).length;
@@ -179,6 +194,16 @@ export function GuideDemo({ world, initial, dials = [], consumeRewards = true, t
           })}
 
           {nudge && !touched && dials.length === 0 && <Nudge text={t(nudge.de, nudge.en)} />}
+
+          {onComplete && (
+            <p className={complete ? "text-base font-bold text-primary" : "text-base text-muted-foreground"} aria-live="polite">
+              {complete
+                ? t("✓ Geschafft. Unten geht es weiter.", "✓ Done. The next part is unlocked below.")
+                : !runsDone
+                  ? t(`Noch ${DEMO_RUNS_NEEDED - view.episode} Runden zuschauen, dann geht es unten weiter.`, `Watch ${DEMO_RUNS_NEEDED - view.episode} more runs to unlock the next part.`)
+                  : t("Dreh an einem Regler, dann geht es unten weiter.", "Move a dial to unlock the next part.")}
+            </p>
+          )}
 
           <div className="flex flex-wrap gap-2 pt-1" onClickCapture={() => setTouched(true)}>
             <Button size="sm" variant="outline" onClick={() => setPaused((p) => !p)}>

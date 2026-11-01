@@ -93,6 +93,23 @@ export function RLGameNew() {
   const [gamma, setGamma] = useState(0.85);
   const [mode, setMode] = useState<"levels" | "free">("levels");
   const [comparisonActive, setComparisonActive] = useState(false);
+  // The whole left column can be tucked away to leave the board alone on screen.
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    try {
+      return window.localStorage.getItem("rr:sidebar") !== "0";
+    } catch {
+      return true;
+    }
+  });
+  const toggleSidebar = () =>
+    setSidebarOpen((prev) => {
+      try {
+        window.localStorage.setItem("rr:sidebar", prev ? "0" : "1");
+      } catch {
+        /* the choice only lasts for this visit */
+      }
+      return !prev;
+    });
   const [currentLevel, setCurrentLevel] = useState<LevelNumber>(1);
   const [freeModeUnlocked, setFreeModeUnlocked] = useState(false);
   // Highest level the player has unlocked by solving the previous one.
@@ -297,7 +314,7 @@ export function RLGameNew() {
       {/* Main Content - 2 Column Layout */}
       <div className="flex flex-1 flex-col md:flex-row md:overflow-hidden">
         {/* Left Sidebar - Parameters & Progress */}
-        <div className="w-full md:w-72 flex-shrink-0 border-b md:border-b-0 md:border-r border-border/40 bg-card/20 p-4 md:p-6 md:overflow-y-auto">
+        <div className={cn("w-full md:w-72 flex-shrink-0 border-b md:border-b-0 md:border-r border-border/40 bg-card/20 p-4 md:p-6 md:overflow-y-auto", !sidebarOpen && "hidden")}>
           {!isLevelMode && (
             <>
               <Button
@@ -401,6 +418,19 @@ export function RLGameNew() {
           </Fold>
           <FeedbackNote level={isLevelMode ? currentLevel : undefined} translate={translate} />
         </div>
+
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          aria-expanded={sidebarOpen}
+          aria-label={translate("Seitenleiste ein- oder ausblenden", "Show or hide sidebar")}
+          className="flex flex-shrink-0 items-center justify-center gap-1 border-b border-border/40 bg-card/20 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground md:w-7 md:flex-col md:border-b-0 md:border-r md:py-0"
+        >
+          <span aria-hidden>{sidebarOpen ? "‹" : "›"}</span>
+          <span className="md:[writing-mode:vertical-rl]">
+            {sidebarOpen ? translate("Leiste ausblenden", "Hide sidebar") : translate("Level, Regler & Legende", "Level, dials & legend")}
+          </span>
+        </button>
 
         {/* Right Content - Game */}
         <div className="flex-1 min-w-0 md:overflow-auto">

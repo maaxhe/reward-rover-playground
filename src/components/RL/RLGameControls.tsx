@@ -12,8 +12,6 @@ import type { UnlockedFeatures } from "@/lib/levelProgression";
 import type { Language, Mode } from "@/lib/rl/types";
 import { SIMULATION_SPEEDS, type SimulationSpeed } from "@/lib/rl/simulation";
 import type { PlaceableTile, PlaygroundState, RandomModeState } from "./RLGame";
-import { RewardHistoryChart } from "./RewardHistoryChart";
-import { TrainingInsights } from "./TrainingInsights";
 import { ChevronDown, ChevronUp, Pause, Play, RotateCcw, Undo2 } from "lucide-react";
 
 type PlaygroundControlsProps = {
@@ -39,8 +37,6 @@ type PlaygroundControlsProps = {
   numberFormatter: Intl.NumberFormat;
   language: Language;
   isSpeedrun?: boolean;
-  showStatistics: boolean;
-  setShowStatistics: (show: boolean) => void;
   levelMode: boolean;
   unlockedFeatures: UnlockedFeatures | null;
 };
@@ -68,8 +64,6 @@ export const PlaygroundControls = ({
   numberFormatter,
   language,
   isSpeedrun = false,
-  showStatistics,
-  setShowStatistics,
   levelMode,
   unlockedFeatures,
 }: PlaygroundControlsProps) => {
@@ -195,48 +189,6 @@ export const PlaygroundControls = ({
       </Badge>
     </div>
 
-    {/* Live-Statistiken */}
-    {state.episodeHistory.length > 0 && (
-      <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4">
-        <div
-          className="flex items-center justify-between cursor-pointer mb-2"
-          onClick={() => setShowStatistics(!showStatistics)}
-        >
-          <h3 className="text-sm font-bold text-foreground">
-            {translate("Statistics", "Statistics")}
-          </h3>
-          {showStatistics ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </div>
-        {showStatistics && (<div className="space-y-2 text-xs text-muted-foreground">
-          <div className="flex justify-between">
-            <span>{translate("Ø Episode-Länge:", "Avg. episode length:")}</span>
-            <span className="font-semibold text-foreground">
-              {(state.episodeHistory.reduce((sum, e) => sum + e.steps, 0) / state.episodeHistory.length).toFixed(1)}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span>{translate("Ø Reward:", "Avg. reward:")}</span>
-            <span className="font-semibold text-foreground">
-              {numberFormatter.format(state.episodeHistory.reduce((sum, e) => sum + e.reward, 0) / state.episodeHistory.length)}
-            </span>
-          </div>
-          <div className="flex justify-between">
-            <span>{translate("Best Reward:", "Best reward:")}</span>
-            <span className="font-semibold text-green-400">
-              {numberFormatter.format(Math.max(...state.episodeHistory.map(e => e.reward)))}
-            </span>
-          </div>
-          <div className="pt-2">
-            <h4 className="mb-2 text-xs font-bold text-foreground">{translate("Reward-Verlauf", "Reward History")}</h4>
-            <RewardHistoryChart history={state.episodeHistory} translate={translate} />
-          </div>
-          <div className="pt-3">
-            <h4 className="mb-2 text-xs font-bold text-foreground">{translate("Lernkurve & Einstellungen", "Learning curve & settings")}</h4>
-            <TrainingInsights history={state.episodeHistory} translate={translate} />
-          </div>
-        </div>)}
-      </Card>
-    )}
   </div>
   );
 };
