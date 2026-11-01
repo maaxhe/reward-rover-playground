@@ -1608,6 +1608,13 @@ const handleActiveBonusClick = useCallback(() => {
   }, []);
 
   const applyGridConfig = useCallback((config: GridConfig) => {
+    // Loading a world re-renders the board at a new size; keep the viewport where the user is looking.
+    const { scrollX, scrollY } = window;
+    const restoreScroll = () => window.scrollTo(scrollX, scrollY);
+    window.requestAnimationFrame(() => {
+      restoreScroll();
+      window.requestAnimationFrame(restoreScroll);
+    });
     setCelebration(null);
     setIsReplaying(false);
     setReplayEpisode(null);
@@ -4032,7 +4039,7 @@ const handleActiveBonusClick = useCallback(() => {
                 <p className="text-xs text-muted-foreground">
                   {translate("Ein Klick lädt die Welt und ersetzt das aktuelle Feld.", "One click loads the world and replaces the current grid.")}
                 </p>
-                <div className="grid grid-cols-1 gap-1.5">
+                <div className="grid grid-cols-2 gap-1.5">
                   {PRESET_LEVELS.map((preset) => (
                     <TooltipProvider key={preset.key}>
                       <Tooltip>
@@ -4041,7 +4048,7 @@ const handleActiveBonusClick = useCallback(() => {
                             variant="outline"
                             size="sm"
                             onClick={() => handleLoadPreset(preset)}
-                            className="h-auto justify-start whitespace-normal px-3 py-1.5 text-left text-sm font-medium"
+                            className="h-auto min-h-9 justify-start whitespace-normal px-2.5 py-1.5 text-left text-xs font-medium leading-tight"
                           >
                             {stripLeadingEmoji(preset.name[language])}
                           </Button>

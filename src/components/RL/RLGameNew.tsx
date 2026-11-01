@@ -313,9 +313,9 @@ export function RLGameNew() {
       </Dialog>
 
       {/* Main Content - 2 Column Layout */}
-      <div className="flex flex-1 flex-col md:flex-row md:overflow-hidden">
+      <div className="flex flex-1 flex-col md:flex-row md:items-start">
         {/* Left Sidebar - Parameters & Progress */}
-        <div className={cn("w-full md:w-72 flex-shrink-0 border-b md:border-b-0 md:border-r border-border/40 bg-card/20 p-4 md:p-6 md:overflow-y-auto", !sidebarOpen && "hidden")}>
+        <div className={cn("w-full md:w-72 flex-shrink-0 border-b md:border-b-0 md:border-r border-border/40 bg-card/20 p-4 md:p-6 md:sticky md:top-[72px] md:max-h-[calc(100vh-72px)] md:overflow-y-auto", !sidebarOpen && "hidden")}>
           {!isLevelMode && (
             <>
               <Button
@@ -328,6 +328,20 @@ export function RLGameNew() {
               </Button>
             </>
           )}
+          <ParametersPanel
+            explorationRate={explorationRate}
+            alpha={alpha}
+            gamma={gamma}
+            onExplorationRateChange={setExplorationRate}
+            onAlphaChange={setAlpha}
+            onGammaChange={setGamma}
+            isLevelMode={isLevelMode}
+            canAdjustAlpha={unlockedFeatures.canAdjustAlpha}
+            canAdjustGamma={unlockedFeatures.canAdjustGamma}
+            disabled={comparisonActive}
+            translate={translate}
+          />
+          {isLevelMode && <div className="mt-6" />}
           {isLevelMode && (
             <>
               {foldIntro && (
@@ -397,22 +411,8 @@ export function RLGameNew() {
                   {translate("Fortschritt zurücksetzen", "Reset progress")}
                 </button>
               )}
-              <div className="mt-6" />
             </>
           )}
-          <ParametersPanel
-            explorationRate={explorationRate}
-            alpha={alpha}
-            gamma={gamma}
-            onExplorationRateChange={setExplorationRate}
-            onAlphaChange={setAlpha}
-            onGammaChange={setGamma}
-            isLevelMode={isLevelMode}
-            canAdjustAlpha={unlockedFeatures.canAdjustAlpha}
-            canAdjustGamma={unlockedFeatures.canAdjustGamma}
-            disabled={comparisonActive}
-            translate={translate}
-          />
           <RLGuideButton className="my-4 w-full font-semibold" />
           <Fold title={translate("Legende", "Legend")} open={folds.legend} onToggle={() => toggleFold("legend")}>
             <GameLegend translate={translate} showPortal={!isLevelMode || unlockedFeatures.canPlacePortals} />
@@ -427,7 +427,7 @@ export function RLGameNew() {
           aria-label={translate("Seitenleiste ein- oder ausblenden", "Show or hide sidebar")}
           title={sidebarOpen ? translate("Seitenleiste ausblenden", "Hide sidebar") : translate("Seitenleiste einblenden", "Show sidebar")}
           className={cn(
-            "flex flex-shrink-0 items-center justify-center gap-2 border-b border-border/40 py-2 text-sm font-semibold transition-colors md:w-10 md:flex-col md:border-b-0 md:border-r md:py-4",
+            "flex flex-shrink-0 items-center justify-center gap-2 border-b border-border/40 py-2 text-sm font-semibold transition-colors md:sticky md:top-[72px] md:h-[calc(100vh-72px)] md:w-10 md:flex-col md:border-b-0 md:border-r md:py-4",
             sidebarOpen
               ? "bg-card/30 text-muted-foreground hover:bg-card/60 hover:text-foreground"
               : "bg-primary/15 text-primary hover:bg-primary/25",
