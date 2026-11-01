@@ -1,3 +1,4 @@
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useCallback, useEffect, useRef, type ReactNode } from "react";
 import { Link } from "react-router-dom";
@@ -424,11 +425,17 @@ export function RLGameNew() {
           onClick={toggleSidebar}
           aria-expanded={sidebarOpen}
           aria-label={translate("Seitenleiste ein- oder ausblenden", "Show or hide sidebar")}
-          className="flex flex-shrink-0 items-center justify-center gap-1 border-b border-border/40 bg-card/20 py-1 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground md:w-7 md:flex-col md:border-b-0 md:border-r md:py-0"
+          title={sidebarOpen ? translate("Seitenleiste ausblenden", "Hide sidebar") : translate("Seitenleiste einblenden", "Show sidebar")}
+          className={cn(
+            "flex flex-shrink-0 items-center justify-center gap-2 border-b border-border/40 py-2 text-sm font-semibold transition-colors md:w-10 md:flex-col md:border-b-0 md:border-r md:py-4",
+            sidebarOpen
+              ? "bg-card/30 text-muted-foreground hover:bg-card/60 hover:text-foreground"
+              : "bg-primary/15 text-primary hover:bg-primary/25",
+          )}
         >
-          <span aria-hidden>{sidebarOpen ? "‹" : "›"}</span>
+          {sidebarOpen ? <PanelLeftClose className="h-5 w-5" aria-hidden /> : <PanelLeftOpen className="h-5 w-5" aria-hidden />}
           <span className="md:[writing-mode:vertical-rl]">
-            {sidebarOpen ? translate("Leiste ausblenden", "Hide sidebar") : translate("Level, Regler & Legende", "Level, dials & legend")}
+            {sidebarOpen ? translate("Seitenleiste ausblenden", "Hide sidebar") : translate("Seitenleiste: Level, Regler, Legende", "Sidebar: level, dials, legend")}
           </span>
         </button>
 

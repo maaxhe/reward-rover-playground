@@ -86,6 +86,9 @@ interface RLGameProps {
   onComparisonActiveChange?: (active: boolean) => void;
 }
 
+/** Preset names mix emoji and plain text; drop the emoji so the list reads evenly. */
+const stripLeadingEmoji = (name: string) => name.replace(/^[^\p{L}\p{N}]+/u, "");
+
 export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAuthTokenChange, onComparisonActiveChange }: RLGameProps = {}) {
   const { levelMode, currentLevel, onLevelSolved, onNextLevel } = useLevel();
   const [levelSolvedDialog, setLevelSolvedDialog] = useState<number | null>(null);
@@ -4024,6 +4027,35 @@ const handleActiveBonusClick = useCallback(() => {
 
             {showSettingsPanel && (
             <>
+            {mode === "playground" && !levelMode && (
+              <CollapsibleTile id="presets-worlds" title={translate("Fertige Welten", "Ready-made worlds")} defaultOpen={true}>
+                <p className="text-xs text-muted-foreground">
+                  {translate("Ein Klick lädt die Welt und ersetzt das aktuelle Feld.", "One click loads the world and replaces the current grid.")}
+                </p>
+                <div className="grid grid-cols-1 gap-1.5">
+                  {PRESET_LEVELS.map((preset) => (
+                    <TooltipProvider key={preset.key}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleLoadPreset(preset)}
+                            className="h-auto justify-start whitespace-normal px-3 py-1.5 text-left text-sm font-medium"
+                          >
+                            {stripLeadingEmoji(preset.name[language])}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">{preset.description[language]}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
+                </div>
+              </CollapsibleTile>
+            )}
+
             <CollapsibleTile id="display" title={translate("Anzeige & Auto-Restart", "Display & auto-restart")} defaultOpen={true}>
               <div className="flex flex-wrap items-start justify-end gap-4">
                 <div className="flex flex-col items-end gap-3">
@@ -4332,37 +4364,6 @@ const handleActiveBonusClick = useCallback(() => {
               </CollapsibleTile>
             )}
 
-            {mode === "playground" && !levelMode && (
-              <CollapsibleTile id="presets" title={translate("Preset-Levels", "Preset levels")} defaultOpen={false}>
-                <p className="text-xs text-muted-foreground">
-                  {translate(
-                    "Fertige Welten zum Ausprobieren – ersetzt das aktuelle Feld.",
-                    "Ready-made worlds to try out – replaces the current grid.",
-                  )}
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {PRESET_LEVELS.map((preset) => (
-                    <TooltipProvider key={preset.key}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleLoadPreset(preset)}
-                            className="text-xs font-semibold h-auto py-2"
-                          >
-                            {preset.name[language]}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">{preset.description[language]}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  ))}
-                </div>
-              </CollapsibleTile>
-            )}
 
             {mode === "random" && (
               <>
