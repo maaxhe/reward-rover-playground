@@ -143,7 +143,7 @@ export const PlaygroundControls = ({
           </>
         ) : (
           <p className="text-xs text-muted-foreground">
-            {translate("Mauern, Belohnungen und Strafen schaltest du in höheren Leveln frei.", "Walls, rewards and penalties unlock in higher levels.")}
+            {translate("Bauen schaltest du in höheren Leveln frei.", "Building unlocks in higher levels.")}
           </p>
         )}
       </div>

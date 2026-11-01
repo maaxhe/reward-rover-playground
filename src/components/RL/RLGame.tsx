@@ -3702,12 +3702,14 @@ const handleActiveBonusClick = useCallback(() => {
               </Card>
             )}
 
-            <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4 space-y-3">
+            {/* An empty leaderboard is just a box saying "nothing here", so it only appears with entries. */}
+            {activeLeaderboardEntries.length > 0 && (
+            <Card className="rounded-lg border border-border/40 bg-secondary/20 p-3 space-y-3">
               <div
                 className="flex items-center justify-between cursor-pointer"
                 onClick={() => setShowLeaderboard(!showLeaderboard)}
               >
-                <h3 className="text-base font-bold text-foreground">
+                <h3 className="text-sm font-bold text-foreground">
                   {leaderboardTitle}
                 </h3>
                 <div className="flex items-center gap-2">
@@ -3781,6 +3783,7 @@ const handleActiveBonusClick = useCallback(() => {
                 </div>
               ))}
             </Card>
+            )}
               </>
               )}
 

@@ -90,6 +90,12 @@ export function ParametersPanel({
         </div>
 
         {/* Alpha (Learning Rate) */}
+        {alphaLocked ? (
+          <div data-tutorial="alpha" className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>🔒 {translate("Lernrate (α)", "Learning rate (α)")}</span>
+            <span>{translate("ab Level 2", "at level 2")}</span>
+          </div>
+        ) : (
         <div
           data-tutorial="alpha"
           className={cn(
@@ -123,8 +129,15 @@ export function ParametersPanel({
             </p>
           )}
         </div>
+        )}
 
         {/* Gamma (Discount Factor) */}
+        {gammaLocked ? (
+          <div data-tutorial="gamma" className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>🔒 {translate("Weitsicht (γ)", "Foresight (γ)")}</span>
+            <span>{translate("ab Level 3", "at level 3")}</span>
+          </div>
+        ) : (
         <div
           data-tutorial="gamma"
           className={cn(
@@ -159,6 +172,7 @@ export function ParametersPanel({
                 )}
           </p>}
         </div>
+        )}
       </div>
     </Card>
   );
