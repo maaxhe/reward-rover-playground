@@ -90,6 +90,9 @@
 .landing footer { border-top: 1px solid var(--line); padding: 2rem 0 3rem; color: var(--muted); font-size: 0.9rem; }
 .landing footer .wrap { display: flex; flex-wrap: wrap; gap: 0.75rem 2rem; justify-content: space-between; }
 .landing footer a { text-decoration: underline; text-underline-offset: 3px; }
+.landing footer .cx { flex-basis: 100%; }
+/* Platz für den schwebenden Erklärung-Knopf, damit er die letzte Zeile nicht verdeckt */
+@media (max-width: 640px) { .landing footer { padding-bottom: 6.5rem; } }
 
 @media (prefers-reduced-motion: reduce) {
   .landing .btn { transition: none; }

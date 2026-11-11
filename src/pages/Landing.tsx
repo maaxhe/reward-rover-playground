@@ -161,6 +161,16 @@ const LandingContent = () => {
             {" · "}
             <Link to="/datenschutz">{translate("Datenschutz", "Privacy")}</Link>
           </span>
+          <span className="cx">
+            {translate("Mehr Werkzeuge für den Unterricht auf", "More classroom tools at")}{" "}
+            <a href="https://coxilab.de/">coxilab.de</a>
+            {": "}
+            <a href="https://dilemma.coxilab.de/">Dilemma</a>
+            {" · "}
+            <a href="https://jobs.coxilab.de/">{translate("KI-Berufs-Puzzle", "AI job puzzle")}</a>
+            {" · "}
+            <a href="https://handzeichen.com/">Handzeichen</a>
+          </span>
         </div>
       </footer>
     </div>
