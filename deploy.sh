@@ -6,8 +6,22 @@ REMOTE_HOST="max@91.99.236.172"
 REMOTE_PATH="~/reward-rover"
 REMOTE_SSH_KEY="${REMOTE_SSH_KEY:-${HOME}/.ssh/biasnavigator_server}"
 
-echo "Building frontend..."
 cd "$ROOT_DIR"
+
+# There has been more than one checkout of this repo. Never deploy a state that lacks commits
+# already on origin/main, or that origin/main does not have yet: the live site must match the repo.
+echo "Checking against origin/main..."
+git fetch --quiet origin
+if [ -n "$(git status --porcelain)" ]; then
+  echo "Abbruch: Es gibt nicht committete Änderungen." >&2; exit 1
+fi
+if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+  echo "Abbruch: HEAD ist nicht origin/main (erst pullen bzw. pushen)." >&2
+  git status -sb | head -1 >&2
+  exit 1
+fi
+
+echo "Building frontend..."
 npm run build
 
 echo "Syncing frontend build into server/public..."

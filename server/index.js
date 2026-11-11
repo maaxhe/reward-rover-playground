@@ -100,6 +100,7 @@ app.post(`${API_PREFIX}/auth/login`, loginLimit, async (req, res) => {
     user.role = "admin";
   }
 
+  statements.touchLogin.run(user.id);
   const token = createToken(user);
   return res.json({ token, user: { id: user.id, username: user.username, role: user.role } });
 });
@@ -327,6 +328,18 @@ app.use((err, _req, res, _next) => {
   if (status === 500) console.error(err);
   res.status(status).send(status === 404 ? "Not found" : "Server error");
 });
+
+// Retention: accounts nobody logged into for a year are removed, once at start and then daily.
+const removeInactiveAccounts = () => {
+  try {
+    const { changes } = statements.deleteInactiveUsers.run();
+    if (changes) console.log(`Removed ${changes} account(s) unused for a year`);
+  } catch (err) {
+    console.error("account cleanup failed:", err.message);
+  }
+};
+removeInactiveAccounts();
+setInterval(removeInactiveAccounts, 24 * 60 * 60 * 1000).unref();
 
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console

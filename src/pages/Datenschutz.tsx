@@ -26,7 +26,7 @@ const Datenschutz = () => {
 
         <main style={{ padding: "2rem 0 4rem" }}>
           <h1 style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }}>Datenschutzerklärung</h1>
-          <p style={{ color: "var(--muted)" }}>Stand: Oktober 2026</p>
+          <p style={{ color: "var(--muted)" }}>Stand: November 2026</p>
 
           <h2 className="legal-h">1. Wer verantwortlich ist</h2>
           <p>
@@ -56,7 +56,9 @@ const Datenschutz = () => {
             Hash, nie im Klartext), deinen Level-Fortschritt und die Umgebungen, die du selbst speicherst.
             Eine E-Mail-Adresse ist dafür nicht nötig. Rechtsgrundlage ist die Vertragserfüllung (Art. 6
             Abs. 1 lit. b DSGVO). Es gibt keine Passwort-Zurücksetzen-Funktion, merke dir das Passwort
-            also gut. Auf Wunsch lösche ich deinen Account samt Daten, schreib dazu einfach eine E-Mail.
+            also gut. Accounts, in die sich ein Jahr lang niemand eingeloggt hat, werden automatisch samt
+            Fortschritt und gespeicherten Umgebungen gelöscht. Auf Wunsch lösche ich deinen Account auch
+            früher, schreib dazu einfach eine E-Mail.
           </p>
           <p>
             Zum Angemeldetbleiben legt die Seite ein Zugangstoken im Speicher deines Browsers ab
@@ -68,9 +70,9 @@ const Datenschutz = () => {
           <p>
             Beim Beitritt zu einem Raum gibst du einen Spielernamen an. Bitte verwende keinen echten Namen,
             ein Spitzname reicht. Gespeichert werden der Spielername, der Lernstand deines Rovers
-            (eine Tabelle mit Zahlen) und dein Ergebnis. Die Daten liegen nur im Arbeitsspeicher des
-            Servers, werden spätestens nach 24 Stunden gelöscht und gehen bei einem Neustart des Servers
-            sofort verloren. Es gibt keine Anmeldung und keine E-Mail-Adresse.
+            (eine Tabelle mit Zahlen) und dein Ergebnis. Die Daten liegen auf dem Server und werden
+            spätestens 24 Stunden nach dem Anlegen des Raums gelöscht. Es gibt keine Anmeldung und keine
+            E-Mail-Adresse.
           </p>
           <p>
             Die Lehrkraft, die den Raum erstellt, sieht die Spielernamen und Ergebnisse ihres Raums.

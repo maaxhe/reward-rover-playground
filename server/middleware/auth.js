@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { statements } from "../db.js";
 
 const getJwtSecret = () => {
   const secret = process.env.JWT_SECRET;
@@ -17,7 +18,12 @@ const authenticate = (req, res, next) => {
 
   try {
     const payload = jwt.verify(token, getJwtSecret());
-    req.user = payload;
+    // The token outlives a deleted account by up to 7 days, and a role may have changed: trust the database.
+    const user = statements.getUserById.get(payload.id);
+    if (!user) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+    req.user = { id: user.id, username: user.username, role: user.role };
     return next();
   } catch (error) {
     return res.status(401).json({ error: "Invalid token" });

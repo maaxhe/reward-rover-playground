@@ -30,6 +30,15 @@ Und wenn man versteht, wie dieser Prozess funktioniert, versteht man auch ein St
   Der zentrale Trade-off im RL: Bleibt der Rover bei sicheren Wegen oder probiert er Neues?  
   Mit jedem Lauf verändert sich sein Verhalten – und du kannst live zuschauen.  
 
+- **Level-Modus**  
+  Zehn Level führen Schritt für Schritt durch die Ideen: erst das Ziel finden, dann Strafen meiden, Neugier und Weitsicht einstellen. Ein Level gilt als geschafft, wenn seine Aufgaben erfüllt sind. Danach ist das freie Spiel offen.
+
+- **Klassen-Challenge (`/klasse`)**  
+  Für den Unterricht: Die Lehrkraft öffnet einen Raum, die Klasse tritt per Code oder QR-Code mit Spitznamen bei, ganz ohne Account. Alle trainieren ihren Rover in derselben Welt mit begrenzter Zeit und begrenzten Episoden. Am Ende lässt der Server jeden Rover ohne Zufall laufen und zeigt die Rangliste, optional auf dem Beamer.
+
+- **Erklärung zum Mitmachen**  
+  Kurze Demos zu Q-Learning, Value Iteration und Lernen aus menschlichem Feedback, dazu Videos echter Roboter.
+
 - **Drei Modi**  
   - **Playground:** Baue deine eigene Welt, platziere Mauern, Rewards, Strafen und Portale.  
   - **Zufallsmodus:** Lass dir automatisch generierte Welten erstellen – jedes Mal anders.  
@@ -94,7 +103,16 @@ npm run dev
 ```
 
 
-Danach findest du das Projekt unter http://localhost:5173.
+Danach findest du das Projekt unter http://localhost:8080.
+
+
+### Backend und Deploy
+
+Accounts, Klassen-Challenge und Tagesaufgabe brauchen den kleinen Express-Server in `server/` (SQLite, siehe `server/README.md`). Lokal: `cd server && npm install && npm start`, das Frontend leitet `/api` dorthin weiter.
+
+`./deploy.sh` baut das Frontend, lädt alles auf den Server und startet ihn neu. Das Skript bricht ab, wenn der lokale Stand nicht genau `origin/main` entspricht.
+
+Die Seiten: `/` Startseite, `/spiel` das Spiel, `/klasse` Klassen-Challenge, `/datenschutz`, `/impressum`.
 
 ---
 
@@ -152,6 +170,15 @@ And once you understand how this process works, you also understand a bit better
 - **Exploration vs. Exploitation**  
   The central trade-off in RL: Does the rover stick to safe paths or try something new?  
   With every run, its behavior changes – and you can watch live.  
+
+- **Level mode**  
+  Ten levels introduce the ideas one at a time: find the goal, avoid penalties, tune curiosity and foresight. A level counts as solved once its objectives are met. After that, free play opens up.
+
+- **Classroom challenge (`/klasse`)**  
+  For lessons: the teacher opens a room, the class joins by code or QR code with a nickname, no account needed. Everyone trains a rover in the same world with limited time and episodes. At the end the server runs each rover without randomness and shows the ranking, optionally on a projector view.
+
+- **Hands-on guide**  
+  Short demos on Q-learning, value iteration and learning from human feedback, plus videos of real robots.
 
 - **Three Modes**  
   - **Playground:** Build your own world, place walls, rewards, penalties, and portals.  
@@ -213,7 +240,7 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:5173.
+Then open http://localhost:8080.
 
 ---
 

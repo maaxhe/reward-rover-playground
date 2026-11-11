@@ -100,6 +100,16 @@ if (!userColumns.includes("email")) {
   db.exec("ALTER TABLE Users ADD COLUMN email TEXT");
 }
 db.exec("UPDATE Users SET provider = 'local' WHERE provider IS NULL");
+// Activity timestamps for the retention rule (accounts unused for a year are removed).
+// SQLite cannot add a column with a non-constant default, so existing rows are backfilled with "now".
+if (!userColumns.includes("created_at")) {
+  db.exec("ALTER TABLE Users ADD COLUMN created_at DATETIME");
+  db.exec("UPDATE Users SET created_at = CURRENT_TIMESTAMP");
+}
+if (!userColumns.includes("last_login_at")) {
+  db.exec("ALTER TABLE Users ADD COLUMN last_login_at DATETIME");
+  db.exec("UPDATE Users SET last_login_at = CURRENT_TIMESTAMP");
+}
 db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_provider ON Users(provider, provider_id) WHERE provider_id IS NOT NULL");
 db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON Users(email) WHERE email IS NOT NULL");
 
@@ -117,8 +127,14 @@ const statements = {
   getUserByProvider: db.prepare(
     "SELECT id, username, password_hash, role, provider, provider_id, email FROM Users WHERE provider = ? AND provider_id = ?",
   ),
+  getUserById: db.prepare("SELECT id, username, role FROM Users WHERE id = ?"),
   createUser: db.prepare(
-    "INSERT INTO Users (username, password_hash, role, provider, provider_id, email) VALUES (@username, @password_hash, @role, @provider, @provider_id, @email)",
+    "INSERT INTO Users (username, password_hash, role, provider, provider_id, email, created_at, last_login_at) VALUES (@username, @password_hash, @role, @provider, @provider_id, @email, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+  ),
+  touchLogin: db.prepare("UPDATE Users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?"),
+  // Saved worlds, progress and daily results go with the account (ON DELETE CASCADE). Admins are kept.
+  deleteInactiveUsers: db.prepare(
+    "DELETE FROM Users WHERE role != 'admin' AND COALESCE(last_login_at, created_at) < datetime('now', '-1 year')",
   ),
   createOAuthUser: db.prepare(
     "INSERT INTO Users (username, password_hash, role, provider, provider_id, email) VALUES (@username, @password_hash, @role, @provider, @provider_id, @email)",

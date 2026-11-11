@@ -2525,8 +2525,8 @@ const handleActiveBonusClick = useCallback(() => {
                 className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200"
               >
                 {translate(
-                  "Merk dir dein Passwort gut! Es gibt keine „Passwort vergessen“-Funktion. Ohne Passwort ist dein Fortschritt nicht mehr erreichbar. Mindestens 6 Zeichen.",
-                  "Remember your password! There is no “forgot password” option. Without it your progress can't be recovered. At least 6 characters.",
+                  "Merk dir dein Passwort gut! Es gibt keine „Passwort vergessen“-Funktion. Ohne Passwort ist dein Fortschritt nicht mehr erreichbar. Mindestens 6 Zeichen. Accounts ohne Login werden nach einem Jahr gelöscht.",
+                  "Remember your password! There is no “forgot password” option. Without it your progress can't be recovered. At least 6 characters. Accounts without a login are deleted after one year.",
                 )}
               </p>
             )}
