@@ -4,14 +4,12 @@ import "@fontsource-variable/bricolage-grotesque";
 import "./landing.css";
 
 /**
- * Provider details (§ 5 DDG). Name, place and e-mail are taken from the existing imprint on
- * maximilianherrmann.com/impressum.html. A street address is legally expected as well:
- * fill `street` in and it appears.
+ * Provider details (§ 5 DDG), same as the imprint on maximilianherrmann.com/impressum.html.
  */
 const PROVIDER = {
   name: "Maximilian E. Herrmann",
-  street: "", // e.g. "Musterstraße 1" — leave empty until filled in
-  city: "Osnabrück, Deutschland",
+  street: "Lotter Straße 25",
+  city: "49078 Osnabrück, Deutschland",
   email: "contact@maximilianherrmann.com",
   site: "maximilianherrmann.com",
 };
@@ -59,7 +57,7 @@ const Impressum = () => {
           <p>
             {PROVIDER.name}
             <br />
-            {PROVIDER.city}
+            {PROVIDER.street}, {PROVIDER.city}
           </p>
 
           <h2 className="legal-h">Haftung für Inhalte</h2>

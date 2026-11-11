@@ -30,7 +30,7 @@ const Datenschutz = () => {
 
           <h2 className="legal-h">1. Wer verantwortlich ist</h2>
           <p>
-            Maximilian E. Herrmann, Osnabrück, Deutschland
+            Maximilian E. Herrmann, Lotter Straße 25, 49078 Osnabrück, Deutschland
             <br />
             E-Mail: <a href="mailto:contact@maximilianherrmann.com">contact@maximilianherrmann.com</a>
           </p>
