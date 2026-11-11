@@ -12,6 +12,7 @@ import { isAdmin } from "./middleware/isAdmin.js";
 import dailyRoutes from "./routes/daily.js";
 import roomRoutes from "./routes/rooms.js";
 import feedbackRoutes from "./routes/feedback.js";
+import { limitByIp } from "./lib/rateLimit.js";
 
 dotenv.config();
 
@@ -26,6 +27,18 @@ const JWT_SECRET = getJwtSecret();
 app.use(cors({ origin: process.env.CORS_ORIGIN || "*" }));
 app.use(express.json({ limit: "2mb" }));
 
+app.use((_req, res, next) => {
+  res.set("X-Content-Type-Options", "nosniff");
+  res.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.set("X-Frame-Options", "SAMEORIGIN");
+  next();
+});
+
+// A whole class often shares one school IP, so the limits are generous:
+// they stop password guessing and mass sign-ups, not a classroom logging in.
+const loginLimit = limitByIp({ windowMs: 10 * 60 * 1000, max: 100 });
+const registerLimit = limitByIp({ windowMs: 60 * 60 * 1000, max: 60 });
+
 const createToken = (user) => {
   return jwt.sign(
     { id: user.id, username: user.username, role: user.role },
@@ -34,7 +47,7 @@ const createToken = (user) => {
   );
 };
 
-app.post(`${API_PREFIX}/auth/register`, async (req, res) => {
+app.post(`${API_PREFIX}/auth/register`, registerLimit, async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) {
     return res.status(400).json({ error: "Username and password are required" });
@@ -66,7 +79,7 @@ app.post(`${API_PREFIX}/auth/register`, async (req, res) => {
   return res.status(201).json({ token, user });
 });
 
-app.post(`${API_PREFIX}/auth/login`, async (req, res) => {
+app.post(`${API_PREFIX}/auth/login`, loginLimit, async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) {
     return res.status(400).json({ error: "Username and password are required" });
@@ -293,10 +306,26 @@ app.use(API_PREFIX, feedbackRoutes);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const publicDir = path.join(__dirname, "public");
-app.use(express.static(publicDir));
+// Hashed build files never change, so browsers may keep them; index.html must stay fresh.
+app.use(
+  "/assets",
+  express.static(path.join(publicDir, "assets"), { immutable: true, maxAge: "1y", fallthrough: false }),
+);
+app.use(express.static(publicDir, { index: false }));
+
+// Unknown API paths get a JSON 404 instead of the app shell.
+app.use(API_PREFIX, (_req, res) => res.status(404).json({ error: "Not found" }));
 
 app.get("*", (req, res) => {
+  res.set("Cache-Control", "no-cache");
   res.sendFile(path.join(publicDir, "index.html"));
+});
+
+// express.static with fallthrough:false reports missing assets as errors.
+app.use((err, _req, res, _next) => {
+  const status = err.status === 404 ? 404 : 500;
+  if (status === 500) console.error(err);
+  res.status(status).send(status === 404 ? "Not found" : "Server error");
 });
 
 app.listen(PORT, () => {
