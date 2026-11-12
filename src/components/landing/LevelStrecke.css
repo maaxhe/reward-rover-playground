@@ -1,10 +1,10 @@
 /* Level als Haltestellen mit Bahn (Logik in src/hooks/useStrecke.ts) */
-.landing .level-strecke { --sx: calc(0.6rem + 5px); --sy: 1.3rem; list-style: none; margin: 0; padding: 0; max-width: 40rem; position: relative; }
+.landing .level-strecke { --sx: 15px; --sy: 1.3rem; list-style: none; margin: 0; padding: 0; max-width: 40rem; position: relative; }
 .landing .level-strecke li { position: relative; padding-left: 2.6rem; margin: 0; }
-.landing .level-strecke li::before { content: ""; position: absolute; left: 0.6rem; top: 0; bottom: 0; width: 10px; background: var(--lk); }
+.landing .level-strecke li::before { content: ""; position: absolute; left: calc(var(--sx) - 5px); top: 0; bottom: 0; width: 10px; background: var(--lk); }
 .landing .level-strecke li:first-child::before { top: var(--sy); }
 .landing .level-strecke li:last-of-type::before { bottom: calc(100% - var(--sy)); }
-.landing .level-strecke li::after { content: ""; position: absolute; left: 0.2rem; top: var(--sy); width: 18px; height: 18px; margin-top: -9px; box-sizing: border-box; border-radius: 50%; background: var(--papier); border: 4px solid var(--tinte); }
+.landing .level-strecke li::after { content: ""; position: absolute; left: calc(var(--sx) - 9px); top: calc(var(--sy) - 9px); width: 18px; height: 18px; box-sizing: border-box; border-radius: 50%; background: var(--papier); border: 4px solid var(--tinte); }
 .landing .level-strecke .halt { display: block; padding: 0.55rem 0 1.1rem; color: inherit; text-decoration: none; }
 .landing .level-strecke .halt-titel { display: block; font-family: var(--display); font-weight: 800; font-size: 1.55rem; line-height: 1.1; color: var(--tinte); }
 .landing .level-strecke a.halt:hover .halt-titel { text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 4px; }
