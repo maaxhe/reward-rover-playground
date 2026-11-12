@@ -38,7 +38,7 @@ export const CoxilabLeiste = () => {
     <ul>
       {LINIEN.map((l) => (
         <li key={l.id}>
-          <a href={l.href} aria-current={l.id === "r" ? "page" : undefined}>
+          <a href={l.href} {...(l.id === "a" ? { target: "_blank", rel: "noopener" } : {})} aria-current={l.id === "r" ? "page" : undefined}>
             <i style={{ background: l.farbe }} aria-hidden="true">{l.id.toUpperCase()}</i>
             <span>{l.name}</span>
           </a>
