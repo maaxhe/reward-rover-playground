@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="de" data-theme="dark">
+<html lang="de" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="color-scheme" content="dark light" />
     <script>
-      /* Hell/Dunkel vor dem ersten Zeichnen setzen. Standard: Dunkel. ?theme=light oder ?theme=dark wählt und merkt sich die Ansicht. */
+      /* Hell/Dunkel vor dem ersten Zeichnen setzen. Standard: Hell. ?theme=light oder ?theme=dark wählt und merkt sich die Ansicht. */
       (function () {
-        var t = "dark";
+        var t = "light";
         try {
           var q = new URLSearchParams(location.search).get("theme");
           if (q === "light" || q === "dark") localStorage.setItem("rr-theme", q);
