@@ -5,7 +5,7 @@
 .cx-leiste{--cx-bg:#ffffff;--cx-ink:#132940;--cx-line:rgba(19,41,64,.28);--cx-hover:#e3eefb;
   box-sizing:border-box;display:flex;align-items:center;gap:8px 12px;height:44px;min-height:44px;padding:0 16px;
   background:var(--cx-bg);color:var(--cx-ink);border-bottom:1px solid var(--cx-line);
-  font:600 14px/1.2 "Barlow",system-ui,sans-serif;white-space:nowrap;overflow:hidden}
+  font:600 14px/1.2 "Barlow",system-ui,sans-serif;white-space:nowrap;overflow:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 html[data-theme="dark"] .cx-leiste{--cx-bg:#0c1a2b;--cx-ink:#e6f0fa;--cx-line:rgba(230,240,250,.28);--cx-hover:#17324f}
 .cx-leiste *{box-sizing:border-box}
 .cx-leiste a{color:inherit;text-decoration:none}
