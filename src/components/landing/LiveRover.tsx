@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Tile } from "@/components/RL/Tile";
+import { useTileSize } from "@/components/RL/CompetitionBoard";
 import { stepPlayground } from "@/lib/rl/playgroundStep";
 import { getBestActionDirection } from "@/lib/rl/qLearning";
 import { shortestPathLength } from "@/lib/levelObjectives";
@@ -23,7 +25,6 @@ export const DEMO_WORLD: CompetitionWorld = {
 };
 
 const PARAMS = { explorationRate: 0.25, alpha: 0.4, gamma: 0.95, consumeRewards: true, autoRestart: true, directionBias: null } as const;
-const ARROW: Record<string, string> = { up: "↑", down: "↓", left: "←", right: "→" };
 const TICK_MS = 170;
 
 interface Props {
@@ -80,10 +81,10 @@ export function LiveRover({ translate }: Props) {
     );
   }
 
-  const cell = 52;
-  const gap = 3;
-  const pad = 10;
-  // Glide between neighbouring tiles; a jump (new episode, portal) snaps instead of sweeping across the board.
+  // Genau das Spielfeld aus dem Spiel: dieselbe Kachel (Tile), derselbe Rahmen, dieselbe Lücke, derselbe gleitende Rover.
+  const tileSize = useTileSize(DEMO_WORLD.size, 52, 64);
+  const TILE_GAP = 3;
+  // Zwischen Nachbarfeldern gleiten; ein Sprung (neue Runde, Portal) setzt den Rover direkt um.
   const prevAgent = useRef(view.agent);
   const jumped = Math.abs(view.agent.x - prevAgent.current.x) + Math.abs(view.agent.y - prevAgent.current.y) > 1;
   useEffect(() => {
@@ -93,48 +94,62 @@ export function LiveRover({ translate }: Props) {
   return (
     <figure className="lr-figure">
       <div
-        className="lr-board"
-        style={{ gridTemplateColumns: `repeat(${DEMO_WORLD.size}, ${cell}px)`, gridTemplateRows: `repeat(${DEMO_WORLD.size}, ${cell}px)` }}
         role="img"
         aria-label={translate(
           "Ein kleines Spielfeld, auf dem ein Rover live lernt, den Weg zum Ziel zu finden.",
           "A small board where a rover learns to find its way to the goal, live.",
         )}
+        className="rounded-lg border border-border bg-background/80 p-4 shadow-soft select-none"
+        style={{ maxWidth: DEMO_WORLD.size * (tileSize + TILE_GAP) + 32 }}
       >
-        {view.grid.map((row, y) =>
-          row.map((c, x) => {
-            const isAgent = view.agent.x === x && view.agent.y === y;
-            const isGoal = DEMO_WORLD.goal.x === x && DEMO_WORLD.goal.y === y;
-            const tile = DEMO_WORLD.tiles.find((t) => t.x === x && t.y === y);
-            const eaten = tile && (tile.type === "reward" || tile.type === "punishment") && c.type === "empty";
-            const q = view.qTable[`${x},${y}`];
-            const learned = q && c.visits > 0;
-            const dir = learned && !isGoal && c.type !== "obstacle" ? getBestActionDirection(view.grid, { x, y }, view.qTable) : undefined;
-            return (
-              <div key={`${x}-${y}`} className={`lr-cell ${tile?.type === "obstacle" ? "is-wall" : ""}`}>
-                {isGoal && <span className="lr-goal" aria-hidden />}
-                {tile?.type === "reward" && <span className={`lr-candy ${eaten ? "is-eaten" : ""}`} aria-hidden />}
-                {tile?.type === "punishment" && <span className={`lr-trap ${eaten ? "is-eaten" : ""}`} aria-hidden />}
-                {dir && !isAgent && (
-                  <span className="lr-arrow" style={{ opacity: Math.min(1, 0.6 + Math.max(...q) / 20) }} aria-hidden>
-                    {ARROW[dir]}
-                  </span>
-                )}
-              </div>
-            );
-          }),
-        )}
-        <div
-          className="lr-rover-slot"
-          style={{
-            width: cell,
-            height: cell,
-            transform: `translate(${pad + view.agent.x * (cell + gap)}px, ${pad + view.agent.y * (cell + gap)}px)`,
-            transition: jumped || !running ? "none" : `transform ${TICK_MS}ms linear`,
-          }}
-          aria-hidden
-        >
-          <span className="lr-rover" />
+        <div className="relative">
+          <div
+            className="grid"
+            style={{
+              gridTemplateColumns: `repeat(${DEMO_WORLD.size}, ${tileSize}px)`,
+              gridTemplateRows: `repeat(${DEMO_WORLD.size}, ${tileSize}px)`,
+              gap: TILE_GAP,
+            }}
+          >
+            {view.grid.map((row, y) =>
+              row.map((cell, x) => {
+                const isAgent = view.agent.x === x && view.agent.y === y;
+                const isGoal = DEMO_WORLD.goal.x === x && DEMO_WORLD.goal.y === y;
+                const tileType = isGoal ? "goal" : isAgent ? "empty" : cell.type;
+                return (
+                  <Tile
+                    key={`${x}-${y}`}
+                    x={x}
+                    y={y}
+                    type={tileType}
+                    value={0}
+                    showValues={false}
+                    isAgent={isAgent}
+                    isGoal={isGoal}
+                    tileSize={tileSize}
+                    ariaLabel={`${x + 1},${y + 1}`}
+                    visits={cell.visits}
+                    showActions
+                    bestAction={getBestActionDirection(view.grid, { x, y }, view.qTable)}
+                  />
+                );
+              }),
+            )}
+          </div>
+          <div
+            className="pointer-events-none absolute flex items-center justify-center"
+            style={{
+              left: view.agent.x * (tileSize + TILE_GAP),
+              top: view.agent.y * (tileSize + TILE_GAP),
+              width: tileSize,
+              height: tileSize,
+              transition: jumped || !running ? "none" : "left 0.3s ease-out, top 0.3s ease-out",
+              zIndex: 10,
+            }}
+            aria-hidden
+          >
+            <span className="rr-rover" />
+          </div>
         </div>
       </div>
       <figcaption className="lr-caption">
