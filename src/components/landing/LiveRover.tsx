@@ -116,7 +116,7 @@ export function LiveRover({ translate }: Props) {
                 {tile?.type === "reward" && <span className={`lr-candy ${eaten ? "is-eaten" : ""}`} aria-hidden />}
                 {tile?.type === "punishment" && <span className={`lr-trap ${eaten ? "is-eaten" : ""}`} aria-hidden />}
                 {dir && !isAgent && (
-                  <span className="lr-arrow" style={{ opacity: Math.min(0.85, 0.25 + Math.max(...q) / 30) }} aria-hidden>
+                  <span className="lr-arrow" style={{ opacity: Math.min(1, 0.6 + Math.max(...q) / 20) }} aria-hidden>
                     {ARROW[dir]}
                   </span>
                 )}

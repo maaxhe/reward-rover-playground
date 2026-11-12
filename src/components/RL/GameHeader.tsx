@@ -34,7 +34,7 @@ export function GameHeader({
           disabled={m.disabled}
           className={cn(
             "font-semibold transition-all",
-            m.disabled && "cursor-not-allowed opacity-50"
+            m.disabled && "cursor-not-allowed opacity-75"
           )}
         >
           {m.label}

@@ -157,9 +157,8 @@ const TileComponent = ({
           style={{
             fontSize: tileSize > 40 ? "2rem" : tileSize > 32 ? "1.5rem" : "1.25rem",
             color: "var(--rr-glass)",
-            opacity: 0.6,
-            fontWeight: "bold",
-            textShadow: "0 0 4px rgba(0,0,0,0.5)",
+            opacity: 0.92,
+            fontWeight: "900",
           }}
         >
           {getArrowIcon(bestAction)}

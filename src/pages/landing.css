@@ -2,11 +2,12 @@
    Grüne Fläche (die Rover-Linie), dunkelgrüne Tinte, dicke Rahmen, runde Ecken.
    Das alte dunkle Design liegt auf dem Branch backup/dunkles-design (Tag dunkles-design-2026-11-12). */
 .landing {
-  --papier: #f5fbf8;
-  --flaeche: #cdeedc;
-  --flaeche-tief: #b4e0c9;
-  --tinte: #12352a;
-  --grau: #4d6a5f;
+  --papier: var(--hz-papier);
+  --flaeche: var(--hz-flaeche);
+  --flaeche-tief: var(--hz-flaeche-tief);
+  --tinte: var(--hz-tinte);
+  --grau: var(--hz-grau);
+  --karte: var(--hz-karte);
   --lk: #5cb68e;
   --coral: #e88080;
   --violet: #9a86dc;
@@ -29,7 +30,7 @@
 .landing .top-area { background: var(--flaeche); border-bottom: 6px solid var(--tinte); border-radius: 0 0 clamp(22px, 4vw, 40px) clamp(22px, 4vw, 40px); }
 .landing .topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.9rem 0; flex-wrap: wrap; }
 .landing .wordmark { display: inline-flex; align-items: center; gap: 0.65rem; font: 800 1.7rem/1 var(--display); letter-spacing: 0.01em; text-decoration: none; white-space: nowrap; }
-.landing .wordmark i { display: inline-grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 0.6rem; background: var(--lk); color: var(--tinte); font-style: normal; font-size: 1.5rem; }
+.landing .wordmark i { display: inline-grid; place-items: center; width: 2.2rem; height: 2.2rem; border-radius: 0.6rem; background: var(--lk); color: #12352a; font-style: normal; font-size: 1.5rem; }
 .landing .topbar nav { display: flex; align-items: center; gap: 1.4rem; font-weight: 600; white-space: nowrap; }
 .landing .topbar nav a { text-decoration: none; border-bottom: 3px solid transparent; }
 .landing .topbar nav a:hover { border-color: var(--tinte); }
@@ -51,17 +52,19 @@
 
 /* Gleisplan: der lebende Rover */
 .lr-figure { margin: 0; justify-self: center; }
-.lr-board { position: relative; display: grid; gap: 5px; padding: 12px; background: var(--flaeche-tief); border: 4px solid var(--tinte); border-radius: 22px; width: max-content; max-width: 100%; }
-.lr-cell { position: relative; background: #fff; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
-.lr-cell.is-wall { background: repeating-linear-gradient(135deg, var(--tinte) 0 3px, #fff 3px 9px); }
-.lr-goal { width: 70%; height: 70%; border-radius: 50%; border: 3px solid var(--tinte); box-shadow: inset 0 0 0 5px #fff, inset 0 0 0 9px var(--tinte); }
-.lr-candy { width: 38%; height: 38%; background: var(--orange); border: 3px solid var(--tinte); transform: rotate(45deg); border-radius: 4px; transition: opacity 0.2s; }
-.lr-trap { width: 50%; height: 50%; background: var(--tinte); clip-path: polygon(20% 0, 50% 30%, 80% 0, 100% 20%, 70% 50%, 100% 80%, 80% 100%, 50% 70%, 20% 100%, 0 80%, 30% 50%, 0 20%); transition: opacity 0.2s; }
+.lr-board { position: relative; display: grid; gap: 6px; padding: 12px; background: var(--flaeche-tief); border: 4px solid var(--tinte); border-radius: 22px; width: max-content; max-width: 100%; }
+.lr-cell { position: relative; background: var(--tile-bg); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--tinte) 38%, transparent); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.lr-cell.is-wall { background: repeating-linear-gradient(135deg, var(--tinte) 0 3px, var(--karte) 3px 9px); }
+.lr-goal { width: 70%; height: 70%; border-radius: 50%; border: 3px solid #12352a; box-shadow: inset 0 0 0 5px #5cb68e, inset 0 0 0 9px #12352a; }
+.lr-candy { width: 38%; height: 38%; background: var(--orange); border: 3px solid #12352a; transform: rotate(45deg); border-radius: 4px; transition: opacity 0.2s; }
+.lr-trap { width: 50%; height: 50%; background: #12352a; clip-path: polygon(20% 0, 50% 30%, 80% 0, 100% 20%, 70% 50%, 100% 80%, 80% 100%, 50% 70%, 20% 100%, 0 80%, 30% 50%, 0 20%); transition: opacity 0.2s; }
 .lr-cell:has(.lr-trap) { background: var(--coral); }
+.lr-cell:has(.lr-goal) { background: #5cb68e; }
+.lr-cell:has(.lr-candy) { background: #fbd9bb; }
 .lr-candy.is-eaten, .lr-trap.is-eaten { opacity: 0.18; }
-.lr-arrow { position: absolute; font-size: 1.35rem; font-weight: 700; color: rgba(18, 53, 42, 0.55); pointer-events: none; }
-.lr-rover { position: absolute; width: 62%; height: 62%; background: var(--oil); border: 3px solid var(--tinte); border-radius: 30% 30% 22% 22%; z-index: 2; }
-.lr-rover::before, .lr-rover::after { content: ""; position: absolute; top: 28%; width: 14%; height: 14%; background: var(--tinte); border-radius: 50%; }
+.lr-arrow { position: absolute; font-size: 1.6rem; font-weight: 900; color: color-mix(in srgb, var(--tinte) 85%, transparent); pointer-events: none; }
+.lr-rover { position: absolute; width: 62%; height: 62%; background: var(--oil); border: 3px solid #12352a; border-radius: 30% 30% 22% 22%; z-index: 2; }
+.lr-rover::before, .lr-rover::after { content: ""; position: absolute; top: 28%; width: 14%; height: 14%; background: #12352a; border-radius: 50%; }
 .lr-rover::before { left: 25%; } .lr-rover::after { right: 25%; }
 .lr-caption { margin-top: 1rem; max-width: 22rem; color: var(--grau); font-size: 1rem; }
 .lr-caption p { margin: 0 0 0.6rem; min-height: 3.2em; }
@@ -83,10 +86,10 @@
 .landing .way p { margin: 0 0 0.8rem; max-width: 38rem; }
 .landing .way p b { font-weight: 800; }
 .landing .way-action { display: flex; flex-wrap: wrap; gap: 0.7rem; align-items: center; }
-.landing .way.is-class .way-action { flex-direction: column; align-items: stretch; max-width: 44rem; background: #fff; border: 4px solid var(--tinte); border-radius: var(--r); padding: 1rem 1.2rem 1.2rem; }
+.landing .way.is-class .way-action { flex-direction: column; align-items: stretch; max-width: 44rem; background: var(--karte); border: 4px solid var(--tinte); border-radius: var(--r); padding: 1rem 1.2rem 1.2rem; }
 .landing .join-form { display: flex; gap: 0.6rem; flex-wrap: wrap; }
-.landing .join-form input { flex: 1 1 9rem; min-width: 0; height: 3.4rem; background: #fff; border: 3px solid var(--tinte); border-radius: 10px; color: var(--tinte); padding: 0 1rem; font: 800 1.8rem/1 var(--display); letter-spacing: 0.3em; text-align: center; }
-.landing .join-form input::placeholder { color: #b6bcc6; letter-spacing: 0.3em; }
+.landing .join-form input { flex: 1 1 9rem; min-width: 0; height: 3.4rem; background: var(--karte); border: 3px solid var(--tinte); border-radius: 10px; color: var(--tinte); padding: 0 1rem; font: 800 1.8rem/1 var(--display); letter-spacing: 0.3em; text-align: center; }
+.landing .join-form input::placeholder { color: color-mix(in srgb, var(--tinte) 35%, transparent); letter-spacing: 0.3em; }
 .landing .join-form .btn { flex: 1 1 9rem; height: 3.4rem; }
 .landing .way-note { font-size: 0.95rem; color: var(--grau); margin: 0; }
 
@@ -100,9 +103,9 @@
 .landing .umsteigen { margin-top: 3.2rem; border-top: 6px solid var(--tinte); padding-top: 1.4rem; }
 .landing .umsteigen h2 { font-size: 2rem; margin-bottom: 0.8rem; }
 .landing .umsteigen ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.7rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
-.landing .umsteigen a { display: grid; grid-template-columns: auto 1fr; gap: 0.2rem 0.8rem; align-items: center; padding: 0.9rem 1rem; border: 4px solid var(--tinte); border-radius: var(--r); background: #fff; text-decoration: none; height: 100%; }
+.landing .umsteigen a { display: grid; grid-template-columns: auto 1fr; gap: 0.2rem 0.8rem; align-items: center; padding: 0.9rem 1rem; border: 4px solid var(--tinte); border-radius: var(--r); background: var(--karte); text-decoration: none; height: 100%; }
 .landing .umsteigen a:hover { background: var(--flaeche); }
-.landing .umsteigen i { display: inline-grid; place-items: center; width: 2.4rem; height: 2.4rem; border-radius: 0.6rem; font: 800 1.6rem/1 var(--display); font-style: normal; color: var(--tinte); }
+.landing .umsteigen i { display: inline-grid; place-items: center; width: 2.4rem; height: 2.4rem; border-radius: 0.6rem; font: 800 1.6rem/1 var(--display); font-style: normal; color: #12352a; }
 .landing .umsteigen b { font: 800 1.5rem/1.05 var(--display); }
 .landing .umsteigen .t { grid-column: 1 / -1; font-size: 1rem; color: var(--grau); }
 

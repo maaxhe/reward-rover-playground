@@ -65,7 +65,7 @@ export function LevelUnlocksCard({ currentLevel, translate }: LevelUnlocksCardPr
               ) : (
                 <Lock className="h-4 w-4 text-muted-foreground/50 flex-shrink-0" />
               )}
-              <span className={`flex-1 ${isUnlocked ? "font-medium" : "opacity-60"}`}>
+              <span className={`flex-1 ${isUnlocked ? "font-medium" : "opacity-75"}`}>
                 {label}
               </span>
               {!isUnlocked && (

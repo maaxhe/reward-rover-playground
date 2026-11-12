@@ -38,7 +38,7 @@ export function ParametersPanel({
 
   return (
     <Card
-      className={cn("border-0 border-t border-border/60 bg-transparent p-0 pt-4 shadow-none rounded-none transition-opacity", disabled && "pointer-events-none opacity-40 grayscale")}
+      className={cn("border-0 border-t border-border/60 bg-transparent p-0 pt-4 shadow-none rounded-none transition-opacity", disabled && "pointer-events-none opacity-75 grayscale")}
       aria-disabled={disabled}
     >
       <div className="mb-4 flex items-center justify-between">
@@ -100,7 +100,7 @@ export function ParametersPanel({
           data-tutorial="alpha"
           className={cn(
             "space-y-2 transition-opacity",
-            alphaLocked && "opacity-50 pointer-events-none"
+            alphaLocked && "opacity-75 pointer-events-none"
           )}
         >
           <div className="flex justify-between items-center">
@@ -142,7 +142,7 @@ export function ParametersPanel({
           data-tutorial="gamma"
           className={cn(
             "space-y-2 transition-opacity",
-            gammaLocked && "opacity-50 pointer-events-none"
+            gammaLocked && "opacity-75 pointer-events-none"
           )}
         >
           <div className="flex justify-between items-center">

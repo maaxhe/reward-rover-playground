@@ -25,7 +25,7 @@ All colors MUST be HSL.
     --secondary-foreground: 161 49% 14%;
 
     --muted: 152 38% 92%;
-    --muted-foreground: 157 16% 36%;
+    --muted-foreground: 154 21% 29%;
 
     --accent: 153 38% 54%;
     --accent-foreground: 161 49% 14%;
@@ -33,7 +33,7 @@ All colors MUST be HSL.
     --destructive: 0 69% 71%;
     --destructive-foreground: 161 49% 14%;
 
-    --border: 150 23% 78%;
+    --border: 151 18% 60%;
     --input: 161 49% 14%;
     --ring: 161 49% 14%;
 
@@ -41,19 +41,19 @@ All colors MUST be HSL.
     --rr-oil: #f5c518;
     --rr-buoy: #12352a;
     --rr-glass: #12352a;
-    --rr-violet: #9a86dc;
+    --rr-violet: #4a3a99;
     --rr-candy: #ee9a5a;
     --ink: #12352a;
-    --tile-bg: #ffffff;
+    --tile-bg: #e4f3ea;
     --tile-reward: #ee9a5a;
     --tile-punishment: #e88080;
     --tile-obstacle: #12352a;
     --tile-agent: #f5c518;
     --tile-goal: #cdeedc;
     --tile-portal: #9a86dc;
-    --tile-outline: #b4e0c9;
+    --tile-outline: rgba(18, 53, 42, 0.38);
     --tile-text-on-light: #12352a;
-    --tile-text-on-dark: #f5fbf8;
+    --tile-text-on-dark: #12352a;
     --grid-line: 150 23% 78%;
     --visited: 153 38% 54%;
 
@@ -70,6 +70,18 @@ All colors MUST be HSL.
 
     --radius: 1rem;
 
+    /* Seitenfarben für Landing und Umsteigeleiste (hell) */
+    --hz-papier: #f5fbf8;
+    --hz-flaeche: #cdeedc;
+    --hz-flaeche-tief: #b4e0c9;
+    --hz-tinte: #12352a;
+    --hz-grau: #4d6a5f;
+    --hz-karte: #ffffff;
+    --wall-a: #12352a;
+    --wall-b: #ffffff;
+    --rover-ink: #12352a;
+    color-scheme: light;
+
     --sidebar-background: 152 38% 92%;
     --sidebar-foreground: 161 49% 14%;
     --sidebar-primary: 161 49% 14%;
@@ -78,6 +90,64 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 161 49% 14%;
     --sidebar-border: 150 23% 78%;
     --sidebar-ring: 161 49% 14%;
+  }
+
+  /* Dunkel (Standard): dasselbe Liniennetz-Design in tiefem Grün, Tinte wird hell. */
+  :root[data-theme="dark"] {
+    --background: 164 47% 11%;
+    --foreground: 150 39% 93%;
+    --card: 165 47% 15%;
+    --card-foreground: 150 39% 93%;
+    --popover: 165 47% 15%;
+    --popover-foreground: 150 39% 93%;
+    --primary: 150 39% 93%;
+    --primary-foreground: 164 47% 11%;
+    --secondary: 165 44% 20%;
+    --secondary-foreground: 150 39% 93%;
+    --muted: 164 45% 16%;
+    --muted-foreground: 152 22% 78%;
+    --accent: 153 38% 54%;
+    --accent-foreground: 164 47% 11%;
+    --destructive: 0 69% 71%;
+    --destructive-foreground: 164 47% 11%;
+    --border: 160 27% 43%;
+    --input: 150 39% 93%;
+    --ring: 150 39% 93%;
+
+    --ink: #e6f4ed;
+    --rr-glass: #e6f4ed;
+    --tile-bg: #0b211b;
+    --tile-goal: #1d4a3f;
+    --tile-outline: rgba(230, 244, 237, 0.42);
+    --tile-text-on-light: #e6f4ed;
+    --tile-text-on-dark: #0f2a23;
+    --grid-line: 162 34% 26%;
+    --gradient-main: linear-gradient(180deg, #0f2a23, #0f2a23);
+    --gradient-card: linear-gradient(135deg, #153a31, #153a31);
+    --glow-agent: 0 0 0 3px rgba(230, 244, 237, 0.25);
+    --glow-primary: 0 0 0 3px rgba(230, 244, 237, 0.2);
+    --shadow-soft: 0 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-medium: 0 4px 0 rgba(0, 0, 0, 0.35);
+    --shadow-xl: 0 8px 0 rgba(0, 0, 0, 0.4);
+
+    --hz-papier: #0f2a23;
+    --hz-flaeche: #1d4a3f;
+    --hz-flaeche-tief: #173d33;
+    --hz-tinte: #e6f4ed;
+    --hz-grau: #9bb8ac;
+    --hz-karte: #153a31;
+    --wall-a: #e6f4ed;
+    --wall-b: #153a31;
+    color-scheme: dark;
+
+    --sidebar-background: #173d33;
+    --sidebar-foreground: #e6f4ed;
+    --sidebar-primary: #e6f4ed;
+    --sidebar-primary-foreground: #0f2a23;
+    --sidebar-accent: #1d4a3f;
+    --sidebar-accent-foreground: #e6f4ed;
+    --sidebar-border: #2c5a4c;
+    --sidebar-ring: #e6f4ed;
   }
 }
 
@@ -94,6 +164,7 @@ All colors MUST be HSL.
 
   html {
     overflow-x: clip;
+    font-size: 106.25%;
   }
 
   h1, h2, h3 {
@@ -107,7 +178,7 @@ All colors MUST be HSL.
   .bg-tile-empty { background-color: var(--tile-bg); }
   .bg-tile-reward { background-color: var(--tile-reward); }
   .bg-tile-punishment { background-color: var(--tile-punishment); }
-  .bg-tile-obstacle { background: repeating-linear-gradient(135deg, #12352a 0 3px, #ffffff 3px 9px); }
+  .bg-tile-obstacle { background: repeating-linear-gradient(135deg, var(--wall-a) 0 3px, var(--wall-b) 3px 9px); }
   .bg-tile-agent { background-color: var(--tile-agent); }
   .bg-tile-goal { background-color: var(--tile-goal); }
   .bg-tile-portal { background-color: var(--tile-portal); }
@@ -309,15 +380,20 @@ All colors MUST be HSL.
 
 /* Board shapes, shared by the playground, the classroom board and the legend.
    They size themselves relative to their tile, so they work from 24px to 60px. */
-.rr-cell { background: var(--tile-bg); }
-.rr-wall { background: repeating-linear-gradient(135deg, #12352a 0 3px, #ffffff 3px 9px); }
+.rr-cell { background: var(--tile-bg); box-shadow: inset 0 0 0 2px var(--tile-outline); }
+/* Jede Kachelart hat eine eigene Farbe, damit man sie auf einen Blick unterscheidet. Die Formen darauf sind immer dunkel. */
+.rr-cell:has(.rr-goal) { background: #5cb68e; }
+.rr-cell:has(.rr-trap) { background: #e88080; }
+.rr-cell:has(.rr-candy) { background: #fbd9bb; }
+.rr-cell:has(.rr-portal) { background: #d9d0f5; }
+.rr-wall { background: repeating-linear-gradient(135deg, var(--wall-a) 0 3px, var(--wall-b) 3px 9px); }
 .rr-goal {
   width: 70%;
   height: 70%;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--rr-glass) 0 16%, transparent 17% 36%, var(--rr-glass) 37% 54%, transparent 55% 68%, var(--rr-glass) 69% 100%);
+  background: radial-gradient(circle, #12352a 0 16%, transparent 17% 36%, #12352a 37% 54%, transparent 55% 68%, #12352a 69% 100%);
 }
-.rr-candy { width: 38%; height: 38%; background: var(--rr-candy); border: 2px solid var(--ink); transform: rotate(45deg); border-radius: 12%; }
+.rr-candy { width: 38%; height: 38%; background: var(--rr-candy); border: 2px solid var(--rover-ink); transform: rotate(45deg); border-radius: 12%; }
 .rr-trap {
   width: 44%;
   height: 44%;
@@ -335,7 +411,7 @@ All colors MUST be HSL.
   width: 62%;
   height: 62%;
   background: var(--rr-oil);
-  border: 2px solid var(--ink);
+  border: 2px solid var(--rover-ink);
   border-radius: 30% 30% 22% 22%;
   z-index: 2;
 }
@@ -346,7 +422,7 @@ All colors MUST be HSL.
   top: 30%;
   width: 14%;
   height: 14%;
-  background: var(--ink);
+  background: var(--rover-ink);
   border-radius: 50%;
 }
 .rr-rover::before { left: 27%; }

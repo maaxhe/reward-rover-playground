@@ -3584,7 +3584,7 @@ const handleActiveBonusClick = useCallback(() => {
               className={cn(
                 "flex flex-col gap-4 rounded-xl border border-border bg-card/95 p-6 text-foreground overflow-y-auto",
                 "h-auto", showConsolePanel && "xl:min-h-[var(--console-height)]",
-                mode === "comparison" && "pointer-events-none opacity-40 grayscale",
+                mode === "comparison" && "pointer-events-none opacity-75 grayscale",
               )}
               style={{
                 ["--console-height" as string]: `${cardHeight}px`,
@@ -3806,7 +3806,7 @@ const handleActiveBonusClick = useCallback(() => {
             style={{ ["--board-height" as string]: `${cardHeight}px` }}
             className={cn(
               "flex flex-col rounded-xl border border-border bg-card/95 p-4 sm:p-6 text-foreground w-full h-auto xl:h-[var(--board-height)] xl:w-fit mx-auto overflow-x-hidden overflow-y-auto",
-              mode === "comparison" && "pointer-events-none opacity-40 grayscale",
+              mode === "comparison" && "pointer-events-none opacity-75 grayscale",
             )}
           >
             <div className="mb-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">

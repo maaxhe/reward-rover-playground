@@ -338,7 +338,7 @@ export const ControlBar = ({
           <Button
             variant={mode === "random" ? "default" : "outline"}
             onClick={() => !isMobile && onModeChange("random")}
-            className={cn("rounded-lg font-semibold", isMobile && "cursor-not-allowed opacity-50")}
+            className={cn("rounded-lg font-semibold", isMobile && "cursor-not-allowed opacity-75")}
             disabled={isMobile}
           >
             {translate("Zufallsmodus", "Random Mode")}
@@ -353,7 +353,7 @@ export const ControlBar = ({
           <Button
             variant={mode === "comparison" ? "default" : "outline"}
             onClick={() => !isMobile && onModeChange("comparison")}
-            className={cn("rounded-lg font-semibold", isMobile && "cursor-not-allowed opacity-50")}
+            className={cn("rounded-lg font-semibold", isMobile && "cursor-not-allowed opacity-75")}
             disabled={isMobile}
           >
             {translate("Vergleichsmodus", "Comparison Mode")}
