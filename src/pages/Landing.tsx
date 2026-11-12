@@ -4,6 +4,7 @@ import "./landing.css";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import { RLGuideButton } from "@/components/RL/RLGuideDialog";
 import { LiveRover } from "@/components/landing/LiveRover";
+import { LevelStrecke } from "@/components/landing/LevelStrecke";
 
 const REPO_URL = "https://github.com/maaxhe/reward-rover-playground";
 
@@ -127,6 +128,11 @@ const LandingContent = () => {
               </div>
             </li>
           </ul>
+        </section>
+
+        <section className="section" aria-labelledby="strecke">
+          <h2 id="strecke">{translate("Die Strecke der Level", "The line of levels")}</h2>
+          <LevelStrecke translate={translate} />
         </section>
 
         <section className="section note" aria-labelledby="why">

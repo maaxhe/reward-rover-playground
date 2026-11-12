@@ -1,0 +1,18 @@
+/* Level als Haltestellen mit Bahn (Logik in src/hooks/useStrecke.ts) */
+.landing .level-strecke { --sx: calc(0.6rem + 5px); --sy: 1.3rem; list-style: none; margin: 0; padding: 0; max-width: 40rem; position: relative; }
+.landing .level-strecke li { position: relative; padding-left: 2.6rem; margin: 0; }
+.landing .level-strecke li::before { content: ""; position: absolute; left: 0.6rem; top: 0; bottom: 0; width: 10px; background: var(--lk); }
+.landing .level-strecke li:first-child::before { top: var(--sy); }
+.landing .level-strecke li:last-of-type::before { bottom: calc(100% - var(--sy)); }
+.landing .level-strecke li::after { content: ""; position: absolute; left: 0.2rem; top: var(--sy); width: 18px; height: 18px; margin-top: -9px; box-sizing: border-box; border-radius: 50%; background: var(--papier); border: 4px solid var(--tinte); }
+.landing .level-strecke .halt { display: block; padding: 0.55rem 0 1.1rem; color: inherit; text-decoration: none; }
+.landing .level-strecke .halt-titel { display: block; font-family: var(--display); font-weight: 800; font-size: 1.55rem; line-height: 1.1; color: var(--tinte); }
+.landing .level-strecke a.halt:hover .halt-titel { text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 4px; }
+.landing .level-strecke .halt-text { display: block; margin-top: 0.2rem; color: var(--grau); font-size: 1rem; line-height: 1.45; }
+
+.landing .level-strecke .zug { position: absolute; left: 0; top: 0; width: 20px; height: 30px; z-index: 2; pointer-events: auto; cursor: pointer; will-change: transform; transition: opacity 0.5s; }
+.landing .level-strecke .zug::after { content: ""; position: absolute; inset: -9px; }
+.landing .level-strecke .zug .k { width: 100%; height: 100%; border-radius: 7px; background: var(--lk); border: 2px solid var(--tinte); box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2); display: flex; flex-direction: column; justify-content: space-evenly; align-items: center; }
+.landing .level-strecke .zug .k span { width: 56%; height: 4px; border-radius: 2px; background: var(--papier); }
+.landing .level-strecke .zug .k.hop { animation: level-strecke-hop 0.45s cubic-bezier(0.2, 0.8, 0.3, 1.4); }
+@keyframes level-strecke-hop { 0% { transform: scale(1); } 40% { transform: scale(1.45) rotate(-8deg); } 100% { transform: scale(1); } }
