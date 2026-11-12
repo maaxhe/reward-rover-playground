@@ -9,6 +9,7 @@ const LINIEN = [
   { id: "p", name: "KI-Berufs-Puzzle", href: "https://jobs.coxilab.de/", farbe: "#9a86dc" },
   { id: "r", name: "Reward Rover", href: "https://rover.coxilab.de/", farbe: "#5cb68e" },
   { id: "h", name: "Handzeichen", href: "https://handzeichen.com/lehrkraefte", farbe: "#ee9a5a" },
+  { id: "a", name: "Artikel", href: "https://maximilianherrmann.com/blog/", farbe: "#5aaed6" },
 ];
 
 const Sonne = () => (

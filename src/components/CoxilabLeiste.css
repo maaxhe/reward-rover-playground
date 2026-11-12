@@ -24,6 +24,6 @@ html[data-theme="dark"] .cx-leiste{--cx-bg:#0c1a2b;--cx-ink:#e6f0fa;--cx-line:rg
 .cx-theme button[aria-pressed="true"]{background:var(--cx-ink);color:var(--cx-bg)}
 .cx-theme button:not([aria-pressed="true"]):hover{background:var(--cx-hover)}
 .cx-leiste :focus-visible{outline:2px solid var(--cx-ink);outline-offset:2px}
-@media (max-width:760px){.cx-info{display:none}}
-@media (max-width:620px){.cx-leiste li a span,.cx-theme button span,.cx-zurueck span{display:none}.cx-leiste li a,.cx-zurueck{padding:0 3px}.cx-theme button{padding:0 9px}}
+@media (max-width:1010px){.cx-info{display:none}}
+@media (max-width:900px){.cx-leiste li a span,.cx-theme button span,.cx-zurueck span{display:none}.cx-leiste li a,.cx-zurueck{padding:0 3px}.cx-theme button{padding:0 9px}}
 @media print{.cx-leiste{display:none}}
