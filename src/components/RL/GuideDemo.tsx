@@ -34,7 +34,7 @@ interface Props {
 }
 
 /** Runs the rover must finish before the demo counts as played. */
-export const DEMO_RUNS_NEEDED = 8;
+export const DEMO_RUNS_NEEDED = 4;
 
 const TICK = { normal: 200, fast: 60 } as const;
 
@@ -108,14 +108,18 @@ export function GuideDemo({ world, initial, dials = [], consumeRewards = true, t
     return () => window.clearInterval(id);
   }, [running, tick, consumeRewards]);
 
+  // Runden aus früheren Anläufen ("Von vorn") bleiben gezählt, damit ein Neustart den Fortschritt nicht wegwirft.
+  const bankRef = useRef(0);
   const restart = () => {
+    bankRef.current += stateRef.current.episode;
     stateRef.current = fresh();
     setView(stateRef.current);
     setPaused(false);
   };
 
   const history = view.episodeHistory;
-  const runsDone = view.episode >= DEMO_RUNS_NEEDED;
+  const gespielt = bankRef.current + view.episode;
+  const runsDone = gespielt >= DEMO_RUNS_NEEDED;
   const needsDial = dials.length > 0 && !touched;
   const complete = alreadyDone || (runsDone && !needsDial);
   const completeRef = useRef(onComplete);
@@ -200,7 +204,7 @@ export function GuideDemo({ world, initial, dials = [], consumeRewards = true, t
               {complete
                 ? t("✓ Geschafft. Unten geht es weiter.", "✓ Done. The next part is unlocked below.")
                 : !runsDone
-                  ? t(`Noch ${DEMO_RUNS_NEEDED - view.episode} Runden zuschauen, dann geht es unten weiter.`, `Watch ${DEMO_RUNS_NEEDED - view.episode} more runs to unlock the next part.`)
+                  ? t(`Runde ${gespielt} von ${DEMO_RUNS_NEEDED}: noch ${DEMO_RUNS_NEEDED - gespielt} zuschauen, dann geht es unten weiter.`, `Run ${gespielt} of ${DEMO_RUNS_NEEDED}: watch ${DEMO_RUNS_NEEDED - gespielt} more to unlock the next part.`)
                   : t("Dreh an einem Regler, dann geht es unten weiter.", "Move a dial to unlock the next part.")}
             </p>
           )}
