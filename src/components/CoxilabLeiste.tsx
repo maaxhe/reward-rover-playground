@@ -4,7 +4,8 @@ import { currentTheme, setTheme, type Theme } from "@/lib/theme";
 import "./CoxilabLeiste.css";
 
 // Schmale Leiste über jedem Rover-Bildschirm: Rückweg zu coxilab.de, Umsteigen zu den anderen Werkzeugen
-// und der Schalter für Hell und Dunkel. Die Farben der Pillen sind die Linienfarben des coxilab-Liniennetzes.
+// und der Schalter für Hell und Dunkel. Auf der Startseite stehen die vier Linien offen, im Spiel und im
+// Klassenraum bleibt es ruhig: nur "← coxilab" und ein "Umsteigen"-Knopf, der die Linien aufklappt.
 const LINIEN = [
   { id: "d", name: "Dilemma", href: "https://dilemma.coxilab.de/", farbe: "#e88080" },
   { id: "p", name: "KI-Berufs-Puzzle", href: "https://jobs.coxilab.de/", farbe: "#9a86dc" },
@@ -27,27 +28,40 @@ const Mond = () => (
 export const CoxilabLeiste = () => {
   const { pathname } = useLocation();
   const [theme, setT] = useState<Theme>(currentTheme());
+  const [offen, setOffen] = useState(false);
   // Auf dem Beamer und im laufenden Klassenspiel braucht jeder den ganzen Bildschirm.
   if (pathname.startsWith("/klasse/beamer") || pathname.startsWith("/klasse/play")) return null;
   const en = typeof document !== "undefined" && document.documentElement.lang.startsWith("en");
+  const kompakt = pathname !== "/";
   const wahl = (t: Theme) => {
     setTheme(t);
     setT(t);
   };
+  const liste = (
+    <ul>
+      {LINIEN.map((l) => (
+        <li key={l.id}>
+          <a href={l.href} aria-current={l.id === "r" ? "page" : undefined} style={{ ["--lf" as string]: l.farbe }}>
+            <i aria-hidden="true">{l.id.toUpperCase()}</i>
+            <span>{l.name}</span>
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
   return (
-    <nav className="cx-leiste" aria-label="coxilab">
+    <nav className={kompakt ? "cx-leiste cx-kompakt" : "cx-leiste"} aria-label="coxilab">
       <a className="cx-zurueck" href="https://coxilab.de/">coxilab</a>
-      <span className="cx-info">{en ? "Switch to:" : "Umsteigen:"}</span>
-      <ul>
-        {LINIEN.map((l) => (
-          <li key={l.id}>
-            <a href={l.href} aria-current={l.id === "r" ? "page" : undefined} style={{ ["--lf" as string]: l.farbe }}>
-              <i aria-hidden="true">{l.id.toUpperCase()}</i>
-              <span>{l.name}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
+      {kompakt ? (
+        <button type="button" className="cx-umsteigen" aria-expanded={offen} onClick={() => setOffen(!offen)}>
+          {en ? "Switch tool" : "Umsteigen"} <span aria-hidden="true">{offen ? "▴" : "▾"}</span>
+        </button>
+      ) : (
+        <>
+          <span className="cx-info">{en ? "Switch to:" : "Umsteigen:"}</span>
+          {liste}
+        </>
+      )}
       <div className="cx-theme" role="group" aria-label={en ? "Colour scheme" : "Farbschema"}>
         <button type="button" aria-pressed={theme === "light"} onClick={() => wahl("light")} title={en ? "Light" : "Hell"}>
           <Sonne /><span>{en ? "Light" : "Hell"}</span>
@@ -56,6 +70,7 @@ export const CoxilabLeiste = () => {
           <Mond /><span>{en ? "Dark" : "Dunkel"}</span>
         </button>
       </div>
+      {kompakt && offen ? <div className="cx-aufgeklappt">{liste}</div> : null}
     </nav>
   );
 };

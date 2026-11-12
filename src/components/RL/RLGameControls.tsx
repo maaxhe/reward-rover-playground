@@ -325,7 +325,7 @@ export const ControlBar = ({
   if (levelMode) return null;
 
   return (
-    <div className="rounded-2xl border-[3px] border-foreground bg-card p-4 text-foreground">
+    <div className="rounded-2xl border-2 border-border bg-card p-4 text-foreground">
       <div className="flex flex-wrap items-center justify-center gap-3">
         <Button
           variant={mode === "playground" ? "default" : "outline"}

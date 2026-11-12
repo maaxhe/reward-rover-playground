@@ -2648,7 +2648,7 @@ const handleActiveBonusClick = useCallback(() => {
           <Collapsible open={showIntro} onOpenChange={setShowIntro}>
             <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
               <div className="grid md:grid-cols-2 gap-6 pt-3">
-                <Card className="rounded-2xl border-[3px] border-foreground bg-secondary p-5 shadow-soft ">
+                <Card className="rounded-2xl border-2 border-border bg-secondary p-5 shadow-soft ">
                   <h3 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
                     {translate(
                       "Exploration vs. Exploitation",
@@ -2677,7 +2677,7 @@ const handleActiveBonusClick = useCallback(() => {
                     )}
                   </p>
                 </Card>
-                <Card className="rounded-2xl border-[3px] border-foreground bg-secondary p-5 shadow-soft ">
+                <Card className="rounded-2xl border-2 border-border bg-secondary p-5 shadow-soft ">
                   <h3 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
                     {translate("Three Modes to Explore", "Three modes to explore")}
                   </h3>

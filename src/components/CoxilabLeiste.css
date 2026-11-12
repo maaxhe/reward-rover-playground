@@ -1,21 +1,25 @@
-/* Umsteigeleiste: oben auf jedem Rover-Bildschirm, im Stil des coxilab-Liniennetzes. Farben aus den --hz-Variablen (Hell und Dunkel). */
-.cx-leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.6rem; padding: 0.55rem max(16px, env(safe-area-inset-left)); background: var(--hz-papier); border-bottom: 2px solid var(--hz-tinte); color: var(--hz-grau); font: 600 0.9rem/1.2 "Barlow", system-ui, sans-serif; }
+/* Umsteigeleiste: ruhig und schmal. Farben aus den --hz-Variablen (Hell und Dunkel). */
+.cx-leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; padding: 0.4rem max(16px, env(safe-area-inset-left)); background: var(--hz-papier); border-bottom: 1px solid color-mix(in srgb, var(--hz-tinte) 30%, transparent); color: var(--hz-grau); font: 600 0.85rem/1.2 "Barlow", system-ui, sans-serif; }
 .cx-leiste a { color: inherit; text-decoration: none; }
-.cx-zurueck { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.1rem 0.7rem 0.1rem 0.15rem; border: 2.5px solid var(--hz-tinte); border-radius: 999px; color: var(--hz-tinte) !important; background: var(--hz-papier); }
-.cx-zurueck::before { content: "←"; display: inline-grid; place-items: center; width: 1.4rem; height: 1.4rem; border-radius: 50%; background: var(--hz-tinte); color: var(--hz-papier); font-weight: 800; }
+.cx-zurueck { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--hz-tinte) !important; font-weight: 700; }
+.cx-zurueck::before { content: "←"; display: inline-grid; place-items: center; width: 1.3rem; height: 1.3rem; border-radius: 50%; background: var(--hz-tinte); color: var(--hz-papier); font-weight: 800; }
+.cx-zurueck:hover { text-decoration: underline; text-underline-offset: 3px; }
 .cx-info { margin-left: 0.2rem; }
-.cx-leiste ul { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
-.cx-leiste li a { display: inline-flex; align-items: center; gap: 0.45rem; padding: 0.1rem 0.7rem 0.1rem 0.15rem; border: 2.5px solid var(--hz-tinte); border-radius: 999px; color: var(--hz-tinte); background: var(--hz-papier); }
+.cx-leiste ul { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0; padding: 0; list-style: none; }
+.cx-leiste li a { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.05rem 0.65rem 0.05rem 0.15rem; border: 1.5px solid color-mix(in srgb, var(--hz-tinte) 55%, transparent); border-radius: 999px; color: var(--hz-tinte); background: transparent; }
 .cx-leiste li a:hover { background: var(--hz-flaeche); }
-.cx-leiste li a[aria-current="page"] { background: var(--hz-tinte); color: var(--hz-papier); }
-.cx-leiste li i { display: inline-grid; place-items: center; width: 1.4rem; height: 1.4rem; border-radius: 50%; background: var(--lf); color: #12352a; font: 800 0.9rem/1 "Barlow Condensed", system-ui, sans-serif; font-style: normal; }
+.cx-leiste li a[aria-current="page"] { background: var(--hz-tinte); color: var(--hz-papier); border-color: var(--hz-tinte); }
+.cx-leiste li i { display: inline-grid; place-items: center; width: 1.3rem; height: 1.3rem; border-radius: 50%; background: var(--lf); color: #12352a; font: 800 0.85rem/1 "Barlow Condensed", system-ui, sans-serif; font-style: normal; }
+.cx-umsteigen { border: 0; background: transparent; color: var(--hz-grau); font: inherit; cursor: pointer; padding: 0.1rem 0.3rem; border-radius: 6px; }
+.cx-umsteigen:hover { color: var(--hz-tinte); background: var(--hz-flaeche); }
+.cx-aufgeklappt { flex-basis: 100%; padding: 0.3rem 0 0.2rem; }
 
 /* Hell/Dunkel */
-.cx-theme { display: inline-flex; margin-left: auto; border: 2.5px solid var(--hz-tinte); border-radius: 999px; overflow: hidden; background: var(--hz-papier); }
-.cx-theme button { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.1rem 0.7rem; border: 0; background: transparent; color: var(--hz-tinte); font: inherit; cursor: pointer; }
-.cx-theme button + button { border-left: 2.5px solid var(--hz-tinte); }
-.cx-theme button svg { width: 1.05rem; height: 1.05rem; }
+.cx-theme { display: inline-flex; margin-left: auto; border: 1.5px solid color-mix(in srgb, var(--hz-tinte) 55%, transparent); border-radius: 999px; overflow: hidden; background: transparent; }
+.cx-theme button { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.05rem 0.65rem; border: 0; background: transparent; color: var(--hz-tinte); font: inherit; cursor: pointer; }
+.cx-theme button + button { border-left: 1.5px solid color-mix(in srgb, var(--hz-tinte) 55%, transparent); }
+.cx-theme button svg { width: 1rem; height: 1rem; }
 .cx-theme button[aria-pressed="true"] { background: var(--hz-tinte); color: var(--hz-papier); }
 .cx-theme button:not([aria-pressed="true"]):hover { background: var(--hz-flaeche); }
 .cx-leiste :focus-visible { outline: 3px solid var(--hz-tinte); outline-offset: 2px; }
-@media (max-width: 560px) { .cx-leiste li a span, .cx-theme button span { display: none; } .cx-leiste li a { padding: 0.1rem; } .cx-theme button { padding: 0.1rem 0.5rem; } }
+@media (max-width: 560px) { .cx-leiste li a span, .cx-theme button span { display: none; } .cx-leiste li a { padding: 0.05rem; } .cx-theme button { padding: 0.05rem 0.5rem; } }

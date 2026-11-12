@@ -72,7 +72,7 @@ const ClassroomHost = () => {
     <ClassroomShell wide>
       <div className="grid gap-6 lg:grid-cols-[1fr_auto]">
         <div className="space-y-4">
-          <Card className="flex flex-wrap items-center gap-5 rounded-2xl border-foreground bg-card p-5">
+          <Card className="flex flex-wrap items-center gap-5 rounded-2xl border-border bg-card p-5">
             {/* White tile + quiet zone keep the code scannable in dark mode and on a projector. */}
             <div className="rounded-xl bg-white p-3 shadow-md">
               <QRCodeSVG value={joinUrl} size={160} level="M" marginSize={0} aria-label={`QR-Code zum Beitreten: ${joinUrl}`} />
@@ -90,7 +90,7 @@ const ClassroomHost = () => {
             </div>
           </Card>
 
-          <Card className="flex flex-wrap items-center gap-3 rounded-2xl border-foreground bg-card p-4">
+          <Card className="flex flex-wrap items-center gap-3 rounded-2xl border-border bg-card p-4">
             {room.phase === "lobby" && (
               <Button size="lg" disabled={busy || room.playerCount === 0} onClick={() => act(() => competitionApi.start(code, hostKey))}>
                 ▶ Training starten
@@ -131,7 +131,7 @@ const ClassroomHost = () => {
           {room.phase === "finished" && top3.length > 0 && (
             <div className="grid gap-3 sm:grid-cols-3">
               {top3.map((row) => (
-                <Card key={row.id} className="rounded-2xl border-foreground bg-card p-4 text-center">
+                <Card key={row.id} className="rounded-2xl border-border bg-card p-4 text-center">
                   <div className="text-4xl">{MEDALS[(row.rank ?? 1) - 1]}</div>
                   <div className="truncate text-lg font-bold">{row.name}</div>
                   <div className="text-sm tabular-nums">{row.totalReward} Pkt{row.reachedGoal ? ` · ${row.steps} Schritte` : ""}</div>

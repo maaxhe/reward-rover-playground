@@ -86,7 +86,7 @@ const Section = ({ id, title, need = 0, children }: { id: string; title: string;
 };
 
 const Dial = ({ symbol, name, line, tip }: { symbol: string; name: string; line: string; tip: string }) => (
-  <div className="grid gap-x-5 gap-y-1 rounded-2xl border-[3px] border-foreground bg-secondary p-5 sm:grid-cols-[4.5rem_1fr]">
+  <div className="grid gap-x-5 gap-y-1 rounded-2xl border-2 border-border bg-secondary p-5 sm:grid-cols-[4.5rem_1fr]">
     <div className="text-5xl font-extrabold leading-none text-primary">{symbol}</div>
     <div className="space-y-1">
       <h4 className="text-xl font-bold text-foreground">{name}</h4>
@@ -332,7 +332,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
                 "After every step the rover updates its memory with a single rule. In words: new value = old value + learning rate × (what I got + foresight × the best that can still come from there − old value).",
               )}
             </p>
-            <pre className="overflow-x-auto rounded-2xl border-[3px] border-foreground bg-secondary p-5 text-lg text-foreground">
+            <pre className="overflow-x-auto rounded-2xl border-2 border-border bg-secondary p-5 text-lg text-foreground">
               Q(s, a) ← Q(s, a) + α · [ r + γ · maxₐ′ Q(s′, a′) − Q(s, a) ]
             </pre>
             <p className="text-base text-muted-foreground">

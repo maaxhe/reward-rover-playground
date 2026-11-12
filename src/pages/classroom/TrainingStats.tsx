@@ -46,7 +46,7 @@ export function TrainingStats({ episodes, tests, shortest, bestServerReward }: P
   ];
 
   return (
-    <Card className="space-y-4 rounded-2xl border-foreground bg-card p-4">
+    <Card className="space-y-4 rounded-2xl border-border bg-card p-4">
       <h2 className="text-sm font-semibold uppercase tracking-wide">Deine Statistik</h2>
 
       <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">

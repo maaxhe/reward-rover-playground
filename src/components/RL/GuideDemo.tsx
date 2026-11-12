@@ -129,7 +129,7 @@ export function GuideDemo({ world, initial, dials = [], consumeRewards = true, t
   const walkable = view.grid.flat().filter((c) => c.type !== "obstacle").length;
 
   return (
-    <div ref={holder} className="rounded-2xl border-[3px] border-foreground bg-card p-4 sm:p-6">
+    <div ref={holder} className="rounded-2xl border-2 border-border bg-card p-4 sm:p-6">
       <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start">
         <div className="flex-shrink-0">
           <CompetitionBoard

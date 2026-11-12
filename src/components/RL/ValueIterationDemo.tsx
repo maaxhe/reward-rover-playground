@@ -112,7 +112,7 @@ export function ValueIterationDemo({ translate: t, initialGamma = 0.9, world = P
   })();
 
   return (
-    <div className="rounded-2xl border-[3px] border-foreground bg-card p-4 sm:p-6">
+    <div className="rounded-2xl border-2 border-border bg-card p-4 sm:p-6">
       <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start">
         <div
           role="img"

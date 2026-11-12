@@ -56,7 +56,7 @@ const LandingContent = () => {
             <div className="cta-row">
               <Link to="/spiel" className="btn btn-primary">{translate("Mit Level 1 anfangen", "Start with level 1")}</Link>
               <Link to="/klasse" className="btn btn-ghost">{translate("Eine Klasse einladen", "Invite a class")}</Link>
-              <RLGuideButton size="default" variant="outline" className="h-auto rounded-full border-[4px] border-foreground bg-transparent px-5 py-3 text-base font-extrabold text-inherit hover:bg-background" />
+              <RLGuideButton size="default" variant="outline" className="h-auto rounded-full border-[3px] border-foreground bg-transparent px-5 py-3 text-base font-extrabold text-inherit hover:bg-background" />
             </div>
           </div>
           <LiveRover translate={translate} />

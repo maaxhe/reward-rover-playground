@@ -60,7 +60,7 @@ function Video({ id, title }: { id: string; title: string }) {
   const { translate: t } = useLanguage();
   const [playing, setPlaying] = useState(false);
   return (
-    <div className="aspect-video w-full overflow-hidden rounded-2xl border-[3px] border-foreground bg-secondary">
+    <div className="aspect-video w-full overflow-hidden rounded-2xl border-2 border-border bg-secondary">
       {playing ? (
         <iframe
           className="h-full w-full"
@@ -175,7 +175,7 @@ export function RealRobotsCard() {
   const { translate: t } = useLanguage();
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-2xl border-[3px] border-foreground bg-card p-4">
+    <div className="rounded-2xl border-2 border-border bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-sm font-semibold">{t("Und in echt?", "And in real life?")}</h2>

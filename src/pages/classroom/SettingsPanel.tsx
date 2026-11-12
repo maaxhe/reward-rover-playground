@@ -88,7 +88,7 @@ export const SettingsPanel = ({ code, hostKey, settings, seed, levelId = null, o
   };
 
   return (
-    <Card className="space-y-4 rounded-2xl border-foreground bg-card p-5">
+    <Card className="space-y-4 rounded-2xl border-border bg-card p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-bold">Einstellungen</h2>
         <Button
