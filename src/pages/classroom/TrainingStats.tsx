@@ -46,12 +46,12 @@ export function TrainingStats({ episodes, tests, shortest, bestServerReward }: P
   ];
 
   return (
-    <Card className="space-y-4 rounded-lg border-border/40 bg-card/60 p-4">
+    <Card className="space-y-4 rounded-2xl border-foreground bg-card p-4">
       <h2 className="text-sm font-semibold uppercase tracking-wide">Deine Statistik</h2>
 
       <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {tiles.map((tile) => (
-          <div key={tile.label} className="rounded-lg border border-border/50 bg-background/60 p-2.5">
+          <div key={tile.label} className="rounded-lg border border-border bg-background/60 p-2.5">
             <dt className="text-xs text-muted-foreground">{tile.label}</dt>
             <dd className="text-2xl font-bold tabular-nums leading-tight">{tile.value}</dd>
             {tile.note && <p className="text-xs text-muted-foreground">{tile.note}</p>}

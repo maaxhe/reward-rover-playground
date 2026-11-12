@@ -79,7 +79,7 @@ export const ReplayBoard = ({ world, replay, tileSize: fixedTileSize, loop = fal
         label={`Replay ${replay.name}`}
       />
       {!compact && replay.paramLog && replay.paramLog.length > 0 && (
-        <div className="space-y-1 rounded-lg border border-border/40 bg-card/60 p-3">
+        <div className="space-y-1 rounded-2xl border-[3px] border-foreground bg-card p-3">
           <h4 className="text-sm font-semibold">So hat {replay.name} die Regler benutzt</h4>
           <ParamSummary log={replay.paramLog} />
           <ParamTimeline log={replay.paramLog} />

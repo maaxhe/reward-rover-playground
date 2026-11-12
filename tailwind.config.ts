@@ -20,8 +20,9 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				sans: ["Bricolage Grotesque Variable", "system-ui", "sans-serif"],
-				mono: ["Bricolage Grotesque Variable", "system-ui", "sans-serif"],
+				sans: ["Barlow", "system-ui", "sans-serif"],
+				display: ["Barlow Condensed", "Arial Narrow", "sans-serif"],
+				mono: ["Barlow", "system-ui", "sans-serif"],
 			},
 			colors: {
 				border: 'hsl(var(--border))',

@@ -55,7 +55,7 @@ export const CompetitionBoard = ({ grid, agent, goal, tileSize, showArrows = fal
   <div
     role="img"
     aria-label={label}
-    className="relative inline-grid gap-0 rounded-xl border border-border/50 bg-background/80 p-2 shadow-soft"
+    className="relative inline-grid gap-0 rounded-xl border border-border bg-background/80 p-2 shadow-soft"
     style={{ gridTemplateColumns: `repeat(${grid.length}, ${tileSize}px)` }}
   >
     {grid.map((row, y) =>

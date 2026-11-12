@@ -41,7 +41,7 @@ const MAIN: RobotVideo[] = [
   {
     id: "r0oCfSm4gHk",
     title: ["Figure 02 lernt natürlich zu gehen", "Figure 02 learns to walk naturally"],
-    channel: "Figure 02",
+    channel: "Reach the Future",
     link: [
       "Auch hier wurde das Gehen in der Simulation geübt und dann auf den echten Roboter übertragen („Sim-to-Real“). Wie dein Rover braucht er erst viel Neugier (ε) und wird später sicherer.",
       "Here too walking was practised in simulation and then moved to the real robot (“sim-to-real”). Like your rover it needs lots of curiosity (ε) first and gets more confident later.",
@@ -60,7 +60,7 @@ function Video({ id, title }: { id: string; title: string }) {
   const { translate: t } = useLanguage();
   const [playing, setPlaying] = useState(false);
   return (
-    <div className="aspect-video w-full overflow-hidden rounded-xl border border-border bg-secondary/40">
+    <div className="aspect-video w-full overflow-hidden rounded-2xl border-[3px] border-foreground bg-secondary">
       {playing ? (
         <iframe
           className="h-full w-full"
@@ -133,7 +133,7 @@ export function RealRobots({ className }: { className?: string }) {
       </div>
 
 
-      <div className="mt-6 rounded-lg border border-border/40 bg-muted/30 p-4">
+      <div className="mt-6 rounded-lg border border-border bg-muted/30 p-4">
         <p className="font-semibold">{t("Was heißt das für deinen Beruf?", "What does this mean for your job?")}</p>
         <p className="mt-1 text-sm text-muted-foreground">
           {t(
@@ -175,7 +175,7 @@ export function RealRobotsCard() {
   const { translate: t } = useLanguage();
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-lg border border-border/40 bg-card/60 p-4">
+    <div className="rounded-2xl border-[3px] border-foreground bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-sm font-semibold">{t("Und in echt?", "And in real life?")}</h2>

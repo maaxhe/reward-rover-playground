@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import "@fontsource-variable/bricolage-grotesque";
 import "./landing.css";
 import { LanguageProvider, useLanguage } from "@/contexts/LanguageContext";
 import { RLGuideButton } from "@/components/RL/RLGuideDialog";
@@ -27,9 +26,10 @@ const LandingContent = () => {
 
   return (
     <div className="landing">
+      <div className="top-area">
       <div className="wrap">
         <header className="topbar">
-          <Link to="/" className="wordmark">Reward Rover</Link>
+          <Link to="/" className="wordmark"><i aria-hidden="true">R</i>Reward Rover</Link>
           <nav aria-label={translate("Hauptmenü", "Main menu")}>
             <Link to="/spiel">{translate("Spielen", "Play")}</Link>
             <Link to="/klasse">{translate("Klassen-Challenge", "Classroom")}</Link>
@@ -56,11 +56,15 @@ const LandingContent = () => {
             <div className="cta-row">
               <Link to="/spiel" className="btn btn-primary">{translate("Mit Level 1 anfangen", "Start with level 1")}</Link>
               <Link to="/klasse" className="btn btn-ghost">{translate("Eine Klasse einladen", "Invite a class")}</Link>
-              <RLGuideButton size="default" variant="outline" className="h-auto rounded-full border-white/30 bg-transparent px-5 py-3 text-base text-inherit hover:bg-white/10" />
+              <RLGuideButton size="default" variant="outline" className="h-auto rounded-full border-[4px] border-[#12352a] bg-transparent px-5 py-3 text-base font-extrabold text-inherit hover:bg-[#f5fbf8]" />
             </div>
           </div>
           <LiveRover translate={translate} />
         </section>
+      </div>
+      </div>
+
+      <div className="wrap">
 
         <section className="section" aria-labelledby="ways">
           <h2 id="ways">{translate("Wo möchtest du anfangen?", "Where do you want to start?")}</h2>
@@ -72,7 +76,7 @@ const LandingContent = () => {
                   "Zehn Level, jedes bringt eine neue Idee mit. Du startest auf einem 5×5-Feld und baust dir Schritt für Schritt ein Gefühl dafür auf, warum der Rover tut, was er tut. ",
                   "Ten levels, each one adds a new idea. You start on a 5×5 board and build a feel, step by step, for why the rover does what it does. ",
                 )}
-                <b>{translate("Jedes Level hat eine Aufgabe, die er wirklich gelernt haben muss.", "Every level has a task he has to have really learned.")}</b>
+                <b>{translate("Jedes Level hat eine Aufgabe, die der Rover wirklich gelernt haben muss.", "Every level has a task the rover has to have really learned.")}</b>
               </p>
               <div className="way-action">
                 <Link to="/spiel" className="btn btn-primary">{translate("Zu den Leveln", "To the levels")}</Link>
@@ -143,6 +147,15 @@ const LandingContent = () => {
             <p className="sign">{translate("Max", "Max")}</p>
           </div>
         </section>
+
+        <section className="umsteigen" aria-labelledby="umsteigen">
+          <h2 id="umsteigen">{translate("Umsteigen", "Switch tools")}</h2>
+          <ul>
+            <li><a href="https://dilemma.coxilab.de/"><i style={{ background: "#e88080" }} aria-hidden="true">D</i><b>Dilemma</b><span className="t">{translate("Wer entscheidet, wenn eine KI entscheidet?", "Who decides when an AI decides?")}</span></a></li>
+            <li><a href="https://jobs.coxilab.de/"><i style={{ background: "#9a86dc" }} aria-hidden="true">P</i><b>{translate("KI-Berufs-Puzzle", "AI job puzzle")}</b><span className="t">{translate("Was kann KI in welchem Beruf wirklich übernehmen?", "What can AI really take over in which job?")}</span></a></li>
+            <li><a href="https://handzeichen.com/lehrkraefte"><i style={{ background: "#ee9a5a" }} aria-hidden="true">H</i><b>Handzeichen</b><span className="t">{translate("Live-Umfragen und Quiz am Handy.", "Live polls and quizzes on the phone.")}</span></a></li>
+          </ul>
+        </section>
       </div>
 
       <footer>
@@ -169,7 +182,7 @@ const LandingContent = () => {
             {" · "}
             <a href="https://jobs.coxilab.de/">{translate("KI-Berufs-Puzzle", "AI job puzzle")}</a>
             {" · "}
-            <a href="https://handzeichen.com/">Handzeichen</a>
+            <a href="https://handzeichen.com/lehrkraefte">Handzeichen</a>
           </span>
         </div>
       </footer>

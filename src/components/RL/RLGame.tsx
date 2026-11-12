@@ -2313,7 +2313,7 @@ const handleActiveBonusClick = useCallback(() => {
           <Badge variant="secondary">🧱 {randomObstacleCount}</Badge>
         </div>
       </div>
-      <div className="mt-4 rounded-lg border border-border/40 bg-background/70">
+      <div className="mt-4 rounded-lg border border-border bg-background/70">
         <button
           type="button"
           onClick={() => setShowRandomStatsCard((prev) => !prev)}
@@ -2323,7 +2323,7 @@ const handleActiveBonusClick = useCallback(() => {
           {showRandomStatsCard ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
         {showRandomStatsCard && (
-          <div className="border-t border-border/40 px-4 py-3 text-sm text-muted-foreground">
+          <div className="border-t border-border px-4 py-3 text-sm text-muted-foreground">
             {randomStatsSummary.count === 0 ? (
               <p>{translate("Noch keine Daten – starte eine Episode, um Statistiken zu sehen.", "No data yet — run an episode to gather statistics.")}</p>
             ) : (
@@ -2370,7 +2370,7 @@ const handleActiveBonusClick = useCallback(() => {
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle className="text-2xl font-bold">{currentSlide?.title}</DialogTitle>
-              <div className="flex items-center gap-2 rounded-full border border-border/60 bg-card/70 px-3 py-1.5">
+              <div className="flex items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5">
                 <span className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   <span role="img" aria-hidden>
                     🇬🇧
@@ -2626,7 +2626,7 @@ const handleActiveBonusClick = useCallback(() => {
                   {translate("Login", "Login")}
                 </Button>
               )}
-              <div className="flex items-center gap-2 rounded-full border border-border/60 bg-card/70 px-3 py-1.5">
+              <div className="flex items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5">
                 <span className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   <span role="img" aria-hidden>
                     🇬🇧
@@ -2648,7 +2648,7 @@ const handleActiveBonusClick = useCallback(() => {
           <Collapsible open={showIntro} onOpenChange={setShowIntro}>
             <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
               <div className="grid md:grid-cols-2 gap-6 pt-3">
-                <Card className="rounded-lg border border-border bg-secondary/40 p-5 shadow-soft ">
+                <Card className="rounded-2xl border-[3px] border-foreground bg-secondary p-5 shadow-soft ">
                   <h3 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
                     {translate(
                       "Exploration vs. Exploitation",
@@ -2677,7 +2677,7 @@ const handleActiveBonusClick = useCallback(() => {
                     )}
                   </p>
                 </Card>
-                <Card className="rounded-lg border border-border bg-secondary/40 p-5 shadow-soft ">
+                <Card className="rounded-2xl border-[3px] border-foreground bg-secondary p-5 shadow-soft ">
                   <h3 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
                     {translate("Three Modes to Explore", "Three modes to explore")}
                   </h3>
@@ -2791,13 +2791,13 @@ const handleActiveBonusClick = useCallback(() => {
               </Button>
             </div>
             <div className="grid gap-3 md:grid-cols-[2fr_1fr]">
-              <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4">
+              <Card className="rounded-lg border border-border bg-secondary/20 p-4">
                 <Collapsible open={comparisonPresetsOpen} onOpenChange={setComparisonPresetsOpen} className="space-y-2">
                   <CollapsibleTrigger asChild>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="w-full justify-between rounded-xl border border-border/40 bg-background/60 font-semibold text-base"
+                      className="w-full justify-between rounded-xl border border-border bg-background/60 font-semibold text-base"
                     >
                       <span>{translate("Preset-Levels", "Preset Levels")}</span>
                       <ChevronDown
@@ -2830,7 +2830,7 @@ const handleActiveBonusClick = useCallback(() => {
                   </CollapsibleContent>
                 </Collapsible>
               </Card>
-              <Card className="rounded-lg border border-border/40 bg-secondary/20 p-4">
+              <Card className="rounded-lg border border-border bg-secondary/20 p-4">
                 <Label className="text-base font-semibold text-foreground">
                   {translate("Geschwindigkeit", "Speed")}
                 </Label>
@@ -3556,7 +3556,7 @@ const handleActiveBonusClick = useCallback(() => {
                         [translate("Bester Reward", "Best reward"), formatRewardValue(playgroundStatsSummary.bestReward)],
                         [translate("Schnellste Episode", "Fastest episode"), formatStepsValue(playgroundStatsSummary.bestSteps)],
                       ].map(([label, value]) => (
-                        <div key={label} className="rounded-lg border border-border/50 bg-background/60 px-3 py-2">
+                        <div key={label} className="rounded-lg border border-border bg-background/60 px-3 py-2">
                           <dt className="text-xs">{label}</dt>
                           <dd className="text-lg font-bold tabular-nums text-foreground">{value}</dd>
                         </div>
@@ -3647,7 +3647,7 @@ const handleActiveBonusClick = useCallback(() => {
             {/* Verlaufsdiagramm (im Playground sitzt es in der Statistik-Kachel) */}
             {mode !== "playground" && randomState.episodeHistory.length > 0 && (
               <Collapsible open={showRewardHistory} onOpenChange={setShowRewardHistory}>
-                <Card className="rounded-lg border border-border/40 bg-card/50 p-4">
+                <Card className="rounded-lg border border-border bg-card p-4">
                   <CollapsibleTrigger className="w-full">
                     <div className="flex items-center justify-between cursor-pointer">
                       <h3 className="text-base font-bold text-foreground">
@@ -3669,7 +3669,7 @@ const handleActiveBonusClick = useCallback(() => {
             )}
 
             {mode === "random" && (
-              <Card className="rounded-lg border border-border/40 bg-card/50 p-4 space-y-3">
+              <Card className="rounded-lg border border-border bg-card p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-bold text-foreground">
                     {translate("Live-Challenge", "Live challenge")}
@@ -3714,7 +3714,7 @@ const handleActiveBonusClick = useCallback(() => {
 
             {/* An empty leaderboard is just a box saying "nothing here", so it only appears with entries. */}
             {activeLeaderboardEntries.length > 0 && (
-            <Card className="rounded-lg border border-border/40 bg-secondary/20 p-3 space-y-3">
+            <Card className="rounded-lg border border-border bg-secondary/20 p-3 space-y-3">
               <div
                 className="flex items-center justify-between cursor-pointer"
                 onClick={() => setShowLeaderboard(!showLeaderboard)}
@@ -3748,7 +3748,7 @@ const handleActiveBonusClick = useCallback(() => {
                     return (
                       <div
                         key={`leaderboard-left-${entry.episode}-${entry.steps}-${entry.mode}`}
-                        className="flex items-center justify-between rounded-xl border border-border/40 bg-background/60 px-3 py-2 text-sm"
+                        className="flex items-center justify-between rounded-xl border border-border bg-background/60 px-3 py-2 text-sm"
                       >
                         <div className="flex items-center gap-3">
                           <span className="text-base font-bold text-primary min-w-[1.5rem] text-center">
@@ -3828,7 +3828,7 @@ const handleActiveBonusClick = useCallback(() => {
               tabIndex={0}
               role="application"
               aria-label={translate("Reward Rover Spielfeld", "Reward Rover playfield")}
-              className="rounded-lg border border-border/50 bg-background/80 p-4 shadow-soft focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow w-full max-w-full mx-auto select-none"
+              className="rounded-lg border border-border bg-background/80 p-4 shadow-soft focus:outline-none focus:ring-2 focus:ring-primary/50 transition-shadow w-full max-w-full mx-auto select-none"
               style={{
                 maxWidth: gridPixelDimension + 40,
               }}
@@ -4314,7 +4314,7 @@ const handleActiveBonusClick = useCallback(() => {
                     {savedEnvironments.map((env) => (
                       <div
                         key={env.id}
-                        className="flex items-center gap-3 rounded-xl border border-border/40 bg-background/60 p-3"
+                        className="flex items-center gap-3 rounded-xl border border-border bg-background/60 p-3"
                       >
                         {renderEnvironmentPreview(env.gridConfig)}
                         <div className="flex-1">
@@ -4418,7 +4418,7 @@ const handleActiveBonusClick = useCallback(() => {
             )}
 
             {mode === "random" && (
-              <Card className="rounded-lg border border-border/40 bg-card/50 p-4">
+              <Card className="rounded-lg border border-border bg-card p-4">
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   <strong className="text-foreground">Level:</strong>{" "}
                   {translate(

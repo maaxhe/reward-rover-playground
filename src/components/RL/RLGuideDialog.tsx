@@ -86,7 +86,7 @@ const Section = ({ id, title, need = 0, children }: { id: string; title: string;
 };
 
 const Dial = ({ symbol, name, line, tip }: { symbol: string; name: string; line: string; tip: string }) => (
-  <div className="grid gap-x-5 gap-y-1 rounded-lg border border-border bg-secondary/40 p-5 sm:grid-cols-[4.5rem_1fr]">
+  <div className="grid gap-x-5 gap-y-1 rounded-2xl border-[3px] border-foreground bg-secondary p-5 sm:grid-cols-[4.5rem_1fr]">
     <div className="text-5xl font-extrabold leading-none text-primary">{symbol}</div>
     <div className="space-y-1">
       <h4 className="text-xl font-bold text-foreground">{name}</h4>
@@ -225,7 +225,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
               onComplete={() => markDone(2)}
               world={DEMO_WORLD}
               initial={{ epsilon: 0.8, alpha: 0.5, gamma: 0.95 }}
-              nudge={{ de: "Zieh die Neugier ε auf 0 und schau, ob der Rover bei einem schlechten Weg hängen bleibt. Dann auf 1: lernt er noch etwas?", en: "Drag curiosity ε to 0 and see whether the rover gets stuck on a poor path. Then to 1: does it still learn anything?" }}
+              nudge={{ de: "Zieh die Neugier ε auf 0 und schau, ob der Rover bei einem schlechten Weg hängen bleibt. Dann auf 1: Er läuft planlos, aber lernt er trotzdem mit? Schau auf die Pfeile.", en: "Drag curiosity ε to 0 and see whether the rover gets stuck on a poor path. Then to 1: it wanders aimlessly, but does it still learn along? Watch the arrows." }}
               dials={["epsilon"]}
               translate={t}
               caption={({ settings, episode }) =>
@@ -332,7 +332,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
                 "After every step the rover updates its memory with a single rule. In words: new value = old value + learning rate × (what I got + foresight × the best that can still come from there − old value).",
               )}
             </p>
-            <pre className="overflow-x-auto rounded-lg border border-border bg-secondary/40 p-5 text-lg text-foreground">
+            <pre className="overflow-x-auto rounded-2xl border-[3px] border-foreground bg-secondary p-5 text-lg text-foreground">
               Q(s, a) ← Q(s, a) + α · [ r + γ · maxₐ′ Q(s′, a′) − Q(s, a) ]
             </pre>
             <p className="text-base text-muted-foreground">
@@ -343,7 +343,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             </p>
           </Section>
 
-          <Section need={4} id="llm" title={t("Auch ChatGPT & Co. lernen so: RLHF", "ChatGPT & co. learn like this too: RLHF")}>
+          <Section need={4} id="llm" title={t("Ähnlich lernen ChatGPT & Co.: RLHF", "ChatGPT & co. learn in a similar way: RLHF")}>
             <p>
               {t(
                 "Ein Sprachmodell lernt zuerst nur, Text weiterzuschreiben. Damit es auch hilfreich antwortet, kommt ein zweiter Schritt dazu: Menschen vergleichen zwei Antworten und wählen die bessere. Das ist die Belohnung. Das Fachwort dafür ist RLHF, Reinforcement Learning from Human Feedback.",
@@ -352,8 +352,8 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             </p>
             <p>
               {t(
-                "Der Rover und das Modell funktionieren gleich: Eine Antwort ist wie ein Schritt, dein Daumen ist die Belohnung, und die Wahrscheinlichkeit, mit der das Modell etwas sagt, ist wie die Pfeile im Spielfeld. Probier es selbst: Du bist der Mensch.",
-                "The rover and the model work alike: an answer is like a step, your thumbs-up is the reward, and the probability that the model says something is like the arrows on the board. Try it yourself: you are the human.",
+                "Das Prinzip ist dasselbe wie beim Rover: Verhalten, das belohnt wird, wird häufiger. Eine Antwort ist wie ein Schritt, dein Daumen ist die Belohnung, und die Wahrscheinlichkeit, mit der das Modell etwas sagt, ist wie die Pfeile im Spielfeld. Technisch ist der Weg ein anderer (statt einer Q-Tabelle ein neuronales Netz). Probier es selbst: Du bist der Mensch.",
+                "The principle is the same as with the rover: behavior that is rewarded becomes more frequent. An answer is like a step, your thumbs-up is the reward, and the probability that the model says something is like the arrows on the board. Technically the route is different (a neural network instead of a Q-table). Try it yourself: you are the human.",
               )}
             </p>
             <RlhfDemo translate={t} />
@@ -369,7 +369,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
             <ul className="list-disc space-y-2 pl-6 marker:text-primary">
               <li>{t("Spiele-KIs, die durch Millionen Partien gegen sich selbst besser werden.", "Game AIs that improve by playing millions of matches against themselves.")}</li>
               <li>{t("Roboter, die Greifen und Laufen durch Üben lernen, statt jede Bewegung einprogrammiert zu bekommen.", "Robots that learn grasping and walking by practising instead of having every move programmed.")}</li>
-              <li>{t("Stromnetze, die Angebot und Nachfrage laufend abgleichen.", "Power grids that keep balancing supply and demand.")}</li>
+              <li>{t("Stromnetze: Hier wird RL erforscht und erprobt, um Angebot und Nachfrage abzugleichen.", "Power grids: RL is being researched and piloted here to balance supply and demand.")}</li>
               <li>{t("Sprachmodelle, die mit menschlichem Feedback als Belohnung nachtrainiert werden.", "Language models fine-tuned with human feedback as the reward.")}</li>
             </ul>
           </Section>
@@ -381,7 +381,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
           <Section need={4} id="probieren" title={t("Probier das aus", "Try this")}>
             <ol className="list-decimal space-y-2 pl-6 marker:font-bold marker:text-primary">
               <li>{t("Stelle ε auf 0 und starte. Bleibt der Rover auf einem schlechten Weg hängen?", "Set ε to 0 and start. Does the rover get stuck on a poor path?")}</li>
-              <li>{t("Stelle ε auf 1. Lernt er überhaupt etwas?", "Set ε to 1. Does it learn anything at all?")}</li>
+              <li>{t("Stelle ε auf 1. Er läuft planlos: Aktualisieren sich die Pfeile trotzdem?", "Set ε to 1. It wanders aimlessly: do the arrows still update?")}</li>
               <li>{t("Setze γ auf 0 und platziere eine Belohnung am Rand. Wird der Rover zum Naschkater?", "Set γ to 0 and put a reward on the side. Does the rover turn into a sweet tooth?")}</li>
             </ol>
           </Section>

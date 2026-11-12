@@ -259,7 +259,7 @@ export function RLGameNew() {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Mode Selector */}
-      <div className="border-b border-border/40 bg-background px-4 md:px-8 py-3 md:py-4 md:sticky md:top-0 z-30">
+      <div className="border-b border-border bg-background px-4 md:px-8 py-3 md:py-4 md:sticky md:top-0 z-30">
         <div className="grid grid-cols-2 items-center gap-2 md:flex md:flex-wrap md:gap-3">
           <Link to="/" className="col-span-2 mr-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
             ← {translate("Startseite", "Home")}
@@ -315,7 +315,7 @@ export function RLGameNew() {
       {/* Main Content - 2 Column Layout */}
       <div className="flex flex-1 flex-col md:flex-row md:items-start">
         {/* Left Sidebar - Parameters & Progress */}
-        <div className={cn("w-full md:w-72 flex-shrink-0 border-b md:border-b-0 md:border-r border-border/40 bg-card/20 p-4 md:p-6 md:sticky md:top-[72px] md:max-h-[calc(100vh-72px)] md:overflow-y-auto", !sidebarOpen && "hidden")}>
+        <div className={cn("w-full md:w-72 flex-shrink-0 border-b md:border-b-0 md:border-r border-border bg-card/20 p-4 md:p-6 md:sticky md:top-[72px] md:max-h-[calc(100vh-72px)] md:overflow-y-auto", !sidebarOpen && "hidden")}>
           {!isLevelMode && (
             <>
               <Button
@@ -427,9 +427,9 @@ export function RLGameNew() {
           aria-label={translate("Seitenleiste ein- oder ausblenden", "Show or hide sidebar")}
           title={sidebarOpen ? translate("Seitenleiste ausblenden", "Hide sidebar") : translate("Seitenleiste einblenden", "Show sidebar")}
           className={cn(
-            "flex flex-shrink-0 items-center justify-center gap-2 border-b border-border/40 py-2 text-sm font-semibold transition-colors md:sticky md:top-[72px] md:h-[calc(100vh-72px)] md:w-10 md:flex-col md:border-b-0 md:border-r md:py-4",
+            "flex flex-shrink-0 items-center justify-center gap-2 border-b border-border py-2 text-sm font-semibold transition-colors md:sticky md:top-[72px] md:h-[calc(100vh-72px)] md:w-10 md:flex-col md:border-b-0 md:border-r md:py-4",
             sidebarOpen
-              ? "bg-card/30 text-muted-foreground hover:bg-card/60 hover:text-foreground"
+              ? "bg-card/30 text-muted-foreground hover:bg-card hover:text-foreground"
               : "bg-primary/15 text-primary hover:bg-primary/25",
           )}
         >
@@ -446,7 +446,7 @@ export function RLGameNew() {
           </LevelProvider>
         </div>
       </div>
-      <footer className="border-t border-border/40 px-4 py-2 text-xs text-muted-foreground md:px-8">
+      <footer className="border-t border-border px-4 py-2 text-xs text-muted-foreground md:px-8">
         <Link to="/impressum" className="underline underline-offset-2 hover:text-foreground">
           {translate("Impressum", "Imprint")}
         </Link>

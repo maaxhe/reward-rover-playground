@@ -62,7 +62,7 @@ export function CollapsibleTile({ id, title, defaultOpen = true, className, asid
   };
 
   return (
-    <Card data-tutorial={tutorial} className={cn("rounded-lg border border-border/40 bg-secondary/20 p-4", open && "space-y-3", className)}>
+    <Card data-tutorial={tutorial} className={cn("rounded-lg border border-border bg-secondary/20 p-4", open && "space-y-3", className)}>
       <button type="button" onClick={toggle} aria-expanded={open} className="flex w-full items-center justify-between gap-2 text-left">
         <h3 className="text-base font-bold text-foreground">{title}</h3>
         <span className="flex items-center gap-2">

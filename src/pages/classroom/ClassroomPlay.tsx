@@ -284,7 +284,7 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
         {replayError && <p className="text-sm text-destructive">{replayError}</p>}
 
         {phase === "lobby" && (
-          <Card className="rounded-lg border-border/40 bg-card/60 p-4 text-sm">
+          <Card className="rounded-2xl border-foreground bg-card p-4 text-sm">
             ⏳ Warte auf die Lehrkraft … {playerCount} {playerCount === 1 ? "Person ist" : "Personen sind"} im Raum. Sobald das Training startet, siehst du hier deine Regler.
           </Card>
         )}
@@ -294,7 +294,7 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
         {phase === "lobby" && vote?.open && <PlayerVoteCard code={code} session={session} vote={vote} />}
 
         {phase === "training" && (
-          <Card className="space-y-4 rounded-lg border-border/40 bg-card/60 p-4">
+          <Card className="space-y-4 rounded-2xl border-foreground bg-card p-4">
             <h2 className="text-sm font-semibold uppercase tracking-wide">Lernparameter</h2>
             <div id="tour-params" className="space-y-4">
             <ParamSlider id="eps" label="Neugier ε" hint="Wie oft probiert der Rover Neues?" value={params.explorationRate} min={0} max={1} step={0.05} onChange={setParam("explorationRate")} />
@@ -331,7 +331,7 @@ const Trainer = ({ code, round, session, world, phase, episodeBudget, remainingM
         )}
 
         {phase !== "lobby" && (
-          <Card className="space-y-1 rounded-lg border-border/40 bg-card/60 p-4 text-sm">
+          <Card className="space-y-1 rounded-2xl border-foreground bg-card p-4 text-sm">
             <h2 className="text-sm font-semibold uppercase tracking-wide">Test-Lauf</h2>
             <p>
               Dein Rover jetzt (ohne Zufall):{" "}

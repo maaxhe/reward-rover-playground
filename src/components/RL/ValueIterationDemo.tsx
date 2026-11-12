@@ -112,12 +112,12 @@ export function ValueIterationDemo({ translate: t, initialGamma = 0.9, world = P
   })();
 
   return (
-    <div className="rounded-xl border border-border bg-card/60 p-4 sm:p-6">
+    <div className="rounded-2xl border-[3px] border-foreground bg-card p-4 sm:p-6">
       <div className="flex flex-col items-center gap-6 lg:flex-row lg:items-start">
         <div
           role="img"
           aria-label={t("Planer-Demo: Value Iteration auf einem 7×7-Feld", "Planner demo: value iteration on a 7×7 board")}
-          className="relative inline-grid flex-shrink-0 gap-0 rounded-xl border border-border/50 bg-background/80 p-2 shadow-soft"
+          className="relative inline-grid flex-shrink-0 gap-0 rounded-xl border border-border bg-background/80 p-2 shadow-soft"
           style={{ gridTemplateColumns: `repeat(${grid.length}, ${tileSize}px)` }}
         >
           {grid.map((row, y) =>

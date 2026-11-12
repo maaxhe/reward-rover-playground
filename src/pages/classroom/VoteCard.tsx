@@ -29,7 +29,7 @@ const OptionRow = ({ title, unit, options, tally, selected, disabled, onPick }: 
             aria-pressed={selected === o}
             className={cn(
               "relative min-h-12 overflow-hidden rounded-lg border px-3 py-2 text-left transition-colors",
-              selected === o ? "border-primary bg-primary/15" : "border-border/60 bg-card/60",
+              selected === o ? "border-primary bg-primary/15" : "border-border/60 bg-card",
               onPick && !disabled && "hover:bg-secondary/50 active:scale-[0.98]",
             )}
           >
@@ -62,7 +62,7 @@ export const PlayerVoteCard = ({ code, session, vote, onVoted }: { code: string;
     }
   };
   return (
-    <Card className="space-y-4 rounded-lg border-primary/40 bg-card/60 p-4">
+    <Card className="space-y-4 rounded-lg border-primary/40 bg-card p-4">
       <div>
         <h2 className="text-lg font-bold">Stimmt ab!</h2>
         <p className="text-sm text-muted-foreground">Wie lange sollen wir trainieren und wie viele Episoden darf jede:r nutzen? Du kannst deine Stimme ändern, bis die Lehrkraft entscheidet.</p>
@@ -118,7 +118,7 @@ export const HostVoteCard = ({
   };
 
   return (
-    <Card className="space-y-4 rounded-lg border-border/40 bg-card/60 p-5">
+    <Card className="space-y-4 rounded-2xl border-foreground bg-card p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-bold">Abstimmung</h2>
         {vote.open ? (

@@ -93,7 +93,7 @@ const ClassroomBeamer = () => {
           <div className="space-y-6">
             <ol className="space-y-2">
               {rows.map((row) => (
-                <li key={row.id} className="flex items-center gap-4 rounded-xl border border-border/40 bg-card/60 px-5 py-3">
+                <li key={row.id} className="flex items-center gap-4 rounded-2xl border-[3px] border-foreground bg-card px-5 py-3">
                   <span className="w-14 text-center text-4xl font-bold tabular-nums">{row.rank ? (MEDALS[row.rank - 1] ?? row.rank) : "–"}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-3xl font-bold">{row.name}</span>
@@ -113,7 +113,7 @@ const ClassroomBeamer = () => {
             {room.leaderboard.length > MAX_ROWS && <p className="text-lg text-muted-foreground">… und {room.leaderboard.length - MAX_ROWS} weitere</p>}
 
             {finished && room.totals && (
-              <div className="rounded-xl border border-border/40 bg-card/60 p-5">
+              <div className="rounded-2xl border-[3px] border-foreground bg-card p-5">
                 <h2 className="mb-3 text-2xl font-bold">Gesamtwertung nach {room.round} Runden</h2>
                 <ol className="grid gap-x-8 gap-y-1 text-2xl md:grid-cols-2">
                   {room.totals.slice(0, 8).map((t) => (

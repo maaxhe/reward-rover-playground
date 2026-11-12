@@ -10,8 +10,8 @@ export const CELEBRATION_FACTS: Array<Record<Language, string>> = [
       en: "RL powers game agents that learn to defeat tough bosses in modern video games.",
     },
     {
-      de: "Selbstfahrende Autos setzen RL ein, um sichere und effiziente Routen zu planen.",
-      en: "Self-driving cars rely on RL to plan safe and efficient routes.",
+      de: "Bei selbstfahrenden Autos wird RL eingesetzt, um Fahrverhalten in Simulationen zu verbessern.",
+      en: "Self-driving car developers use RL to improve driving behavior in simulation.",
     },
     {
       de: "DeepMinds AlphaGo nutzte RL, um menschliche Go-Weltmeister zu schlagen.",
@@ -22,15 +22,15 @@ export const CELEBRATION_FACTS: Array<Record<Language, string>> = [
       en: "Recommendation systems use RL to decide which product you might like next.",
     },
     {
-      de: "RL hilft dabei, Stromnetze im Gleichgewicht zu halten – in Echtzeit.",
-      en: "Power-grid controllers use RL to keep supply and demand balanced in real time.",
+      de: "RL wird erforscht und erprobt, um Stromnetze im Gleichgewicht zu halten.",
+      en: "RL is being researched and piloted to keep power grids balanced.",
     },
     {
       de: "Roboterarme trainieren mit RL, um Objekte präzise zu greifen – auch bei neuen Formen.",
       en: "Industrial robot arms train with RL to grasp unfamiliar objects precisely.",
     },
     {
-      de: "In der Medizin unterstützt RL adaptive Dosierungspläne für Behandlungen.",
+      de: "In der Medizin wird RL für adaptive Dosierungspläne in der Forschung erprobt.",
       en: "Healthcare researchers explore RL to adapt treatment dosing plans.",
     },
     {
@@ -98,8 +98,8 @@ export const CELEBRATION_FACTS: Array<Record<Language, string>> = [
       en: "In comparison mode, you can pit two different learning strategies against each other!",
     },
     {
-      de: "Portale teleportieren den Rover zu einem zufälligen freien Feld – nutze sie strategisch!",
-      en: "Portals teleport the rover to a random free tile – use them strategically!",
+      de: "Portale kommen paarweise: Wer in eins läuft, kommt beim anderen wieder heraus. Das Teleport-Feld dagegen schickt den Rover auf ein zufälliges Feld – nutze beides strategisch!",
+      en: "Portals come in pairs: step into one and you come out of the other. The teleport tile, by contrast, sends the rover to a random tile – use both strategically!",
     },
     {
       de: "Die Belohnung für das Erreichen des Ziels beträgt standardmäßig 100 Punkte!",

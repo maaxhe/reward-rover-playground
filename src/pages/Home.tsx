@@ -11,7 +11,7 @@ const HomeContent = () => {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Header */}
-      <header className="border-b border-border/40 bg-card/30">
+      <header className="border-b border-border bg-card/30">
         <div className="max-w-full px-8 py-6">
           <h1 className="text-2xl font-semibold">Reward Rover</h1>
           <p className="text-xs text-muted-foreground uppercase tracking-widest font-medium mt-1">
@@ -39,7 +39,7 @@ const HomeContent = () => {
           {/* Mode Selection Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {/* Levels Mode */}
-            <Card className="p-6 border-border/40 bg-card/60 hover:bg-card/80 transition-colors cursor-pointer group"
+            <Card className="p-6 border-border bg-card hover:bg-card/80 transition-colors cursor-pointer group"
               onClick={() => navigate("/app?mode=levels")}>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -60,7 +60,7 @@ const HomeContent = () => {
             </Card>
 
             {/* Free Mode */}
-            <Card className="p-6 border-border/40 bg-card/60 hover:bg-card/80 transition-colors cursor-pointer group"
+            <Card className="p-6 border-border bg-card hover:bg-card/80 transition-colors cursor-pointer group"
               onClick={() => navigate("/app?mode=free")}>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -94,7 +94,7 @@ const HomeContent = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border/40 bg-card/20 py-4">
+      <footer className="border-t border-border bg-card/20 py-4">
         <div className="max-w-full px-8 text-center text-xs text-muted-foreground">
           <p>Maxim Leopold | Cognitive Science Research</p>
         </div>

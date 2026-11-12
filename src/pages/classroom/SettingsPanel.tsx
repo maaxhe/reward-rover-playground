@@ -88,7 +88,7 @@ export const SettingsPanel = ({ code, hostKey, settings, seed, levelId = null, o
   };
 
   return (
-    <Card className="space-y-4 rounded-lg border-border/40 bg-card/60 p-5">
+    <Card className="space-y-4 rounded-2xl border-foreground bg-card p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-bold">Einstellungen</h2>
         <Button
@@ -150,7 +150,7 @@ export const SettingsPanel = ({ code, hostKey, settings, seed, levelId = null, o
         ))}
       </div>
 
-      <div className="flex flex-wrap items-end gap-3 border-t border-border/40 pt-3">
+      <div className="flex flex-wrap items-end gap-3 border-t border-border pt-3">
         <div className="space-y-1">
           <Label htmlFor="seed" className="text-sm font-semibold">Welt-Nummer (Seed)</Label>
           <Input

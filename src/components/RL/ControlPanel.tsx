@@ -40,7 +40,7 @@ export function ControlPanel({
   return (
     <div className="space-y-4">
       {/* Main Controls Card */}
-      <Card className="p-4 bg-card/60 border-border/50">
+      <Card className="p-4 bg-card border-border">
         <h2 className="text-lg font-semibold mb-4">
           {translate("Controls", "Controls")}
         </h2>
@@ -90,7 +90,7 @@ export function ControlPanel({
       </Card>
 
       {/* Stats Card */}
-      <Card className="p-4 bg-card/60 border-border/50">
+      <Card className="p-4 bg-card border-border">
         <h2 className="text-lg font-semibold mb-3">
           {translate("Stats", "Stats")}
         </h2>

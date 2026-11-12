@@ -9,7 +9,7 @@ import type { LeaderboardRow, ParamSummary, TotalsRow } from "@/lib/competition/
 export const ClassroomShell = ({ children, wide = false }: { children: ReactNode; wide?: boolean }) => (
   <LanguageProvider>
     <div className="min-h-screen bg-background text-foreground [touch-action:manipulation]">
-      <header className="border-b border-border bg-card/50">
+      <header className="border-b border-border bg-card">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link to="/klasse" className="text-xl font-bold gradient-text">
             Reward Rover · Klassen-Challenge
@@ -49,7 +49,7 @@ export const formatParams = (p: ParamSummary) =>
 
 /** Overall standings over all rounds (shown from round 2 on). */
 export const TotalsCard = ({ totals, meId }: { totals: TotalsRow[]; meId?: string }) => (
-  <Card className="overflow-hidden rounded-lg border-border/40 bg-card/60">
+  <Card className="overflow-hidden rounded-2xl border-foreground bg-card">
     <h2 className="px-4 pt-3 text-sm font-semibold">Gesamtwertung</h2>
     <p className="px-4 pb-2 text-xs text-muted-foreground">Rangpunkte pro Runde: Platz 1 = 10, Platz 2 = 8, Platz 3 = 6 …</p>
     <ol className="divide-y divide-border/40">
@@ -74,7 +74,7 @@ interface LeaderboardProps {
 }
 
 export const Leaderboard = ({ rows, meId, onSelect, selectedId, onKick }: LeaderboardProps) => (
-  <Card className="overflow-hidden rounded-lg border-border/40 bg-card/60">
+  <Card className="overflow-hidden rounded-2xl border-foreground bg-card">
     {rows.length === 0 ? (
       <p className="p-4 text-sm text-muted-foreground">Noch niemand beigetreten.</p>
     ) : (

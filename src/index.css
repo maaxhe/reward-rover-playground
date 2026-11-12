@@ -7,76 +7,77 @@ All colors MUST be HSL.
 */
 
 @layer base {
-  /* Sea-chart night with oilskin yellow (same palette as the landing page). The whole app is dark on purpose. */
-  :root,
-  .dark {
-    --background: 199 57% 12%;
-    --foreground: 165 22% 93%;
+  /* Haltestelle: Aushangfahrplan-Stil von coxilab. Hellgrüne Fläche (die Rover-Linie), dunkelgrüne Tinte, dicke Rahmen, runde Ecken. */
+  :root {
+    --background: 150 43% 97%;
+    --foreground: 161 49% 14%;
 
-    --card: 199 56% 16%;
-    --card-foreground: 165 22% 93%;
+    --card: 0 0% 100%;
+    --card-foreground: 161 49% 14%;
 
-    --popover: 199 56% 16%;
-    --popover-foreground: 165 22% 93%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 161 49% 14%;
 
-    --primary: 47 92% 53%;
-    --primary-foreground: 50 100% 5%;
+    --primary: 161 49% 14%;
+    --primary-foreground: 150 43% 97%;
 
-    --secondary: 199 49% 21%;
-    --secondary-foreground: 165 22% 93%;
+    --secondary: 147 49% 87%;
+    --secondary-foreground: 161 49% 14%;
 
-    --muted: 199 45% 17%;
-    --muted-foreground: 177 14% 68%;
+    --muted: 152 38% 92%;
+    --muted-foreground: 157 16% 36%;
 
-    --accent: 175 29% 66%;
-    --accent-foreground: 199 57% 12%;
+    --accent: 153 38% 54%;
+    --accent-foreground: 161 49% 14%;
 
-    --destructive: 8 75% 60%;
-    --destructive-foreground: 50 100% 5%;
+    --destructive: 0 69% 71%;
+    --destructive-foreground: 161 49% 14%;
 
-    --border: 197 35% 25%;
-    --input: 197 35% 25%;
-    --ring: 47 92% 53%;
+    --border: 150 23% 78%;
+    --input: 161 49% 14%;
+    --ring: 161 49% 14%;
 
     /* Reward Rover board palette (see .rr-* shapes below) */
     --rr-oil: #f5c518;
-    --rr-buoy: #e5604d;
-    --rr-glass: #8fc1bd;
-    --rr-violet: #9b8cf5;
-    --tile-bg: rgba(143, 193, 189, 0.07);
-    --tile-reward: #f5c518;
-    --tile-punishment: #e5604d;
-    --tile-obstacle: #1f4a58;
+    --rr-buoy: #12352a;
+    --rr-glass: #12352a;
+    --rr-violet: #9a86dc;
+    --rr-candy: #ee9a5a;
+    --ink: #12352a;
+    --tile-bg: #ffffff;
+    --tile-reward: #ee9a5a;
+    --tile-punishment: #e88080;
+    --tile-obstacle: #12352a;
     --tile-agent: #f5c518;
-    --tile-goal: #8fc1bd;
-    --tile-portal: #9b8cf5;
-    --tile-outline: #0f2b38;
-    --tile-text-on-light: #e9f1ef;
-    --tile-text-on-dark: #0d2530;
-    --grid-line: 197 35% 25%;
-    --visited: 47 92% 53%;
+    --tile-goal: #cdeedc;
+    --tile-portal: #9a86dc;
+    --tile-outline: #b4e0c9;
+    --tile-text-on-light: #12352a;
+    --tile-text-on-dark: #f5fbf8;
+    --grid-line: 150 23% 78%;
+    --visited: 153 38% 54%;
 
-    --gradient-main: radial-gradient(circle at top, rgba(143, 193, 189, 0.08), rgba(13, 37, 48, 0.98));
-    --gradient-card: linear-gradient(135deg, rgba(18, 49, 63, 0.95), rgba(18, 49, 63, 0.95));
-    --gradient-agent: linear-gradient(135deg, rgba(245, 197, 24, 0.9), rgba(245, 197, 24, 0.9));
+    --gradient-main: linear-gradient(180deg, #f5fbf8, #f5fbf8);
+    --gradient-card: linear-gradient(135deg, #ffffff, #ffffff);
+    --gradient-agent: linear-gradient(135deg, #f5c518, #f5c518);
 
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --glow-agent: 0 0 20px rgba(245, 197, 24, 0.35);
-    --glow-primary: 0 0 15px rgba(245, 197, 24, 0.25);
-    --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.3);
-    --shadow-medium: 0 8px 25px rgba(0, 0, 0, 0.4);
-    --shadow-xl: 0 20px 50px rgba(0, 0, 0, 0.5);
+    --glow-agent: 0 0 0 3px rgba(18, 53, 42, 0.25);
+    --glow-primary: 0 0 0 3px rgba(18, 53, 42, 0.2);
+    --shadow-soft: 0 2px 0 rgba(18, 53, 42, 0.12);
+    --shadow-medium: 0 4px 0 rgba(18, 53, 42, 0.14);
+    --shadow-xl: 0 8px 0 rgba(18, 53, 42, 0.16);
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    --sidebar-background: 199 57% 12%;
-    --sidebar-foreground: 165 22% 93%;
-    --sidebar-primary: 47 92% 53%;
-    --sidebar-primary-foreground: 50 100% 5%;
-    --sidebar-accent: 199 49% 21%;
-    --sidebar-accent-foreground: 165 22% 93%;
-    --sidebar-border: 197 35% 25%;
-    --sidebar-ring: 47 92% 53%;
+    --sidebar-background: 152 38% 92%;
+    --sidebar-foreground: 161 49% 14%;
+    --sidebar-primary: 161 49% 14%;
+    --sidebar-primary-foreground: 150 43% 97%;
+    --sidebar-accent: 147 49% 87%;
+    --sidebar-accent-foreground: 161 49% 14%;
+    --sidebar-border: 150 23% 78%;
+    --sidebar-ring: 161 49% 14%;
   }
 }
 
@@ -87,13 +88,18 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
-    font-family: "Bricolage Grotesque Variable", system-ui, sans-serif;
-    font-optical-sizing: auto;
+    font-family: "Barlow", system-ui, sans-serif;
     overflow-x: clip;
   }
 
   html {
     overflow-x: clip;
+  }
+
+  h1, h2, h3 {
+    font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.005em;
   }
 }
 
@@ -101,7 +107,7 @@ All colors MUST be HSL.
   .bg-tile-empty { background-color: var(--tile-bg); }
   .bg-tile-reward { background-color: var(--tile-reward); }
   .bg-tile-punishment { background-color: var(--tile-punishment); }
-  .bg-tile-obstacle { background: repeating-linear-gradient(135deg, #1f4a58 0 6px, #173b48 6px 12px); }
+  .bg-tile-obstacle { background: repeating-linear-gradient(135deg, #12352a 0 3px, #ffffff 3px 9px); }
   .bg-tile-agent { background-color: var(--tile-agent); }
   .bg-tile-goal { background-color: var(--tile-goal); }
   .bg-tile-portal { background-color: var(--tile-portal); }
@@ -245,31 +251,31 @@ All colors MUST be HSL.
     width: 1.25rem;
     height: 1.25rem;
     border-radius: 9999px;
-    border: 2px solid hsl(var(--primary) / 0.8);
-    background: radial-gradient(circle at 30% 30%, hsl(0 0% 100% / 0.45), hsl(191 82% 53% / 0.9));
-    box-shadow: 0 6px 18px hsl(191 82% 53% / 0.45);
+    border: 3px solid hsl(var(--primary));
+    background: radial-gradient(circle at 30% 30%, hsl(0 0% 100%), hsl(var(--accent)));
+    box-shadow: 0 2px 0 hsl(var(--foreground) / 0.35);
     margin-top: -0.375rem;
     transition: transform 180ms ease, box-shadow 180ms ease;
   }
 
   .input-slider:active::-webkit-slider-thumb {
     transform: scale(1.05);
-    box-shadow: 0 8px 22px hsl(191 82% 53% / 0.55);
+    box-shadow: 0 3px 0 hsl(var(--foreground) / 0.4);
   }
 
   .input-slider::-moz-range-thumb {
     width: 1.25rem;
     height: 1.25rem;
     border-radius: 9999px;
-    border: 2px solid hsl(var(--primary) / 0.8);
-    background: radial-gradient(circle at 30% 30%, hsl(0 0% 100% / 0.45), hsl(191 82% 53% / 0.9));
-    box-shadow: 0 6px 18px hsl(191 82% 53% / 0.45);
+    border: 3px solid hsl(var(--primary));
+    background: radial-gradient(circle at 30% 30%, hsl(0 0% 100%), hsl(var(--accent)));
+    box-shadow: 0 2px 0 hsl(var(--foreground) / 0.35);
     transition: transform 180ms ease, box-shadow 180ms ease;
   }
 
   .input-slider:active::-moz-range-thumb {
     transform: scale(1.05);
-    box-shadow: 0 8px 22px hsl(191 82% 53% / 0.55);
+    box-shadow: 0 3px 0 hsl(var(--foreground) / 0.4);
   }
 
   /* Minimal professional card styling */
@@ -304,14 +310,14 @@ All colors MUST be HSL.
 /* Board shapes, shared by the playground, the classroom board and the legend.
    They size themselves relative to their tile, so they work from 24px to 60px. */
 .rr-cell { background: var(--tile-bg); }
-.rr-wall { background: repeating-linear-gradient(135deg, #1f4a58 0 6px, #173b48 6px 12px); }
+.rr-wall { background: repeating-linear-gradient(135deg, #12352a 0 3px, #ffffff 3px 9px); }
 .rr-goal {
   width: 70%;
   height: 70%;
   border-radius: 50%;
   background: radial-gradient(circle, var(--rr-glass) 0 16%, transparent 17% 36%, var(--rr-glass) 37% 54%, transparent 55% 68%, var(--rr-glass) 69% 100%);
 }
-.rr-candy { width: 38%; height: 38%; background: var(--rr-oil); transform: rotate(45deg); border-radius: 12%; }
+.rr-candy { width: 38%; height: 38%; background: var(--rr-candy); border: 2px solid var(--ink); transform: rotate(45deg); border-radius: 12%; }
 .rr-trap {
   width: 44%;
   height: 44%;
@@ -329,9 +335,9 @@ All colors MUST be HSL.
   width: 62%;
   height: 62%;
   background: var(--rr-oil);
+  border: 2px solid var(--ink);
   border-radius: 30% 30% 22% 22%;
   z-index: 2;
-  box-shadow: 0 3px 0 #b8920a;
 }
 .rr-rover::before,
 .rr-rover::after {
@@ -340,7 +346,7 @@ All colors MUST be HSL.
   top: 30%;
   width: 14%;
   height: 14%;
-  background: #1b1600;
+  background: var(--ink);
   border-radius: 50%;
 }
 .rr-rover::before { left: 27%; }
@@ -353,23 +359,17 @@ All colors MUST be HSL.
   font-size: 0.625rem;
   font-weight: 700;
   line-height: 1;
-  color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  background: rgba(0, 0, 0, 0.3);
+  color: #12352a;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(18, 53, 42, 0.35);
   padding: 0.15rem 0.25rem;
-  border-radius: 0.25rem;
+  border-radius: 0.3rem;
 }
 
-.tile-value-badge.light {
-  color: rgba(15, 23, 42, 0.9);
-  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.4);
-}
-
+.tile-value-badge.light,
 .tile-value-badge.empty {
-  color: rgba(255, 255, 255, 0.95);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  background: rgba(0, 0, 0, 0.3);
+  color: #12352a;
+  background: rgba(255, 255, 255, 0.85);
 }
 
 /* Guided tour in the classroom: the element the current step talks about. */
