@@ -25,9 +25,9 @@ export interface LevelConfig {
 export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
   1: {
     level: 1,
-    name: "Anfänger – Neugier",
+    name: "Neugier",
     nameEn: "Beginner – Curiosity",
-    description: "Lerne nur die Neugier (Exploration) kennen. Alles andere ist deaktiviert.",
+    description: "Hier gibt es nur einen Regler: die Neugier. Probier aus, was er mit dem Rover macht.",
     descriptionEn: "Learn only curiosity (exploration). Everything else is disabled.",
     unlockedFeatures: {
       canPlaceWalls: false,
@@ -42,9 +42,9 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
   },
   2: {
     level: 2,
-    name: "Lernrate – Alpha (α)",
+    name: "Lernrate (α)",
     nameEn: "Learning Rate – Alpha (α)",
-    description: "Schalte die Lernrate frei. Verstehe wie schnell der Rover lernt.",
+    description: "Jetzt kommt die Lernrate dazu. Sie bestimmt, wie schnell der Rover Neues übernimmt.",
     descriptionEn: "Unlock learning rate. Understand how fast the rover learns.",
     unlockedFeatures: {
       canPlaceWalls: false,
@@ -59,9 +59,9 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
   },
   3: {
     level: 3,
-    name: "Weitsicht – Gamma (γ)",
+    name: "Weitsicht (γ)",
     nameEn: "Foresight – Gamma (γ)",
-    description: "Schalte die Weitsicht (den Diskontfaktor) frei. Kurz- vs. Langfristiges Denken.",
+    description: "Jetzt kommt die Weitsicht dazu. Denkt der Rover nur an den nächsten Schritt oder an das Ziel am Ende?",
     descriptionEn: "Unlock foresight (the discount factor). Short-term vs. long-term thinking.",
     unlockedFeatures: {
       canPlaceWalls: false,
@@ -78,7 +78,7 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
     level: 4,
     name: "Belohnungen platzieren",
     nameEn: "Place Rewards",
-    description: "Platziere Belohnungen auf dem Spielfeld. Wir werden sehen, ob der Rover sie findet!",
+    description: "Leg Belohnungen aufs Feld und schau, ob der Rover sie findet.",
     descriptionEn: "Place rewards on the field. Will the rover find them?",
     unlockedFeatures: {
       canPlaceWalls: false,
@@ -95,7 +95,7 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
     level: 5,
     name: "Strafen platzieren",
     nameEn: "Place Penalties",
-    description: "Platziere Strafen. Der Rover muss lernen, sie zu vermeiden.",
+    description: "Leg Strafen aufs Feld. Der Rover muss lernen, ihnen aus dem Weg zu gehen.",
     descriptionEn: "Place penalties. The rover must learn to avoid them.",
     unlockedFeatures: {
       canPlaceWalls: false,
@@ -112,7 +112,7 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
     level: 6,
     name: "Mauern bauen",
     nameEn: "Build Walls",
-    description: "Platziere Hindernisse. Der Rover muss kreative Wege finden.",
+    description: "Bau Mauern. Der Rover muss sich einen Weg drumherum suchen.",
     descriptionEn: "Place obstacles. The rover must find creative paths.",
     unlockedFeatures: {
       canPlaceWalls: true,
@@ -129,7 +129,7 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
     level: 7,
     name: "Gittergröße ändern",
     nameEn: "Change Grid Size",
-    description: "Passt die Spielfeldgröße an. Größer = schwieriger.",
+    description: "Mach das Feld größer. Je größer es ist, desto länger braucht der Rover.",
     descriptionEn: "Adjust the field size. Bigger = harder.",
     unlockedFeatures: {
       canPlaceWalls: true,
@@ -146,7 +146,7 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
     level: 8,
     name: "Portale freischalten",
     nameEn: "Unlock Portals",
-    description: "Nutze Portale für Teleportation. Der Rover entdeckt neue Dimensionen!",
+    description: "Setz Portale. Wer hineinfährt, kommt an einer anderen Stelle wieder heraus.",
     descriptionEn: "Use portals for teleportation. The rover discovers new dimensions!",
     unlockedFeatures: {
       canPlaceWalls: true,
@@ -161,9 +161,9 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
   },
   9: {
     level: 9,
-    name: "Meister – Alles kombiniert",
+    name: "Alles zusammen",
     nameEn: "Master – Everything Combined",
-    description: "Kombiniere alles was du gelernt hast. Kreiere komplexe Szenarien.",
+    description: "Nimm alles zusammen, was du bisher kennst, und bau dem Rover eine schwierige Welt.",
     descriptionEn: "Combine everything you've learned. Create complex scenarios.",
     unlockedFeatures: {
       canPlaceWalls: true,
@@ -178,9 +178,9 @@ export const LEVEL_CONFIGS: Record<LevelNumber, LevelConfig> = {
   },
   10: {
     level: 10,
-    name: "Champion – Free Mode entsperrt!",
+    name: "Das letzte Level",
     nameEn: "Champion – Free Mode Unlocked!",
-    description: "Du hast es geschafft! Free Mode ist jetzt verfügbar.",
+    description: "Die letzte Aufgabe. Danach ist das freie Spiel offen.",
     descriptionEn: "You made it! Free Mode is now available.",
     unlockedFeatures: {
       canPlaceWalls: true,

@@ -387,6 +387,6 @@ export const getSpeedrunStageConfig = (stage: number): SpeedrunStageConfig =>
 
 export const getEpisodeTitle = (episodeNumber: number, language: Language): string => {
   const base = EPISODE_TITLES[(episodeNumber - 1) % EPISODE_TITLES.length];
-  const prefix = language === "en" ? "Mission" : "Einsatz";
-  return `${prefix} ${episodeNumber}: ${base}`;
+  if (language !== "en") return `Lauf ${episodeNumber}`;
+  return `Mission ${episodeNumber}: ${base}`;
 };

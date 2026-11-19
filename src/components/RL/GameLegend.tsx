@@ -10,11 +10,11 @@ interface Props {
 /** Always-visible explanation of the board symbols; lives in the far-left sidebar next to the game. */
 export function GameLegend({ translate, showPortal = true }: Props) {
   const items = [
-    { label: translate("Rover", "Rover"), shape: "rr-rover", emoji: "🤖", description: translate("Der lernende Rover – beobachte seine Entscheidungen!", "The learning rover – watch its decisions unfold!") },
+    { label: translate("Rover", "Rover"), shape: "rr-rover", emoji: "🤖", description: translate("Er lernt. Schau ihm beim Entscheiden zu.", "The learning rover – watch its decisions unfold!") },
     { label: translate("Ziel", "Goal"), shape: "rr-goal", emoji: "🎯", description: translate("Hier gibt's die größte Belohnung.", "Maximum reward lives here.") },
-    { label: translate("Belohnung", "Reward"), shape: "rr-candy", emoji: "🍬", description: translate("Positive Rewards – der Rover mag diese Felder.", "Positive rewards – the rover loves these tiles.") },
-    { label: translate("Strafe", "Penalty"), shape: "rr-trap", emoji: "⚡", description: translate("Negative Rewards – besser vermeiden.", "Negative rewards – better avoid them.") },
-    { label: translate("Mauer", "Wall"), shape: "rr-wall", emoji: "🧱", description: translate("Unpassierbar – hier kommt keiner durch.", "Solid – nobody passes through here.") },
+    { label: translate("Belohnung", "Reward"), shape: "rr-candy", emoji: "🍬", description: translate("Gibt Pluspunkte. Diese Felder mag der Rover.", "Positive rewards – the rover loves these tiles.") },
+    { label: translate("Strafe", "Penalty"), shape: "rr-trap", emoji: "⚡", description: translate("Gibt Minuspunkte. Besser drumherum fahren.", "Negative rewards – better avoid them.") },
+    { label: translate("Mauer", "Wall"), shape: "rr-wall", emoji: "🧱", description: translate("Hier kommt keiner durch.", "Solid – nobody passes through here.") },
     ...(showPortal
       ? [{ label: translate("Portal", "Portal"), shape: "rr-portal", emoji: "🌀", description: translate("Teleportiert zu einem anderen Portal.", "Teleports to another portal.") }]
       : []),

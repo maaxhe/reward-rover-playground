@@ -1389,9 +1389,9 @@ const handleActiveBonusClick = useCallback(() => {
     const rank = rankIndex === -1 ? sortedHistory.length : rankIndex + 1;
     const fact = CELEBRATION_FACTS[Math.floor(Math.random() * CELEBRATION_FACTS.length)][language];
     toast({
-      title: translate("Mission geschafft", "Mission Complete"),
+      title: translate("Im Ziel", "Mission Complete"),
       description: translate(
-        `Du hast ${title} in ${latest.steps} Zügen geknackt. Schau ins Leaderboard!`,
+        `${title}: im Ziel nach ${latest.steps} Schritten. Schau in die Bestenliste.`,
         `You conquered ${title} in ${latest.steps} moves. Check the leaderboard!`,
       ),
     });
@@ -1423,9 +1423,9 @@ const handleActiveBonusClick = useCallback(() => {
     const rank = rankIndex === -1 ? sortedHistory.length : rankIndex + 1;
     const fact = CELEBRATION_FACTS[Math.floor(Math.random() * CELEBRATION_FACTS.length)][language];
     toast({
-      title: translate("Mission geschafft", "Mission Complete"),
+      title: translate("Im Ziel", "Mission Complete"),
       description: translate(
-        `Du hast ${title} in ${latest.steps} Zügen gemeistert. Schau ins Leaderboard!`,
+        `${title}: im Ziel nach ${latest.steps} Schritten. Schau in die Bestenliste.`,
         `You completed ${title} in ${latest.steps} moves. Check the leaderboard!`,
       ),
     });
@@ -2220,7 +2220,7 @@ const handleActiveBonusClick = useCallback(() => {
       ? speedrunEnabled
         ? translate("Speedrun-Bestenliste", "Speedrun Leaderboard")
         : translate("Zufallsmodus-Bestenliste", "Random Mode Leaderboard")
-      : translate("Playground-Bestenliste", "Playground Leaderboard");
+      : translate("Bestenliste", "Playground Leaderboard");
   const leaderboardEmptyText = mode === "random"
     ? speedrunEnabled
       ? translate(
@@ -2477,7 +2477,7 @@ const handleActiveBonusClick = useCallback(() => {
             <DialogTitle className="text-2xl font-bold text-white">
               {authIsRegistering
                 ? translate("Account erstellen", "Create account")
-                : translate("Login", "Login")}
+                : translate("Anmelden", "Login")}
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
               {translate(
@@ -2547,7 +2547,7 @@ const handleActiveBonusClick = useCallback(() => {
                 onClick={handleAuthSubmit}
                 className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold transition-colors"
               >
-                {authIsRegistering ? translate("Registrieren", "Register") : translate("Login", "Login")}
+                {authIsRegistering ? translate("Registrieren", "Register") : translate("Anmelden", "Login")}
               </Button>
               <button
                 type="button"
@@ -2558,7 +2558,7 @@ const handleActiveBonusClick = useCallback(() => {
                   ? translate("Schon registriert? ", "Already registered? ")
                   : translate("Neu hier? ", "New here? ")}
                 <span className="text-primary/90 hover:text-primary">
-                  {authIsRegistering ? translate("Login", "Login") : translate("Registrieren", "Register")}
+                  {authIsRegistering ? translate("Anmelden", "Login") : translate("Registrieren", "Register")}
                 </span>
               </button>
             </div>
@@ -2623,7 +2623,7 @@ const handleActiveBonusClick = useCallback(() => {
                 </>
               ) : (
                 <Button variant="outline" size="sm" onClick={() => setAuthDialogOpen(true)}>
-                  {translate("Login", "Login")}
+                  {translate("Anmelden", "Login")}
                 </Button>
               )}
               <div className="flex items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5">
@@ -3428,7 +3428,7 @@ const handleActiveBonusClick = useCallback(() => {
                     return (
                       facts +
                       (levelSolvedDialog >= 10
-                        ? translate("Das war das letzte Level. Der Free Mode ist offen.", "That was the last level. Free Mode is open.")
+                        ? translate("Das war das letzte Level. Das freie Spiel ist offen.", "That was the last level. Free Mode is open.")
                         : translate(`Level ${levelSolvedDialog + 1} ist jetzt offen.`, `Level ${levelSolvedDialog + 1} is open now.`))
                     );
                   })()}
@@ -3465,17 +3465,17 @@ const handleActiveBonusClick = useCallback(() => {
             <Card className="relative w-full max-w-xl overflow-hidden border-primary/40 bg-card/95 p-8 text-center shadow-sm">
               <div className="relative space-y-4">
                 <h2 className="text-3xl font-bold text-foreground">
-                  {translate("Glückwunsch!", "Congratulations!")}
+                  {translate("Im Ziel!", "Congratulations!")}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {translate("Mission", "Mission")} #{celebration.rank}
+                  {translate("Platz", "Mission")} #{celebration.rank}
                 </p>
                 <h3 className="text-lg font-semibold text-foreground">
                   {celebration.title}
                 </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   {translate(
-                    `Du hast es in ${celebration.steps} Zügen mit einem Reward von ${numberFormatter.format(celebration.reward)} geschafft. Schau in der Bestenliste nach deinem Rang!`,
+                    `Der Rover ist im Ziel: ${celebration.steps} Schritte, ${numberFormatter.format(celebration.reward)} Punkte Belohnung.`,
                     `Finished in ${celebration.steps} moves with a reward of ${numberFormatter.format(celebration.reward)}. Check the leaderboard to see your rank!`,
                   )}
                 </p>
@@ -3494,7 +3494,7 @@ const handleActiveBonusClick = useCallback(() => {
                   <div className="rounded-lg border border-primary/30 bg-primary/10 p-3 text-sm text-foreground">
                     <p>
                       {translate(
-                        "Tipp: Mit Auto-Restart startet der Rover nach jedem Ziel von selbst neu – so lernt er ohne Klicken weiter.",
+                        "Tipp: Mit Auto-Restart startet der Rover nach jedem Ziel von selbst neu. So lernt er weiter, ohne dass du klicken musst.",
                         "Tip: With auto restart the rover starts over by itself after every goal, so it keeps learning without extra clicks.",
                       )}
                     </p>
@@ -3529,7 +3529,7 @@ const handleActiveBonusClick = useCallback(() => {
               onClick={() => setShowPlaygroundStatsCard((prev) => !prev)}
               className="flex w-full items-center justify-between text-left text-sm font-semibold text-foreground"
             >
-              <span>{translate("Playground-Statistik", "Playground Statistics")}</span>
+              <span>{translate("Statistik", "Playground Statistics")}</span>
               <span className="flex items-center gap-3">
                 {!showPlaygroundStatsCard && playgroundStatsSummary.count > 0 && (
                   <span className="text-xs font-normal tabular-nums text-muted-foreground">
@@ -3811,7 +3811,7 @@ const handleActiveBonusClick = useCallback(() => {
           >
             <div className="mb-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
               <h2 className="text-2xl font-bold text-foreground">
-                {translate("Playground", "Playground")}
+                {translate("Spielfeld", "Playground")}
               </h2>
               {mode === "playground" && (
                 <RoverSays
@@ -3989,7 +3989,7 @@ const handleActiveBonusClick = useCallback(() => {
                     {running ? translate("Pause", "Pause") : translate("Start", "Start")}
                   </Button>
                   <Button variant="secondary" size="lg" className="font-semibold" onClick={playground ? handlePlaygroundStep : handleRandomStep}>
-                    {translate("Step", "Step")}
+                    {translate("Schritt", "Step")}
                   </Button>
                   <Button variant="outline" size="lg" aria-label={translate("Zurück", "Reset")} onClick={playground ? handlePlaygroundReset : handleRandomReset}>
                     <RotateCcw className="h-4 w-4" />

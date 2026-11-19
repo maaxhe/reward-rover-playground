@@ -18,7 +18,7 @@ export function GameHeader({
   translate,
 }: GameHeaderProps) {
   const modes: Array<{ key: Mode; label: string; disabled: boolean }> = [
-    { key: "playground", label: translate("Playground", "Playground"), disabled: false },
+    { key: "playground", label: translate("Spielfeld", "Playground"), disabled: false },
     { key: "random", label: translate("Random Mode", "Random Mode"), disabled: isMobile },
     { key: "comparison", label: translate("Comparison", "Comparison"), disabled: isMobile },
   ];

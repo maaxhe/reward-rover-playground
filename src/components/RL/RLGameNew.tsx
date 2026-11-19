@@ -276,7 +276,7 @@ export function RLGameNew() {
             onClick={() => (canAccessFreeMode ? setMode("free") : setPwOpen(true))}
             className="w-full font-semibold md:w-auto"
           >
-            {translate("Free Mode", "Free Mode")}
+            {translate("Freies Spiel", "Free Mode")}
             {!canAccessFreeMode && <span className="ml-2 text-xs">🔒</span>}
           </Button>
           <Button asChild variant="outline" className="w-full font-semibold md:ml-auto md:w-auto">
@@ -289,7 +289,7 @@ export function RLGameNew() {
       <Dialog open={pwOpen} onOpenChange={(o) => { setPwOpen(o); if (!o) { setPw(""); setPwError(false); } }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Free Mode 🔒</DialogTitle>
+            <DialogTitle>{translate("Freies Spiel", "Free Mode")} 🔒</DialogTitle>
             <DialogDescription>
               {translate(
                 "Gib das Passwort ein, oder löse alle 10 Level.",
@@ -386,11 +386,11 @@ export function RLGameNew() {
                   🔒{" "}
                   {currentLevel >= 10
                     ? translate(
-                        "Erreiche das Ziel, um den Free Mode freizuschalten.",
+                        "Lös die Aufgabe dieses Levels, dann ist das freie Spiel offen.",
                         "Reach the goal to unlock Free Mode.",
                       )
                     : translate(
-                        "Bring den Rover ins Ziel, um das nächste Level freizuschalten.",
+                        "Lös die Aufgabe dieses Levels, dann geht das nächste auf.",
                         "Get the rover to the goal to unlock the next level.",
                       )}
                 </p>

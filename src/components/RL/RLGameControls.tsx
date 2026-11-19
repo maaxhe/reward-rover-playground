@@ -84,7 +84,7 @@ export const PlaygroundControls = ({
       </div>
       <div className="grid grid-cols-2 gap-2">
         <Button variant="secondary" onClick={onStep} className="font-semibold">
-          {translate("Step", "Step")}
+          {translate("Schritt", "Step")}
         </Button>
         <Button variant="outline" onClick={onReset} className="font-semibold">
           <RotateCcw className="mr-2 h-4 w-4" />
@@ -191,7 +191,7 @@ export const RandomControls = ({
     </div>
     <div className="flex gap-2">
       <Button variant="secondary" size="lg" onClick={onStep} className="flex-1 font-semibold">
-        {translate("Step", "Step")}
+        {translate("Schritt", "Step")}
       </Button>
       <Button variant="outline" size="lg" onClick={onReset} className="flex-1 font-semibold">
         <RotateCcw className="mr-2 h-4 w-4" />
@@ -332,7 +332,7 @@ export const ControlBar = ({
           onClick={() => onModeChange("playground")}
           className="rounded-lg font-semibold"
         >
-          {translate("Playground", "Playground")}
+          {translate("Spielfeld", "Playground")}
         </Button>
         <div className="relative">
           <Button

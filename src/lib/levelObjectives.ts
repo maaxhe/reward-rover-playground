@@ -102,7 +102,7 @@ export const LEVEL_OBJECTIVES: Record<LevelNumber, LevelObjective> = {
     efficientEpisodes: 4,
     stepFactor: 1.75,
     hint: {
-      de: "Letzte Aufgabe: Vier Läufe hintereinander fast auf dem besten Weg. Danach kennst du alle Regler und der Free Mode ist offen.",
+      de: "Letzte Aufgabe: Vier Läufe hintereinander fast auf dem besten Weg. Danach kennst du alle Regler und das freie Spiel ist offen.",
       en: "Last task: four runs in a row almost on the best path. After that you know every dial and Free Mode is open.",
     },
   },
