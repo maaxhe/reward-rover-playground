@@ -17,7 +17,7 @@ export type GridConfig = Pick<PresetLevel, "size" | "tiles" | "agent" | "goal">;
 export const PRESET_LEVELS: PresetLevel[] = [
   {
     key: "trap",
-    name: { de: "🪤 Die Falle", en: "🪤 The Trap" },
+    name: { de: "Die Falle", en: "The Trap" },
     description: {
       de: "Belohnungen locken in eine Sackgasse - der Rover muss lernen zu widerstehen!",
       en: "Rewards lure into a dead end - the rover must learn to resist!",
@@ -43,7 +43,7 @@ export const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "twopaths",
-    name: { de: "🚦 Zwei Wege", en: "🚦 Two Paths" },
+    name: { de: "Zwei Wege", en: "Two Paths" },
     description: {
       de: "Welcher Weg ist besser? Der schnelle mit Risiko oder der sichere Umweg?",
       en: "Which path is better? The fast risky one or the safe detour?",
@@ -101,7 +101,7 @@ export const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "gauntlet",
-    name: { de: "⚡ Spießrutenlauf", en: "⚡ The Gauntlet" },
+    name: { de: "Spießrutenlauf", en: "The Gauntlet" },
     description: {
       de: "Viele Strafen versperren den direkten Weg - Vorsicht ist geboten!",
       en: "Many penalties block the direct path - caution is required!",
@@ -124,7 +124,7 @@ export const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "bouncer",
-    name: { de: "🚪 Der Türsteher", en: "🚪 The Bouncer" },
+    name: { de: "Der Türsteher", en: "The Bouncer" },
     description: {
       de: "Das Ziel ist blockiert – nur durch eine Strafe führt der einzige Eingang.",
       en: "The goal is blocked — only a penalty opens the only entrance.",
@@ -208,7 +208,7 @@ export const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "riskyBridge",
-    name: { de: "🌉 Die unsichere Brücke", en: "The Risky Bridge" },
+    name: { de: "Die unsichere Brücke", en: "The Risky Bridge" },
     description: {
       de: "Ein schmaler Steg führt direkt zum Ziel, doch Strafen flankieren ihn – der sichere Umweg ist viel länger.",
       en: "A one-tile bridge heads straight for the goal, but penalties flank it – the safe detour is much longer.",
@@ -226,7 +226,7 @@ export const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "trappedMaze",
-    name: { de: "🧩 Labyrinth mit Fallen", en: "🧩 Trapped Maze" },
+    name: { de: "Labyrinth mit Fallen", en: "Trapped Maze" },
     description: {
       de: "Belohnungen stecken in Sackgassen, doch das Ziel in der Mitte erfordert einen riskanten Schritt.",
       en: "Rewards hide in dead ends, but the central goal demands a risky step.",
@@ -271,7 +271,7 @@ export const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "twoRooms",
-    name: { de: "🚪 Zwei Räume", en: "🚪 Two Rooms" },
+    name: { de: "Zwei Räume", en: "Two Rooms" },
     description: {
       de: "Eine Wand teilt das Feld, nur ein Durchgang führt in den lohnenden zweiten Raum.",
       en: "A wall splits the field; only one doorway leads to the rewarding second room.",
@@ -303,7 +303,7 @@ export const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "fourRooms",
-    name: { de: "🏠 Vier Räume", en: "Four Rooms" },
+    name: { de: "Vier Räume", en: "Four Rooms" },
     description: {
       de: "Der Klassiker: Vier Räume mit engen Durchgängen zwischen den Quadranten.",
       en: "A classic benchmark: four rooms with narrow doorways between quadrants.",
@@ -321,7 +321,7 @@ export const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "lavaBridge",
-    name: { de: "🌋 Die Lavabrücke", en: "Lava Bridge" },
+    name: { de: "Die Lavabrücke", en: "Lava Bridge" },
     description: {
       de: "Ein schmaler Steg führt durch Lava – der sichere Umweg kostet wertvolle Schritte.",
       en: "A narrow bridge crosses lava — the safe detour costs many steps.",
@@ -358,7 +358,7 @@ export const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "islandHopping",
-    name: { de: "🏝️ Insel-Hopping", en: "Island Hopping" },
+    name: { de: "Insel-Hopping", en: "Island Hopping" },
     description: {
       de: "Drei Inseln sind nur über Portale verbunden – ohne Sprünge bleibt der Rover stecken.",
       en: "Three islands are linked only by portals — without jumps the rover is stuck.",
@@ -392,7 +392,7 @@ export const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "labyrinthXL",
-    name: { de: "🧭 Großes Labyrinth", en: "🧭 Grand Maze" },
+    name: { de: "Großes Labyrinth", en: "Grand Maze" },
     description: {
       de: "Komplexes 14×14-Labyrinth mit verschlungenen Wegen, Portalen und Abzweigungen – du brauchst Ausdauer!",
       en: "Complex 14×14 labyrinth packed with twists, portals, and branches – stamina required!",
@@ -540,7 +540,7 @@ export const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "crossroads",
-    name: { de: "⚡ Kreuzung", en: "⚡ Crossroads" },
+    name: { de: "Kreuzung", en: "Crossroads" },
     description: {
       de: "Vier Wege, eine Entscheidung – welcher Pfad führt zum Sieg?",
       en: "Four paths, one decision – which path leads to victory?",

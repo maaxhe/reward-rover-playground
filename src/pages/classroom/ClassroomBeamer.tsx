@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { useTileSize } from "@/components/RL/CompetitionBoard";
 import { competitionApi, sessionStore, type Replay } from "@/lib/competition/api";
 import { levelLabel } from "@/lib/competition/levelWorld";
-import { MEDALS, formatCountdown, formatParams } from "./shared";
+import { formatCountdown, formatParams } from "./shared";
+import { DownloadIcon, RankBadge } from "@/components/RL/icons";
 import { ReplayBoard } from "./ReplayBoard";
 import { downloadCsv, roundCsv } from "./exportCsv";
 import { useRoom, useTick } from "./useRoom";
@@ -94,7 +95,7 @@ const ClassroomBeamer = () => {
             <ol className="space-y-2">
               {rows.map((row) => (
                 <li key={row.id} className="flex items-center gap-4 rounded-2xl border-2 border-border bg-card px-5 py-3">
-                  <span className="w-14 text-center text-4xl font-bold tabular-nums">{row.rank ? (MEDALS[row.rank - 1] ?? row.rank) : "–"}</span>
+                  <span className="w-14 text-center text-4xl font-bold tabular-nums">{row.rank ? <RankBadge rank={row.rank} /> : "–"}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-3xl font-bold">{row.name}</span>
                     {row.params && <span className="block truncate text-base text-muted-foreground">{formatParams(row.params)}</span>}
@@ -118,7 +119,7 @@ const ClassroomBeamer = () => {
                 <ol className="grid gap-x-8 gap-y-1 text-2xl md:grid-cols-2">
                   {room.totals.slice(0, 8).map((t) => (
                     <li key={t.id} className="flex justify-between gap-4">
-                      <span className="truncate">{MEDALS[t.rank - 1] ?? `${t.rank}.`} {t.name}</span>
+                      <span className="truncate"><RankBadge rank={t.rank} suffix="." /> {t.name}</span>
                       <span className="font-bold tabular-nums">{t.total}</span>
                     </li>
                   ))}
@@ -146,7 +147,7 @@ const ClassroomBeamer = () => {
             </div>
             {finished && (
               <Button variant="outline" onClick={() => downloadCsv(`reward-rover-${room.code}-runde-${room.round}.csv`, roundCsv(room.leaderboard, room.totals))}>
-                ⬇ Ergebnisse als CSV
+                <DownloadIcon className="mr-2" /> Ergebnisse als CSV
               </Button>
             )}
           </div>

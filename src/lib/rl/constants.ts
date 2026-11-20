@@ -35,15 +35,6 @@ export const TILE_SIZE_LABELS: Record<Language, Record<keyof typeof TILE_SIZE_MA
   en: { s: "Small", m: "Medium", l: "Large" },
 };
 
-export const TILE_ICONS: Record<TileType, string> = {
-  empty: "",
-  obstacle: "",
-  reward: "🍬",
-  punishment: "⚡",
-  goal: "🎯",
-  portal: "🌀",
-};
-
 export const TILE_LABELS: Record<Language, Record<TileType, string>> = {
   de: {
     empty: "Leer",
@@ -197,7 +188,7 @@ export const SPEEDRUN_STAGES: SpeedrunStageConfig[] = [
 export const PRESET_LEVELS: PresetLevel[] = [
   {
     key: "trap",
-    name: { de: "🪤 Die Falle", en: "🪤 The Trap" },
+    name: { de: "Die Falle", en: "The Trap" },
     description: {
       de: "Mehrere verlockende Sackgassen mit Belohnungen - der Rover muss Geduld lernen!",
       en: "Multiple tempting dead ends with rewards - the rover must learn patience!",
@@ -251,7 +242,7 @@ export const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "spiral",
-    name: { de: "🌀 Spirale des Chaos", en: "🌀 Spiral of Chaos" },
+    name: { de: "Spirale des Chaos", en: "Spiral of Chaos" },
     description: {
       de: "Eine gefährliche Spirale mit Portalen im Zentrum – nur die klügsten Rover finden den Weg!",
       en: "A dangerous spiral with portals at the center – only the smartest rovers find the way!",
@@ -310,7 +301,7 @@ export const PRESET_LEVELS: PresetLevel[] = [
   },
   {
     key: "crossroads",
-    name: { de: "⚡ Kreuzung der Entscheidungen", en: "⚡ Crossroads of Decisions" },
+    name: { de: "Kreuzung der Entscheidungen", en: "Crossroads of Decisions" },
     description: {
       de: "Vier Wege, eine Entscheidung – welcher Pfad führt zum Sieg?",
       en: "Four paths, one decision – which path leads to victory?",

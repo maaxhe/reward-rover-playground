@@ -1,3 +1,4 @@
+import { LockIcon } from "./icons";
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -71,7 +72,7 @@ const Section = ({ id, title, need = 0, children }: { id: string; title: string;
       <h3 className="text-3xl font-extrabold tracking-tight text-foreground">{title}</h3>
       {locked && (
         <p className="rounded-lg border border-dashed border-border bg-secondary/40 px-4 py-3 text-base font-semibold text-muted-foreground">
-          {t("🔒 Spiel zuerst die Demo darüber durch, dann schaltet sich dieser Teil frei.", "🔒 Play the demo above first, then this part unlocks.")}
+          <LockIcon className="mr-2" />{t("Spiel zuerst die Demo darüber durch, dann schaltet sich dieser Teil frei.", "Play the demo above first, then this part unlocks.")}
         </p>
       )}
       <div
@@ -127,7 +128,7 @@ export function RLGuideDialog({ open, onOpenChange, translate: t }: Props) {
               disabled={done < c.need}
               className="rounded-lg px-3 py-2 text-left text-sm font-semibold text-foreground/80 transition-colors hover:bg-primary/15 hover:text-foreground disabled:opacity-40 disabled:hover:bg-transparent"
             >
-              <span className="mr-2 text-muted-foreground">{done < c.need ? "🔒" : i + 1}</span>
+              <span className="mr-2 text-muted-foreground">{done < c.need ? <LockIcon /> : i + 1}</span>
               {t(c.de, c.en)}
             </button>
           ))}

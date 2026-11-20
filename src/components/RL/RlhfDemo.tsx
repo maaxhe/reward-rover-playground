@@ -1,3 +1,4 @@
+import { AnswerIcon, PickIcon, PointsIcon, RisingIcon } from "./icons";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -83,10 +84,10 @@ export function RlhfDemo({ translate: t }: { translate: (de: string, en: string)
   };
 
   const steps = [
-    { icon: "💬", de: "Das Modell antwortet", en: "The model answers" },
-    { icon: "👍", de: "Ein Mensch wählt die bessere Antwort", en: "A human picks the better answer" },
-    { icon: "🏆", de: "Das gibt Belohnung", en: "That earns reward" },
-    { icon: "📈", de: "Gute Antworten werden wahrscheinlicher", en: "Good answers become more likely" },
+    { icon: <AnswerIcon />, de: "Das Modell antwortet", en: "The model answers" },
+    { icon: <PickIcon />, de: "Ein Mensch wählt die bessere Antwort", en: "A human picks the better answer" },
+    { icon: <PointsIcon />, de: "Das gibt Belohnung", en: "That earns reward" },
+    { icon: <RisingIcon />, de: "Gute Antworten werden wahrscheinlicher", en: "Good answers become more likely" },
   ];
 
   return (
@@ -94,7 +95,7 @@ export function RlhfDemo({ translate: t }: { translate: (de: string, en: string)
       <ol className="grid gap-2 sm:grid-cols-4">
         {steps.map((s, i) => (
           <li key={s.de} className="flex items-center gap-3 rounded-xl bg-background/60 p-3 text-sm font-semibold">
-            <span className="text-2xl" aria-hidden>{s.icon}</span>
+            <span className="text-2xl text-primary" aria-hidden>{s.icon}</span>
             <span><span className="mr-1 text-muted-foreground">{i + 1}.</span>{t(s.de, s.en)}</span>
           </li>
         ))}
@@ -107,7 +108,7 @@ export function RlhfDemo({ translate: t }: { translate: (de: string, en: string)
 
       <div className="space-y-2">
         <p className={cn("text-sm font-semibold", !touched && "text-primary")}>
-          {t("👉 Welche Antwort ist besser? Klick sie an.", "👉 Which answer is better? Click it.")}
+          {t("Welche Antwort ist besser? Klick sie an.", "Which answer is better? Click it.")}
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
           {pair.map((idx, slot) => (

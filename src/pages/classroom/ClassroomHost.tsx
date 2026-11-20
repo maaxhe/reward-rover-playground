@@ -1,3 +1,4 @@
+import { DownloadIcon, RankBadge } from "@/components/RL/icons";
 import { useCallback, useMemo, useState } from "react";
 import { RealRobotsCard } from "@/components/RL/RealRobots";
 import { Link, useParams } from "react-router-dom";
@@ -7,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { CompetitionBoard, useTileSize } from "@/components/RL/CompetitionBoard";
 import { competitionApi, sessionStore, type LeaderboardRow, type Replay } from "@/lib/competition/api";
 import { worldToState } from "@/lib/competition/world";
-import { ClassroomShell, Leaderboard, MEDALS, TotalsCard, formatCountdown } from "./shared";
+import { ClassroomShell, Leaderboard, TotalsCard, formatCountdown } from "./shared";
 import { ReplayBoard } from "./ReplayBoard";
 import { SettingsPanel } from "./SettingsPanel";
 import { HostVoteCard } from "./VoteCard";
@@ -118,7 +119,7 @@ const ClassroomHost = () => {
                   Nochmal – neue Welt
                 </Button>
                 <Button variant="outline" onClick={() => downloadCsv(`reward-rover-${room.code}-runde-${room.round}.csv`, roundCsv(room.leaderboard, room.totals))}>
-                  ⬇ CSV
+                  <DownloadIcon className="mr-2" /> CSV
                 </Button>
                 <span className="text-xs text-muted-foreground">Alle bleiben im Raum, Ergebnisse werden gelöscht. In der Lobby kannst du noch Einstellungen ändern.</span>
               </>
@@ -132,7 +133,7 @@ const ClassroomHost = () => {
             <div className="grid gap-3 sm:grid-cols-3">
               {top3.map((row) => (
                 <Card key={row.id} className="rounded-2xl border-border bg-card p-4 text-center">
-                  <div className="text-4xl">{MEDALS[(row.rank ?? 1) - 1]}</div>
+                  <div className="text-4xl"><RankBadge rank={row.rank ?? 1} /></div>
                   <div className="truncate text-lg font-bold">{row.name}</div>
                   <div className="text-sm tabular-nums">{row.totalReward} Pkt{row.reachedGoal ? ` · ${row.steps} Schritte` : ""}</div>
                 </Card>

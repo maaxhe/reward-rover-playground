@@ -1,4 +1,4 @@
-import { memo, ReactNode, useMemo } from "react";
+import { memo, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { formatPlanned, valueTint } from "./valueTint";
 
@@ -21,8 +21,6 @@ export interface TileProps {
   onClick?: (x: number, y: number) => void;
   onMouseDown?: () => void;
   onMouseEnter?: () => void;
-  /** Kept for callers that still pass emoji; the board now draws shapes (see .rr-* in index.css). */
-  icon?: ReactNode;
   /** Draw the rover inside this tile (boards without a separate animated rover overlay). */
   showAgent?: boolean;
   visits?: number;

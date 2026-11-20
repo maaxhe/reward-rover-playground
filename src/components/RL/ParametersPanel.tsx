@@ -1,3 +1,4 @@
+import { LockIcon } from "./icons";
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -92,7 +93,7 @@ export function ParametersPanel({
         {/* Alpha (Learning Rate) */}
         {alphaLocked ? (
           <div data-tutorial="alpha" className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>🔒 {translate("Lernrate (α)", "Learning rate (α)")}</span>
+            <span><LockIcon /> {translate("Lernrate (α)", "Learning rate (α)")}</span>
             <span>{translate("ab Level 2", "at level 2")}</span>
           </div>
         ) : (
@@ -105,7 +106,7 @@ export function ParametersPanel({
         >
           <div className="flex justify-between items-center">
             <Label className="text-xs font-medium">
-              {alphaLocked && <span className="mr-1">🔒</span>}
+              {alphaLocked && <LockIcon className="mr-1" />}
               {translate("Lernrate (α)", "Learning Rate (α)")}
             </Label>
             <span className="text-xs font-semibold text-primary">{alpha.toFixed(2)}</span>
@@ -124,7 +125,7 @@ export function ParametersPanel({
           {(alphaLocked || showHelp) && (
             <p className="text-xs text-muted-foreground">
               {alphaLocked
-                ? translate("🔒 Schalte Level 2 frei.", "🔒 Reach level 2 to unlock.")
+                ? translate("Schalte Level 2 frei.", "Reach level 2 to unlock.")
                 : translate("Wie schnell lernt der Rover?", "How fast does the rover learn?")}
             </p>
           )}
@@ -134,7 +135,7 @@ export function ParametersPanel({
         {/* Gamma (Discount Factor) */}
         {gammaLocked ? (
           <div data-tutorial="gamma" className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>🔒 {translate("Weitsicht (γ)", "Foresight (γ)")}</span>
+            <span><LockIcon /> {translate("Weitsicht (γ)", "Foresight (γ)")}</span>
             <span>{translate("ab Level 3", "at level 3")}</span>
           </div>
         ) : (
@@ -147,7 +148,7 @@ export function ParametersPanel({
         >
           <div className="flex justify-between items-center">
             <Label className="text-xs font-medium">
-              {gammaLocked && <span className="mr-1">🔒</span>}
+              {gammaLocked && <LockIcon className="mr-1" />}
               {translate("Weitsicht (γ)", "Foresight (γ)")}
             </Label>
             <span className="text-xs font-semibold text-primary">{gamma.toFixed(2)}</span>
@@ -165,7 +166,7 @@ export function ParametersPanel({
           />
           {(gammaLocked || showHelp) && <p className="text-xs text-muted-foreground">
             {gammaLocked
-              ? translate("🔒 Schalte Level 3 frei.", "🔒 Reach level 3 to unlock.")
+              ? translate("Schalte Level 3 frei.", "Reach level 3 to unlock.")
               : translate(
                   "Auch „Discount-Faktor“ genannt (dasselbe!): Denkt der Rover kurz- oder langfristig?",
                   "Also called “discount factor” (the same thing!): does the rover think short or long term?"

@@ -1,3 +1,4 @@
+import { PlayIcon } from "./icons";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -76,7 +77,7 @@ function Video({ id, title }: { id: string; title: string }) {
           onClick={() => setPlaying(true)}
           className="flex h-full w-full flex-col items-center justify-center gap-2 p-4 text-center transition hover:bg-secondary/70"
         >
-          <span className="text-4xl">▶️</span>
+          <PlayIcon className="text-4xl text-primary" />
           <span className="text-sm font-semibold">{t("Video laden und abspielen", "Load and play video")}</span>
           <span className="text-xs text-muted-foreground">{t("Erst beim Klick wird YouTube geladen.", "YouTube is only loaded when you click.")}</span>
         </button>

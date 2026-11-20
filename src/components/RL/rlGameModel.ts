@@ -32,15 +32,6 @@ export const TILE_SIZE_LABELS: Record<Language, Record<keyof typeof TILE_SIZE_MA
   },
 };
 
-export const TILE_ICONS: Record<TileType, string> = {
-  empty: "",
-  obstacle: "",
-  reward: "🍬",
-  punishment: "⚡",
-  goal: "🎯",
-  portal: "🌀",
-};
-
 export const TILE_LABELS: Record<Language, Record<TileType, string>> = {
   de: {
     empty: "Leer",
@@ -1125,36 +1116,24 @@ export type PlaceableTile = "obstacle" | "reward" | "punishment" | "portal";
 
 export type ChallengeTile = "reward" | "obstacle" | "punishment" | "portal";
 
-export const CHALLENGE_ICON_MAP: Record<ChallengeTile, string> = {
-  reward: "🍬",
-  obstacle: "🧱",
-  punishment: "⚡",
-  portal: "🌀",
-};
-
-export const BONUS_DETAILS: Record<BonusType, { icon: string; label: Record<Language, string>; actionHint: Record<Language, string> }> = {
+export const BONUS_DETAILS: Record<BonusType, { label: Record<Language, string>; actionHint: Record<Language, string> }> = {
   reward: {
-    icon: "🍬",
     label: { de: "Belohnung platzieren", en: "Place reward" },
     actionHint: { de: "Klicke ins Feld, um eine Belohnung zu setzen.", en: "Click the grid to drop a reward." },
   },
   punishment: {
-    icon: "⚡",
     label: { de: "Strafe platzieren", en: "Place penalty" },
     actionHint: { de: "Klicke ins Feld, um eine Strafe zu setzen.", en: "Click the grid to drop a penalty." },
   },
   obstacle: {
-    icon: "🧱",
     label: { de: "Mauer ziehen", en: "Draw wall" },
     actionHint: { de: "Klicke und ziehe, um Mauern zu bauen.", en: "Click and drag to build walls." },
   },
   portal: {
-    icon: "🌀",
     label: { de: "Portal setzen", en: "Place portal" },
     actionHint: { de: "Setze ein Portal – ein Partner erscheint bei nächster Belohnung.", en: "Drop a portal – another portal arrives with the next reward." },
   },
   teleport: {
-    icon: "✨",
     label: { de: "Rover beamen", en: "Beam rover" },
     actionHint: { de: "Sofortige Aktion: teleportiert den Rover auf ein zufälliges Feld.", en: "Instant action: teleports the rover to a random tile." },
   },

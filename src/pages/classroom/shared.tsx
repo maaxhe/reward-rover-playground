@@ -1,3 +1,4 @@
+import { RankBadge } from "@/components/RL/icons";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
@@ -38,8 +39,6 @@ export const formatCountdown = (ms: number) => {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 };
 
-export const MEDALS = ["🥇", "🥈", "🥉"];
-
 const fmtParam = (n: number) => String(parseFloat(n.toFixed(2))).replace(".", ",");
 const fmtPair = ([first, last]: [number, number]) => (Math.abs(first - last) >= 0.05 ? `${fmtParam(first)} → ${fmtParam(last)}` : fmtParam(last));
 
@@ -55,7 +54,7 @@ export const TotalsCard = ({ totals, meId }: { totals: TotalsRow[]; meId?: strin
     <ol className="divide-y divide-border/40">
       {totals.map((row) => (
         <li key={row.id} className={cn("flex items-center gap-3 px-4 py-2", row.id === meId && "bg-primary/10")}>
-          <span className="w-8 text-center text-lg font-bold tabular-nums">{MEDALS[row.rank - 1] ?? row.rank}</span>
+          <span className="w-8 text-center text-lg font-bold tabular-nums"><RankBadge rank={row.rank} /></span>
           <span className="flex-1 truncate font-semibold">{row.name}</span>
           <span className="text-xs tabular-nums text-muted-foreground">{row.rounds.join(" + ")}</span>
           <span className="w-12 text-right font-bold tabular-nums">{row.total}</span>
@@ -91,7 +90,7 @@ export const Leaderboard = ({ rows, meId, onSelect, selectedId, onKick }: Leader
             onClick={() => onSelect && row.submitted && onSelect(row)}
           >
             <span className="w-8 text-center text-lg font-bold tabular-nums">
-              {row.rank ? (MEDALS[row.rank - 1] ?? row.rank) : "–"}
+              {row.rank ? <RankBadge rank={row.rank} /> : "–"}
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate font-semibold">

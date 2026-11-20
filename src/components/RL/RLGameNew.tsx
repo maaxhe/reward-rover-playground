@@ -1,3 +1,4 @@
+import { LockIcon } from "./icons";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useCallback, useEffect, useRef, type ReactNode } from "react";
@@ -277,7 +278,7 @@ export function RLGameNew() {
             className="w-full font-semibold md:w-auto"
           >
             {translate("Freies Spiel", "Free Mode")}
-            {!canAccessFreeMode && <span className="ml-2 text-xs">🔒</span>}
+            {!canAccessFreeMode && <LockIcon className="ml-2 text-xs" />}
           </Button>
           <Button asChild variant="outline" className="w-full font-semibold md:ml-auto md:w-auto">
             <Link to="/klasse">{translate("Klassen-Modus", "Classroom")}</Link>
@@ -289,7 +290,7 @@ export function RLGameNew() {
       <Dialog open={pwOpen} onOpenChange={(o) => { setPwOpen(o); if (!o) { setPw(""); setPwError(false); } }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{translate("Freies Spiel", "Free Mode")} 🔒</DialogTitle>
+            <DialogTitle>{translate("Freies Spiel", "Free Mode")} <LockIcon className="ml-1" /></DialogTitle>
             <DialogDescription>
               {translate(
                 "Gib das Passwort ein, oder löse alle 10 Level.",
@@ -378,12 +379,12 @@ export function RLGameNew() {
                   className="flex-1 font-semibold"
                 >
                   {translate("Level", "Level")} →
-                  {nextLevelLocked && currentLevel < 10 && <span className="ml-1 text-xs">🔒</span>}
+                  {nextLevelLocked && currentLevel < 10 && <LockIcon className="ml-1 text-xs" />}
                 </Button>
               </div>
               {nextLevelLocked && (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  🔒{" "}
+                  <LockIcon />{" "}
                   {currentLevel >= 10
                     ? translate(
                         "Lös die Aufgabe dieses Levels, dann ist das freie Spiel offen.",

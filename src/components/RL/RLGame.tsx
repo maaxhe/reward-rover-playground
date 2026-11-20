@@ -1,3 +1,4 @@
+import { BeamIcon, LockIcon, PauseIcon, PenaltyIcon, PlayIcon, PortalIcon, RewardIcon, WallIcon } from "./icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ToWorkerMsg, FromWorkerMsg, SnapshotPayload } from "../../workers/rlWorker";
 import type { CSSProperties } from "react";
@@ -43,6 +44,7 @@ import {
   AuthUser,
   BONUS_DETAILS,
   BONUS_INTERVAL,
+  BonusType,
   ChallengeTile,
   ComparisonState,
   EpisodeStats,
@@ -50,7 +52,6 @@ import {
   LEVELS,
   LevelKey,
   Mode,
-  TILE_ICONS,
   TILE_LABELS,
   TILE_SIZE_LABELS,
   TILE_SIZE_MAP,
@@ -87,6 +88,14 @@ interface RLGameProps {
 }
 
 /** Preset names mix emoji and plain text; drop the emoji so the list reads evenly. */
+const BonusIcon = ({ type }: { type: BonusType }) => {
+  if (type === "reward") return <RewardIcon />;
+  if (type === "punishment") return <PenaltyIcon />;
+  if (type === "obstacle") return <WallIcon />;
+  if (type === "portal") return <PortalIcon />;
+  return <BeamIcon />;
+};
+
 const stripLeadingEmoji = (name: string) => name.replace(/^[^\p{L}\p{N}]+/u, "");
 
 export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAuthTokenChange, onComparisonActiveChange }: RLGameProps = {}) {
@@ -2308,9 +2317,9 @@ const handleActiveBonusClick = useCallback(() => {
           >
             {numberFormatter.format(randomState.totalReward)}
           </Badge>
-          <Badge variant="secondary">🍬 {randomRewardCount}</Badge>
-          <Badge variant="secondary">⚡ {randomPunishmentCount}</Badge>
-          <Badge variant="secondary">🧱 {randomObstacleCount}</Badge>
+          <Badge variant="secondary" className="gap-1"><RewardIcon /> {randomRewardCount}</Badge>
+          <Badge variant="secondary" className="gap-1"><PenaltyIcon /> {randomPunishmentCount}</Badge>
+          <Badge variant="secondary" className="gap-1"><WallIcon /> {randomObstacleCount}</Badge>
         </div>
       </div>
       <div className="mt-4 rounded-lg border border-border bg-background/70">
@@ -2372,9 +2381,6 @@ const handleActiveBonusClick = useCallback(() => {
               <DialogTitle className="text-2xl font-bold">{currentSlide?.title}</DialogTitle>
               <div className="flex items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5">
                 <span className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  <span role="img" aria-hidden>
-                    🇬🇧
-                  </span>
                   {translate("English", "English")}
                 </span>
                 <Switch
@@ -2628,9 +2634,6 @@ const handleActiveBonusClick = useCallback(() => {
               )}
               <div className="flex items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5">
                 <span className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  <span role="img" aria-hidden>
-                    🇬🇧
-                  </span>
                   {translate("English UI", "English UI")}
                 </span>
                 <Switch
@@ -2754,7 +2757,7 @@ const handleActiveBonusClick = useCallback(() => {
                   onClick={() => changePlacementMode("reward")}
                   className="flex items-center gap-2 font-semibold"
                 >
-                  <span aria-hidden>🍬</span>
+                  <RewardIcon />
                   {translate("Belohnung platzieren", "Place reward")}
                 </Button>
                 <Button
@@ -2762,7 +2765,7 @@ const handleActiveBonusClick = useCallback(() => {
                   onClick={() => changePlacementMode("punishment")}
                   className="flex items-center gap-2 font-semibold"
                 >
-                  <span aria-hidden>⚡</span>
+                  <PenaltyIcon />
                   {translate("Strafe platzieren", "Place penalty")}
                 </Button>
                 <Button
@@ -2770,7 +2773,7 @@ const handleActiveBonusClick = useCallback(() => {
                   onClick={handleComparisonStart}
                   className="flex items-center gap-2 font-semibold"
                 >
-                  <span aria-hidden>▶️</span>
+                  <PlayIcon />
                   {translate("Beide starten", "Start both")}
                 </Button>
                 <Button
@@ -2778,7 +2781,7 @@ const handleActiveBonusClick = useCallback(() => {
                   onClick={handleComparisonPause}
                   className="flex items-center gap-2 font-semibold"
                 >
-                  <span aria-hidden>⏸️</span>
+                  <PauseIcon />
                   {translate("Beide pausieren", "Pause both")}
                 </Button>
               </div>
@@ -3037,7 +3040,6 @@ const handleActiveBonusClick = useCallback(() => {
                       const isGoal = comparisonState.left.goal.x === x && comparisonState.left.goal.y === y;
                       const tileType = isGoal ? "goal" : isAgent ? "empty" : cell.type;
                       const value = showValues ? cell.qValue : cell.value;
-                      const icon = isAgent ? "" : isGoal ? TILE_ICONS.goal : TILE_ICONS[cell.type];
                       const showValue =
                         showValues &&
                         !isAgent &&
@@ -3058,7 +3060,6 @@ const handleActiveBonusClick = useCallback(() => {
                           isGoal={isGoal}
                           tileSize={leftComparisonTileSizePx}
                           ariaLabel={ariaLabel}
-                          icon={icon}
                           visits={cell.visits}
                           showHeatmap={showHeatmap}
                           maxVisits={leftComparisonMaxVisits}
@@ -3294,7 +3295,6 @@ const handleActiveBonusClick = useCallback(() => {
                       const isGoal = comparisonState.right.goal.x === x && comparisonState.right.goal.y === y;
                       const tileType = isGoal ? "goal" : isAgent ? "empty" : cell.type;
                       const value = showValues ? cell.qValue : cell.value;
-                      const icon = isAgent ? "" : isGoal ? TILE_ICONS.goal : TILE_ICONS[cell.type];
                       const showValue =
                         showValues &&
                         !isAgent &&
@@ -3315,7 +3315,6 @@ const handleActiveBonusClick = useCallback(() => {
                           isGoal={isGoal}
                           tileSize={rightComparisonTileSizePx}
                           ariaLabel={ariaLabel}
-                          icon={icon}
                           visits={cell.visits}
                           showHeatmap={showHeatmap}
                           maxVisits={rightComparisonMaxVisits}
@@ -3690,7 +3689,7 @@ const handleActiveBonusClick = useCallback(() => {
                       onClick={handleActiveBonusClick}
                       className="flex w-full items-center justify-center gap-2 text-base font-semibold"
                     >
-                      <span aria-hidden>{bonusDetail.icon}</span>
+                      {activeBonus && <BonusIcon type={activeBonus} />}
                       <span>{bonusDetail.label[language]}</span>
                     </Button>
                     <p className="text-sm text-muted-foreground text-center">
@@ -3853,7 +3852,6 @@ const handleActiveBonusClick = useCallback(() => {
                         ? playgroundState.goal.x === x && playgroundState.goal.y === y
                         : randomState.goals.some((goal) => goal.x === x && goal.y === y);
                     const tileType = isGoal ? "goal" : (isAgent ? "empty" : cell.type);
-                    const icon = isAgent ? "" : isGoal ? "🎯" : TILE_ICONS[cell.type];
                     const value = showValues ? cell.qValue : cell.value;
                     const showValue =
                       showValues &&
@@ -3875,7 +3873,6 @@ const handleActiveBonusClick = useCallback(() => {
                         isGoal={isGoal}
                         tileSize={tileSizePx}
                         ariaLabel={ariaLabel}
-                        icon={icon}
                         visits={cell.visits}
                         showHeatmap={showHeatmap}
                         maxVisits={maxVisits}
@@ -4274,12 +4271,12 @@ const handleActiveBonusClick = useCallback(() => {
               </div>
               {levelMode && !unlockedFeatures?.canChangeGridSize && (
                 <p className="text-xs text-muted-foreground italic mt-3">
-                  🔒 {translate("Schalte Level 5 frei, um das Feld auf Mittel zu stellen.", "Reach level 5 to switch to the medium board.")}
+                  <LockIcon /> {translate("Schalte Level 5 frei, um das Feld auf Mittel zu stellen.", "Reach level 5 to switch to the medium board.")}
                 </p>
               )}
               {levelMode && unlockedFeatures?.canChangeGridSize && !unlockedFeatures?.canUseLargeGrid && (
                 <p className="text-xs text-muted-foreground italic mt-3">
-                  🔒 {translate("Schalte Level 7 frei, um das große Feld zu nutzen.", "Reach level 7 to use the large board.")}
+                  <LockIcon /> {translate("Schalte Level 7 frei, um das große Feld zu nutzen.", "Reach level 7 to use the large board.")}
                 </p>
               )}
             </CollapsibleTile>

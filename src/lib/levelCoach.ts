@@ -88,7 +88,7 @@ const placeOnBoard = (tool: string, toolEn: string): CoachSlide => ({
 
 const guide: CoachSlide = {
   target: "guide",
-  title: { de: "Wie lernt der Rover? 📖", en: "How does the rover learn? 📖" },
+  title: { de: "Wie lernt der Rover?", en: "How does the rover learn?" },
   text: {
     de: "Wenn du wissen willst, wie der Rover überhaupt lernt: Hier ist die Erklärung, mit kleinen Rovern zum Ausprobieren. Du kannst sie jederzeit wieder aufmachen.",
     en: "Want to know how the rover learns at all? This is the explanation, with little rovers to play with. You can open it again any time.",
