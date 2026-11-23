@@ -86,7 +86,7 @@ function Video({ id, title }: { id: string; title: string }) {
   );
 }
 
-const PUZZLE_BASE = "https://jobs.coxilab.de/puzzle";
+const PUZZLE_BASE = "https://coxilab.de/jobs/puzzle";
 
 /** Professions in the KI-Berufs-Puzzle where robots and autonomous machines are a real topic. */
 const JOBS: Array<{ slug: string; title: [string, string]; hint: [string, string] }> = [
@@ -156,7 +156,7 @@ export function RealRobots({ className }: { className?: string }) {
             </a>
           ))}
         </div>
-        <a href="https://jobs.coxilab.de" target="_blank" rel="noopener" className="mt-3 inline-block text-sm underline underline-offset-2">
+        <a href="https://coxilab.de/jobs/" target="_blank" rel="noopener" className="mt-3 inline-block text-sm underline underline-offset-2">
           {t("Alle Berufe ansehen", "See all jobs")} →
         </a>
       </div>

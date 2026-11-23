@@ -5,8 +5,8 @@ import "./CoxilabLeiste.css";
 
 // Identische Umsteigeleiste auf jeder Seite (Vorlage: coxilab-stile/leiste/leiste.css): Rückweg zu coxilab.de, Umsteigen, Hell/Dunkel.
 const LINIEN = [
-  { id: "d", name: "Dilemma", href: "https://dilemma.coxilab.de/", farbe: "#e88080" },
-  { id: "p", name: "KI-Berufs-Puzzle", href: "https://jobs.coxilab.de/", farbe: "#9a86dc" },
+  { id: "d", name: "Dilemma", href: "https://coxilab.de/dilemma/", farbe: "#e88080" },
+  { id: "p", name: "KI-Berufs-Puzzle", href: "https://coxilab.de/jobs/", farbe: "#9a86dc" },
   { id: "r", name: "Reward Rover", href: "https://rover.coxilab.de/", farbe: "#5cb68e" },
   { id: "h", name: "Handzeichen", href: "https://coxilab.de/handzeichen/", farbe: "#ee9a5a" },
   { id: "a", name: "Artikel", href: "https://maximilianherrmann.com/blog/", farbe: "#5aaed6" },
