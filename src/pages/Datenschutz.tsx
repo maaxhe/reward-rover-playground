@@ -91,8 +91,7 @@ const Datenschutz = () => {
 
           <h2 className="legal-h">7. Kein Tracking</h2>
           <p>
-            Es gibt keinen Analysedienst, keine Werbung und keine Tracking-Cookies. Es wird nicht mitgezählt, wer
-            die Seite besucht.
+            Es gibt keinen Analysedienst, keine Werbung und keine Tracking-Cookies. Der Server zählt pro Monat, wie oft eine Startseite geöffnet und wie oft ein Raum oder eine Umfrage eröffnet wird. Im Zähler stehen nur der Monat und das Ereignis, keine IP-Adresse, keine Kennung und kein Raumcode. Die Browserkennung wird nur im Moment des Aufrufs geprüft, um Bots auszusortieren. Daraus entstehen Monatssummen, die sich keiner Person zuordnen lassen.
           </p>
 
           <h2 className="legal-h">8. Schriften und externe Inhalte</h2>
