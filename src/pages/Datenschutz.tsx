@@ -4,8 +4,8 @@ import "./landing.css";
 
 /**
  * Privacy notice. Written from what the code actually does (accounts, classroom rooms, browser
- * storage, Umami script). It is a solid starting point, not legal advice: have the points marked
- * in the comments checked against your hosting setup (server logs, Umami region).
+ * storage, no analytics). It is a solid starting point, not legal advice: have the points marked
+ * in the comments checked against your hosting setup (server logs).
  */
 const Datenschutz = () => {
   useEffect(() => {
@@ -89,14 +89,10 @@ const Datenschutz = () => {
             abgeglichen). Du kannst sie jederzeit in den Browser-Einstellungen löschen.
           </p>
 
-          <h2 className="legal-h">7. Reichweitenmessung (Umami)</h2>
+          <h2 className="legal-h">7. Kein Tracking</h2>
           <p>
-            Ich nutze den Analysedienst Umami (Umami Cloud), um zu sehen, wie oft die Seite aufgerufen wird.
-            Umami arbeitet ohne Cookies und ohne Nutzerprofile, die Aufrufe werden nur zusammengezählt.
-            Dafür lädt dein Browser ein Skript von <code>cloud.umami.is</code>, dabei wird technisch bedingt
-            deine IP-Adresse an Umami übermittelt. Rechtsgrundlage ist mein berechtigtes Interesse an der
-            Verbesserung des Angebots (Art. 6 Abs. 1 lit. f DSGVO). Du kannst widersprechen, indem du das
-            Laden des Skripts in deinem Browser blockierst.
+            Es gibt keinen Analysedienst, keine Werbung und keine Tracking-Cookies. Es wird nicht mitgezählt, wer
+            die Seite besucht.
           </p>
 
           <h2 className="legal-h">8. Schriften und externe Inhalte</h2>

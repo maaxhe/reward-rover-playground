@@ -77,13 +77,13 @@ describe("imprint", () => {
 });
 
 describe("privacy notice", () => {
-  it("is linked from the landing footer and covers accounts, rooms and analytics", () => {
+  it("is linked from the landing footer and covers accounts, rooms and the no-tracking promise", () => {
     renderLanding();
     expect(screen.getByText("Datenschutz").getAttribute("href")).toBe("/datenschutz");
     cleanup();
     render(<MemoryRouter><Datenschutz /></MemoryRouter>);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Datenschutzerklärung");
-    for (const h of [/Account/, /Klassen-Challenge/, /Umami/, /Deine Rechte/]) {
+    for (const h of [/Account/, /Klassen-Challenge/, /Kein Tracking/, /Deine Rechte/]) {
       expect(screen.getByRole("heading", { level: 2, name: h })).toBeTruthy();
     }
   });

@@ -17,6 +17,7 @@ import { limitByIp } from "./lib/rateLimit.js";
 dotenv.config();
 
 const app = express();
+app.disable("x-powered-by");
 // Behind nginx: needed so per-IP limits (room creation) see the real client address.
 app.set("trust proxy", 1);
 const PORT = process.env.PORT || 3001;
