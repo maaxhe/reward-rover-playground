@@ -74,6 +74,7 @@ export const PlaygroundControls = ({
   levelMode,
   unlockedFeatures,
 }: PlaygroundControlsProps) => {
+  const [moreOpen, setMoreOpen] = useState(false);
   return (
     <div className="space-y-5">
       <div className="hidden lg:block">
@@ -90,38 +91,48 @@ export const PlaygroundControls = ({
           <RotateCcw className="mr-2 h-4 w-4" />
           {translate("Zurück", "Reset")}
         </Button>
-        <Button variant="ghost" size="sm" onClick={onUndo} disabled={!canUndo} className="font-medium">
-          <Undo2 className="mr-2 h-4 w-4" />
-          {translate("Rückgängig", "Undo")}
-        </Button>
-        {onReplay && onStopReplay && (
-          <Button
-            variant={isReplaying ? "destructive" : "ghost"}
-            size="sm"
-            onClick={isReplaying ? onStopReplay : onReplay}
-            className="font-medium"
-          >
-            {isReplaying ? translate("Stop", "Stop") : translate("Replay", "Replay")}
-          </Button>
-        )}
       </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <Label className="text-sm font-semibold text-foreground">{translate("Tempo", "Speed")}</Label>
-        <div className="grid flex-1 grid-cols-4 gap-1">
-          {SIMULATION_SPEEDS.map((option) => (
-            <Button
-              key={option.key}
-              variant={simulationSpeed === option.key ? "default" : "outline"}
-              size="sm"
-              onClick={() => onSimulationSpeedChange(option.key)}
-              className="h-7 px-0 text-xs font-semibold"
-            >
-              {option.label}
+      <Collapsible open={moreOpen} onOpenChange={setMoreOpen}>
+        <CollapsibleTrigger className="flex w-full items-center justify-between text-xs font-medium text-muted-foreground hover:text-foreground">
+          {translate("Tempo, Rückgängig, Replay", "Speed, undo, replay")}
+          <ChevronDown className={cn("h-3 w-3 transition-transform", moreOpen && "rotate-180")} />
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-3 pt-3">
+          <div className="flex items-center justify-between gap-3">
+            <Label className="text-sm font-semibold text-foreground">{translate("Tempo", "Speed")}</Label>
+            <div className="grid flex-1 grid-cols-4 gap-1">
+              {SIMULATION_SPEEDS.map((option) => (
+                <Button
+                  key={option.key}
+                  variant={simulationSpeed === option.key ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => onSimulationSpeedChange(option.key)}
+                  className="h-7 px-0 text-xs font-semibold"
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="ghost" size="sm" onClick={onUndo} disabled={!canUndo} className="font-medium">
+              <Undo2 className="mr-2 h-4 w-4" />
+              {translate("Rückgängig", "Undo")}
             </Button>
-          ))}
-        </div>
-      </div>
+            {onReplay && onStopReplay && (
+              <Button
+                variant={isReplaying ? "destructive" : "ghost"}
+                size="sm"
+                onClick={isReplaying ? onStopReplay : onReplay}
+                className="font-medium"
+              >
+                {isReplaying ? translate("Stop", "Stop") : translate("Replay", "Replay")}
+              </Button>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       <div data-tutorial="tools" className="space-y-2">
         {TOOLS.filter((tool) => !levelMode || unlockedFeatures?.[tool.unlock]).length > 0 ? (

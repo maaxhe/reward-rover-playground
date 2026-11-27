@@ -179,6 +179,7 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
   const isDesktopAtStart = typeof window === "undefined" || window.innerWidth >= 1280;
   const [showConsolePanel, setShowConsolePanel] = useState(isDesktopAtStart);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [showMoreDisplay, setShowMoreDisplay] = useState(false);
   const [isReplaying, setIsReplaying] = useState(false);
   const [replayEpisode, setReplayEpisode] = useState<EpisodeStats | null>(null);
   const [replayStep, setReplayStep] = useState(0);
@@ -243,8 +244,8 @@ export function RLGame({ explorationRate = 0.2, alpha = 0.1, gamma = 0.85, onAut
     onAuthTokenChange?.(authToken);
   }, [authToken, onAuthTokenChange]);
   const introToggleLabel = showIntro
-    ? translate("Anleitung ausblenden", "Hide guide")
-    : translate("Anleitung & Infos anzeigen", "Show guide & info");
+    ? translate("Infos ausblenden", "Hide info")
+    : translate("Was ist das?", "What is this?");
 
   useEffect(() => {
     if (isAutoRestartEnabled) {
@@ -2574,75 +2575,50 @@ const handleActiveBonusClick = useCallback(() => {
 
       <div className="bg-[var(--gradient-main)] pb-12">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 pt-6">
-        {/* Hero Section */}
-        <div className={cn("rounded-xl border border-border bg-card/95", levelMode ? "p-4 sm:p-5" : "p-8")}>
-          <div className={cn("flex items-center gap-3", levelMode ? "mb-2" : "mb-4")}>
-            <Target className={cn("text-primary", levelMode ? "h-6 w-6" : "h-8 w-8")} />
-            <h1 className={cn("font-bold gradient-text", levelMode ? "text-2xl md:text-3xl" : "text-4xl md:text-5xl")}>Reward Rover</h1>
-          </div>
-
-          <p className={cn("text-xl text-muted-foreground leading-relaxed mb-6 max-w-4xl", levelMode && "hidden")}>
-            {isEnglish ? (
-              <>
-                Experience <strong className="text-foreground gradient-text">reinforcement learning</strong> across three modes.
-                Compare strategies, explore random worlds, and build your own playground.
-              </>
-            ) : (
-              <>
-                Erlebe <strong className="text-foreground gradient-text">Reinforcement Learning</strong> in drei Modi.
-                Vergleiche Strategien, erkunde Zufallswelten und baue deinen eigenen Playground.
-              </>
-            )}
-          </p>
-
-          <div className={cn("flex flex-wrap items-center justify-between gap-4", levelMode ? "mb-0" : "mb-6")}>
-            <div className="flex flex-wrap items-center gap-3">
+        {/* Kopfzeile: nur Titel und leise Links; Erklärung und Konto bleiben einen Klick entfernt */}
+        <div className="rounded-xl border border-border bg-card/95 p-4 sm:px-5">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <div className="flex items-center gap-3">
+              <Target className="h-6 w-6 text-primary" />
+              <h1 className="text-2xl font-bold gradient-text">Reward Rover</h1>
               <Button
-                variant="outline"
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowIntro((prev) => !prev)}
-                className="font-semibold flex items-center gap-2"
+                aria-expanded={showIntro}
+                className="gap-1 text-muted-foreground"
               >
                 {introToggleLabel}
-                <ChevronDown
-                  className={cn("h-4 w-4 transition-transform duration-200", showIntro ? "rotate-180" : "")}
-                />
+                <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", showIntro ? "rotate-180" : "")} />
               </Button>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-1">
               {authUser ? (
                 <>
-                  <Badge variant="secondary" className="bg-foreground/10 text-foreground border-foreground/15">
-                    {authUser.username}
-                  </Badge>
+                  <span className="px-2 text-sm font-medium text-foreground">{authUser.username}</span>
                   {isAdmin && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open("/admin", "_blank")}
-                    >
-                      {translate("Admin Panel", "Admin Panel")}
+                    <Button variant="ghost" size="sm" onClick={() => window.open("/admin", "_blank")}>
+                      {translate("Admin", "Admin")}
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" onClick={handleLogout}>
-                    {translate("Logout", "Logout")}
+                  <Button variant="ghost" size="sm" onClick={handleLogout}>
+                    {translate("Abmelden", "Logout")}
                   </Button>
                 </>
               ) : (
-                <Button variant="outline" size="sm" onClick={() => setAuthDialogOpen(true)}>
+                <Button variant="ghost" size="sm" onClick={() => setAuthDialogOpen(true)}>
                   {translate("Anmelden", "Login")}
                 </Button>
               )}
-              <div className="flex items-center gap-2 rounded-full border border-border/60 bg-card px-3 py-1.5">
-                <span className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {translate("English UI", "English UI")}
-                </span>
-                <Switch
-                  id="language-toggle"
-                  checked={isEnglish}
-                  onCheckedChange={(checked) => setLanguage(checked ? "en" : "de")}
-                  aria-label={translate("Sprache umschalten", "Toggle language")}
-                />
-              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setLanguage(isEnglish ? "de" : "en")}
+                aria-label={translate("Sprache umschalten", "Toggle language")}
+                className="font-semibold text-muted-foreground"
+              >
+                {isEnglish ? "DE" : "EN"}
+              </Button>
             </div>
           </div>
 
@@ -4153,6 +4129,17 @@ const handleActiveBonusClick = useCallback(() => {
                       </p>
                     )}
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowMoreDisplay((v) => !v)}
+                    aria-expanded={showMoreDisplay}
+                    className="flex items-center gap-1 self-end text-xs font-medium text-muted-foreground hover:text-foreground"
+                  >
+                    {translate("Weitere Optionen", "More options")}
+                    <ChevronDown className={cn("h-3 w-3 transition-transform", showMoreDisplay && "rotate-180")} />
+                  </button>
+                  {showMoreDisplay && (
+                    <div className="flex flex-col items-end gap-3">
                   <div className="space-y-1">
                     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
                       <div className="flex items-center gap-1.5">
@@ -4239,6 +4226,8 @@ const handleActiveBonusClick = useCallback(() => {
                       )}
                     </p>
                   </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </CollapsibleTile>

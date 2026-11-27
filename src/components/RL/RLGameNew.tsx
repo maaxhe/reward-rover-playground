@@ -259,31 +259,37 @@ export function RLGameNew() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-      {/* Mode Selector */}
-      <div className="border-b border-border bg-background px-4 md:px-8 py-3 md:py-4 md:sticky md:top-0 z-30">
-        <div className="grid grid-cols-2 items-center gap-2 md:flex md:flex-wrap md:gap-3">
-          <Link to="/" className="col-span-2 mr-2 text-sm font-semibold text-muted-foreground hover:text-foreground">
-            ← {translate("Startseite", "Home")}
+      {/* Mode Selector: ruhige Leiste, Modi als Umschalter, Rest als leise Links */}
+      <div className="border-b border-border bg-background px-4 md:px-8 py-2 md:sticky md:top-0 z-30">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <Link to="/" className="text-sm font-medium text-muted-foreground hover:text-foreground">
+            ← {translate("Start", "Home")}
           </Link>
-          <Button
-            variant={mode === "levels" ? "default" : "outline"}
-            onClick={() => setMode("levels")}
-            className="w-full font-semibold md:w-auto"
-          >
-            {translate("Level-Modus", "Level Mode")}
-          </Button>
-          <Button
-            variant={mode === "free" ? "default" : "outline"}
-            onClick={() => (canAccessFreeMode ? setMode("free") : setPwOpen(true))}
-            className="w-full font-semibold md:w-auto"
-          >
-            {translate("Freies Spiel", "Free Mode")}
-            {!canAccessFreeMode && <LockIcon className="ml-2 text-xs" />}
-          </Button>
-          <Button asChild variant="outline" className="w-full font-semibold md:ml-auto md:w-auto">
-            <Link to="/klasse">{translate("Klassen-Modus", "Classroom")}</Link>
-          </Button>
-          <RLGuideButton size="default" variant="default" className="w-full font-semibold md:w-auto" />
+          <div className="inline-flex rounded-lg border border-border bg-card/40 p-0.5">
+            <Button
+              size="sm"
+              variant={mode === "levels" ? "default" : "ghost"}
+              onClick={() => setMode("levels")}
+              className="h-8 font-semibold"
+            >
+              {translate("Level", "Levels")}
+            </Button>
+            <Button
+              size="sm"
+              variant={mode === "free" ? "default" : "ghost"}
+              onClick={() => (canAccessFreeMode ? setMode("free") : setPwOpen(true))}
+              className="h-8 font-semibold"
+            >
+              {translate("Freies Spiel", "Free Mode")}
+              {!canAccessFreeMode && <LockIcon className="ml-2 text-xs" />}
+            </Button>
+          </div>
+          <div className="ml-auto flex items-center gap-1">
+            <Button asChild size="sm" variant="ghost" className="font-medium">
+              <Link to="/klasse">{translate("Klassen-Modus", "Classroom")}</Link>
+            </Button>
+            <RLGuideButton compact size="sm" variant="ghost" className="font-medium" />
+          </div>
         </div>
       </div>
 
@@ -316,7 +322,7 @@ export function RLGameNew() {
       {/* Main Content - 2 Column Layout */}
       <div className="flex flex-1 flex-col md:flex-row md:items-start">
         {/* Left Sidebar - Parameters & Progress */}
-        <div className={cn("w-full md:w-72 flex-shrink-0 border-b md:border-b-0 md:border-r border-border bg-card/20 p-4 md:p-6 md:sticky md:top-[72px] md:max-h-[calc(100vh-72px)] md:overflow-y-auto", !sidebarOpen && "hidden")}>
+        <div className={cn("w-full md:w-72 flex-shrink-0 border-b md:border-b-0 md:border-r border-border bg-card/20 p-4 md:p-6 md:sticky md:top-[53px] md:max-h-[calc(100vh-53px)] md:overflow-y-auto", !sidebarOpen && "hidden")}>
           {!isLevelMode && (
             <>
               <Button
@@ -414,7 +420,6 @@ export function RLGameNew() {
               )}
             </>
           )}
-          <RLGuideButton className="my-4 w-full font-semibold" />
           <Fold title={translate("Legende", "Legend")} open={folds.legend} onToggle={() => toggleFold("legend")}>
             <GameLegend translate={translate} showPortal={!isLevelMode || unlockedFeatures.canPlacePortals} />
           </Fold>
@@ -428,7 +433,7 @@ export function RLGameNew() {
           aria-label={translate("Seitenleiste ein- oder ausblenden", "Show or hide sidebar")}
           title={sidebarOpen ? translate("Seitenleiste ausblenden", "Hide sidebar") : translate("Seitenleiste einblenden", "Show sidebar")}
           className={cn(
-            "flex flex-shrink-0 items-center justify-center gap-2 border-b border-border py-2 text-sm font-semibold transition-colors md:sticky md:top-[72px] md:h-[calc(100vh-72px)] md:w-10 md:flex-col md:border-b-0 md:border-r md:py-4",
+            "flex flex-shrink-0 items-center justify-center gap-2 border-b border-border py-2 text-sm font-semibold transition-colors md:sticky md:top-[53px] md:h-[calc(100vh-53px)] md:w-10 md:flex-col md:border-b-0 md:border-r md:py-4",
             sidebarOpen
               ? "bg-card/30 text-muted-foreground hover:bg-card hover:text-foreground"
               : "bg-primary/15 text-primary hover:bg-primary/25",
