@@ -157,9 +157,9 @@ const LandingContent = () => {
         <section className="umsteigen" aria-labelledby="umsteigen">
           <h2 id="umsteigen">{translate("Umsteigen", "Switch tools")}</h2>
           <ul>
-            <li><a href="https://coxilab.de/dilemma/"><i style={{ background: "#e88080" }} aria-hidden="true">D</i><b>Dilemma</b><span className="t">{translate("Wer entscheidet, wenn eine KI entscheidet?", "Who decides when an AI decides?")}</span></a></li>
+            <li><a href="https://coxilab.de/dilemma/"><i style={{ background: "#e3b23c" }} aria-hidden="true">D</i><b>Dilemma</b><span className="t">{translate("Wer entscheidet, wenn eine KI entscheidet?", "Who decides when an AI decides?")}</span></a></li>
             <li><a href="https://coxilab.de/jobs/"><i style={{ background: "#9a86dc" }} aria-hidden="true">P</i><b>{translate("KI-Berufs-Puzzle", "AI job puzzle")}</b><span className="t">{translate("Was kann KI in welchem Beruf wirklich übernehmen?", "What can AI really take over in which job?")}</span></a></li>
-            <li><a href="https://handzeichen.com/lehrkraefte"><i style={{ background: "#ee9a5a" }} aria-hidden="true">H</i><b>Handzeichen</b><span className="t">{translate("Live-Umfragen und Quiz am Handy.", "Live polls and quizzes on the phone.")}</span></a></li>
+            <li><a href="https://handzeichen.com/lehrkraefte"><i style={{ background: "#ea425b" }} aria-hidden="true">H</i><b>Handzeichen</b><span className="t">{translate("Live-Umfragen und Quiz am Handy.", "Live polls and quizzes on the phone.")}</span></a></li>
           </ul>
         </section>
       </div>
